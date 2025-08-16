@@ -3,6 +3,7 @@
 import { Users, Package, BarChart3, Zap, Star } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import CartButton from '@/components/ui/CartButton';
+import UpcomingInventory from '@/components/sections/UpcomingInventory';
 
 export default function Home() {
 
@@ -107,6 +108,66 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* Próximo Inventario */}
+        <UpcomingInventory
+          arrivalDate="2024-02-15"
+          arrivalTime="9:00 AM - 11:00 AM"
+          expectedProducts={[
+            {
+              id: "1",
+              name: "Máscara de Pestañas Volumizadora",
+              description: "Máscara de pestañas de larga duración que agrega volumen y longitud sin grumos",
+              price: 24.99,
+              stock: 50,
+              category: "Maquillaje",
+              brand: "BeautyPro",
+              image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "2",
+              name: "Serum Facial con Vitamina C",
+              description: "Serum antioxidante que ilumina la piel y reduce las manchas oscuras",
+              price: 39.99,
+              stock: 30,
+              category: "Skincare",
+              brand: "GlowEssence",
+              image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "3",
+              name: "Paleta de Sombras Profesional",
+              description: "Paleta con 18 sombras mate y brillantes para crear looks únicos",
+              price: 49.99,
+              stock: 25,
+              category: "Maquillaje",
+              brand: "ColorStudio",
+              image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "4",
+              name: "Crema Hidratante con Ácido Hialurónico",
+              description: "Crema hidratante intensiva que mantiene la piel suave y elástica",
+              price: 29.99,
+              stock: 40,
+              category: "Skincare",
+              brand: "HydraCare",
+              image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ]}
+        />
 
         {/* Stats Section */}
         <div className="bg-white rounded-xl shadow-md p-8">
