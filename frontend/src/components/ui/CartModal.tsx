@@ -22,17 +22,18 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
       />
       
       {/* Modal centrado */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
         <div className="
-          relative w-full max-w-md bg-white rounded-lg shadow-xl
+          relative w-full max-w-sm sm:max-w-md bg-white rounded-lg shadow-xl
           transform transition-all duration-300 ease-in-out
           animate-in fade-in-0 zoom-in-95
+          mx-2
         ">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <ShoppingCart className="w-6 h-6 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">Tu Carrito</h2>
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Tu Carrito</h2>
             </div>
             <button
               onClick={onClose}
@@ -47,7 +48,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </div>
 
           {/* Contenido */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {cartItemCount === 0 ? (
               <div className="text-center py-8">
                 <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -86,7 +87,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </div>
 
           {/* Footer con botón de WhatsApp */}
-          <div className="p-6 border-t border-gray-200">
+          <div className="p-4 sm:p-6 border-t border-gray-200">
             <button
               onClick={() => {
                 // Aquí iría la lógica para enviar por WhatsApp
@@ -102,7 +103,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               "
             >
               <MessageCircle className="w-5 h-5" />
-              Finalizar compra por WhatsApp
+              Finalizar compra
             </button>
           </div>
         </div>

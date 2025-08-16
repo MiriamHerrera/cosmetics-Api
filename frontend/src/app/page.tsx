@@ -43,17 +43,28 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo/Brand */}
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
                 💄 Cosmetics
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Botones de acción */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <CartButton />
-              <button className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors">
-                Iniciar Sesión
+              <button className="
+                bg-pink-600 text-white 
+                px-2 py-2 sm:px-4 sm:py-2 
+                text-xs sm:text-sm
+                rounded-lg hover:bg-pink-700 
+                transition-colors
+                whitespace-nowrap
+              ">
+                <span className="hidden sm:inline">Iniciar Sesión</span>
+                <span className="sm:hidden">Login</span>
               </button>
             </div>
           </div>
