@@ -1,0 +1,55 @@
+# Dependencias
+node_modules/
+vendor/
+
+# Builds
+.next/
+/public/build
+/storage/*.key
+
+# Env files
+.env
+.env.local
+.env.production.local
+.env.staging
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel específico (cuando lo agregues)
+/backend/bootstrap/cache/
+/backend/storage/app/*
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+
+# Next.js específico
+/.next/
+/out/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Testing
+/coverage 

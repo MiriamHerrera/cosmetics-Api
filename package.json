@@ -1,0 +1,42 @@
+{
+  "name": "cosmetics-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sistema completo de inventario y ventas para cosméticos",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && php artisan serve",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && composer install --optimize-autoloader --no-dev",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && composer install",
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "lint:frontend": "cd frontend && npm run lint",
+    "test:frontend": "cd frontend && npm run test",
+    "clean": "rimraf frontend/.next frontend/out backend/vendor backend/node_modules",
+    "setup": "npm run install:all && npm run build:frontend"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "keywords": [
+    "cosmetics",
+    "inventory",
+    "ecommerce",
+    "nextjs",
+    "laravel",
+    "typescript",
+    "tailwindcss"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+} 
