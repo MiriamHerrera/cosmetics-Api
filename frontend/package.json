@@ -1,0 +1,12 @@
+{
+  "name": "cosmetics-app",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && php artisan serve",
+    "build:frontend": "cd frontend && npm run build",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && composer install"
+  },
+  "workspaces": ["frontend"]
+}
