@@ -1,0 +1,31 @@
+{
+  "name": "cosmetics-api-backend",
+  "version": "1.0.0",
+  "description": "Backend API para sistema de cosméticos",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest"
+  },
+  "keywords": ["cosmetics", "api", "inventory", "ecommerce"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "multer": "^1.4.5-lts.1",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  }
+} 
