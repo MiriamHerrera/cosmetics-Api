@@ -11,6 +11,8 @@ const { testConnection } = require('./config/database');
 // Importar rutas
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
+const cartRoutes = require('./routes/cart');
+const reservationRoutes = require('./routes/reservations');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -53,6 +55,8 @@ app.use((req, res, next) => {
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/reservations', reservationRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -73,6 +77,8 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       products: '/api/products',
+      cart: '/api/cart',
+      reservations: '/api/reservations',
       health: '/api/health'
     }
   });
@@ -114,6 +120,8 @@ const startServer = async () => {
       console.log(`📱 API disponible en: http://localhost:${PORT}`);
       console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🛒 Endpoint: /api/cart`);
+      console.log(`📅 Endpoint: /api/reservations`);
     });
 
   } catch (error) {
