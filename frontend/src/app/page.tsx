@@ -1,11 +1,8 @@
 'use client';
 
 import { Users, Package, BarChart3, Zap, Star } from 'lucide-react';
-import { useStore } from '@/store/useStore';
 import CartButton from '@/components/ui/CartButton';
-import UpcomingInventory from '@/components/sections/UpcomingInventory';
-import CurrentInventory from '@/components/sections/CurrentInventory';
-import StockSurvey from '@/components/sections/StockSurvey';
+import { UpcomingInventory, CurrentInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
 export default function Home() {
   const features = [
@@ -80,6 +77,9 @@ export default function Home() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       
+
+        {/* Sección de Productos */}
+        <ProductsSection />
 
         {/* Próximo Inventario */}
         <UpcomingInventory

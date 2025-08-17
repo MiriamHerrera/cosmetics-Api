@@ -1,7 +1,7 @@
 'use client';
 
 import { ShoppingCart, Zap, Heart } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useCart } from '@/hooks/useCart';
 import type { Product } from '@/types';
 import { useState } from 'react';
 
@@ -11,19 +11,18 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
-  const { addToCart } = useStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const { addToCart, loading: cartLoading } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
 
   const handleAddToCart = async () => {
-    setIsLoading(true);
     try {
-      addToCart(product, 1);
-      // Aquí podrías mostrar una notificación de éxito
+      const success = await addToCart(product, 1);
+      if (success) {
+        // Aquí podrías mostrar una notificación de éxito
+        console.log('Producto agregado al carrito');
+      }
     } catch (error) {
       console.error('Error al agregar al carrito:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -49,8 +48,9 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-100">
         <img
-          src={product.image || '/placeholder-product.jpg'}
+          src={product.image_url || '/placeholder-product.svg'}
           alt={product.name}
+          onLoad={() => console.log('Imagen cargada:', product.image_url || '/placeholder-product.svg')}
           className="
             w-full h-full object-cover
             transition-transform duration-300
@@ -58,7 +58,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           "
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/placeholder-product.jpg';
+            target.src = '/placeholder-product.svg';
           }}
         />
         
@@ -81,21 +81,21 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
         </button>
 
         {/* Badge de stock */}
-        {product.stock <= 5 && product.stock > 0 && (
+        {product.stock_total <= 5 && product.stock_total > 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
               px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium
               bg-orange-500 text-white
               rounded-full
             ">
-              <span className="hidden sm:inline">Solo {product.stock} disponibles</span>
-              <span className="sm:hidden">{product.stock} disp</span>
+              <span className="hidden sm:inline">Solo {product.stock_total} disponibles</span>
+              <span className="sm:hidden">{product.stock_total} disp</span>
             </span>
           </div>
         )}
 
         {/* Badge de agotado */}
-        {product.stock === 0 && (
+        {product.stock_total === 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
               px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium
@@ -124,7 +124,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           text-xs text-gray-500 mb-2
           font-medium
         ">
-          {product.category}
+          {product.category_name}
         </p>
 
         {/* Precio y Stock en la misma línea */}
@@ -133,7 +133,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
             ${product.price.toFixed(2)}
           </span>
           <span className="text-xs text-gray-500 font-medium">
-            {product.stock}
+            {product.stock_total}
           </span>
         </div>
 
@@ -142,7 +142,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           {/* Botón de compra inmediata */}
           <button
             onClick={handleQuickBuy}
-            disabled={product.stock === 0 || isLoading}
+            disabled={product.stock_total === 0 || cartLoading}
             className="
               flex-1 bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
               disabled:bg-gray-300 disabled:cursor-not-allowed
@@ -162,7 +162,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           {/* Botón de agregar al carrito */}
           <button
             onClick={handleAddToCart}
-            disabled={product.stock === 0 || isLoading}
+            disabled={product.stock_total === 0 || cartLoading}
                         className="
               flex-1 border-2 border-rose-400 hover:bg-gradient-to-r hover:from-rose-400 hover:to-pink-500 hover:text-white
               disabled:bg-gray-300 disabled:cursor-not-allowed

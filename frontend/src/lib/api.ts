@@ -191,7 +191,7 @@ export const ordersApi = {
 export const categoriesApi = {
   // Obtener todas las categorías
   getAll: async (): Promise<ApiResponse<Category[]>> => {
-    const response = await api.get('/categories');
+    const response = await api.get('/products/categories');
     return response.data;
   }
 };

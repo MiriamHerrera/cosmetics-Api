@@ -13,6 +13,7 @@ interface AppState {
   // Acciones
   setUser: (user: User | null) => void;
   setProducts: (products: Product[]) => void;
+  setCart: (cart: Cart | null) => void;
   addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   updateCartItemQuantity: (productId: string, quantity: number) => void;
@@ -39,6 +40,8 @@ export const useStore = create<AppState>()(
       setUser: (user) => set({ user }),
       
       setProducts: (products) => set({ products }),
+      
+      setCart: (cart) => set({ cart }),
       
       addToCart: (product, quantity) => {
         const currentCart = get().cart;

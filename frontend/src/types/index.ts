@@ -5,13 +5,13 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  stock: number;
-  category: string;
-  brand: string;
-  image: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  stock_total: number;
+  category_name: string;
+  product_type_name: string;
+  image_url: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
