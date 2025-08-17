@@ -67,11 +67,11 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
         {/* Header de la sección */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-4 h-4 bg-rose-400 rounded-full"></div>
+            <div className="w-4 h-4 bg-purple-400 rounded-full"></div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800">
               ¡Tu Opinión Cuenta!
             </h2>
-            <div className="w-4 h-4 bg-rose-400 rounded-full"></div>
+            <div className="w-4 h-4 bg-purple-400 rounded-full"></div>
           </div>
         </div>
 
