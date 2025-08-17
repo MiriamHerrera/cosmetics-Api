@@ -6,7 +6,6 @@ import CartButton from '@/components/ui/CartButton';
 import UpcomingInventory from '@/components/sections/UpcomingInventory';
 
 export default function Home() {
-
   const features = [
     {
       icon: Package,
@@ -55,7 +54,6 @@ export default function Home() {
             
             {/* Botones de acción */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <CartButton />
               <button className="
                 bg-pink-600 text-white 
                 px-2 py-2 sm:px-4 sm:py-2 
@@ -71,6 +69,11 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Carrito flotante en esquina inferior derecha */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <CartButton />
+      </div>
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -169,30 +172,6 @@ export default function Home() {
           ]}
         />
 
-        {/* Stats Section */}
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            Números que Hablan
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-pink-600 mb-2">500+</div>
-              <div className="text-gray-600">Productos</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-pink-600 mb-2">1000+</div>
-              <div className="text-gray-600">Clientes</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-pink-600 mb-2">50+</div>
-              <div className="text-gray-600">Categorías</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-pink-600 mb-2">24/7</div>
-              <div className="text-gray-600">Soporte</div>
-            </div>
-          </div>
-        </div>
       </main>
 
       {/* Footer */}

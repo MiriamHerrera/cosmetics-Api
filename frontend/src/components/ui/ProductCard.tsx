@@ -172,7 +172,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
               focus:outline-none focus:ring-2 focus:ring-pink-500
            "
           >
-            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-600" />
+            <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-pink-600" />
             <span className="hidden sm:inline text-pink-600">Carrito</span>
             <span className="sm:hidden text-pink-600">+</span>
           </button>

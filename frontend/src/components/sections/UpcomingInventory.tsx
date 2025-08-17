@@ -31,12 +31,12 @@ export default function UpcomingInventory({
   };
 
   return (
-    <section className="py-12 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <section className="py-2 bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header de la sección */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-6">
+          <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
             🚚 Próximo Inventario
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -54,16 +54,16 @@ export default function UpcomingInventory({
             {/* Fecha de llegada */}
             <div className="
               flex flex-col items-center text-center
-              p-4 rounded-xl bg-blue-50
+              p-2 rounded-xl bg-blue-50
               border border-blue-100
             ">
               <div className="
-                w-12 h-12 bg-blue-500 rounded-full
+                w-10 h-10 bg-blue-500 rounded-full
                 flex items-center justify-center mb-3
               ">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="text-gray-900 mb-1">
                 Fecha de Llegada
               </h3>
               <p className="text-blue-600 font-medium">
@@ -74,16 +74,16 @@ export default function UpcomingInventory({
             {/* Horario */}
             <div className="
               flex flex-col items-center text-center
-              p-4 rounded-xl bg-purple-50
+              p-2 rounded-xl bg-purple-50
               border border-purple-100
             ">
               <div className="
-                w-12 h-12 bg-purple-500 rounded-full
+                w-10 h-10 bg-purple-500 rounded-full
                 flex items-center justify-center mb-3
               ">
                 <Clock className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="text-gray-900 mb-1">
                 Horario
               </h3>
               <p className="text-purple-600 font-medium">
@@ -94,16 +94,16 @@ export default function UpcomingInventory({
             {/* Productos esperados */}
             <div className="
               flex flex-col items-center text-center
-              p-4 rounded-xl bg-green-50
+              p-2 rounded-xl bg-green-50
               border border-green-100
             ">
               <div className="
-                w-12 h-12 bg-green-500 rounded-full
+                w-10 h-10 bg-green-500 rounded-full
                 flex items-center justify-center mb-3
               ">
                 <Package className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="text-gray-900 mb-1">
                 Productos Esperados
               </h3>
               <p className="text-green-600 font-medium">
@@ -116,11 +116,11 @@ export default function UpcomingInventory({
         {/* Lista de productos */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-gray-900">
+            <h3 className="text-xl font-bold text-gray-900">
               Productos que Llegan
             </h3>
             <button className="
-              flex items-center gap-2 text-purple-600 hover:text-purple-700
+              flex items-center gap-2 text-pink-600 hover:text-purple-700
               font-medium transition-colors
               group
             ">
@@ -142,31 +142,7 @@ export default function UpcomingInventory({
               />
             ))}
           </div>
-        </div>
-
-        {/* Call to action */}
-        <div className="
-          text-center bg-white rounded-2xl shadow-lg p-8
-          border border-gray-100
-        ">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            ¿Quieres ser el primero en saber?
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Suscríbete para recibir notificaciones cuando lleguen nuevos productos
-          </p>
-          <button className="
-            bg-gradient-to-r from-purple-600 to-blue-600
-            hover:from-purple-700 hover:to-blue-700
-            text-white font-semibold
-            px-8 py-3 rounded-full
-            transition-all duration-300
-            transform hover:scale-105
-            shadow-lg hover:shadow-xl
-          ">
-            Notificarme
-          </button>
-        </div>
+        </div>        
       </div>
     </section>
   );
