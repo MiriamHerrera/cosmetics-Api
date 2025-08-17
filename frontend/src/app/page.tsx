@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 import CartButton from '@/components/ui/CartButton';
 import UpcomingInventory from '@/components/sections/UpcomingInventory';
 import CurrentInventory from '@/components/sections/CurrentInventory';
+import StockSurvey from '@/components/sections/StockSurvey';
 
 export default function Home() {
   const features = [
@@ -223,6 +224,9 @@ export default function Home() {
             }
           ]}
         />
+
+        {/* Encuesta de Stock */}
+        <StockSurvey totalVotes={156} />
 
       </main>
 

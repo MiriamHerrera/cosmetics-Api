@@ -56,7 +56,7 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
         {/* Header de la sección */}
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            📦 Inventario en Stock
+          ✨Disponible Ya
           </h2>
         </div>
 
