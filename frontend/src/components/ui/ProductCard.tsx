@@ -48,9 +48,9 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-100">
         <img
-          src={product.image_url || '/placeholder-product.svg'}
+          src={product.image_url || '/NoImage.jpg'}
           alt={product.name}
-          onLoad={() => console.log('Imagen cargada:', product.image_url || '/placeholder-product.svg')}
+
           className="
             w-full h-full object-cover
             transition-transform duration-300
@@ -58,7 +58,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           "
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/placeholder-product.svg';
+            target.src = '/NoImage.jpg';
           }}
         />
         
