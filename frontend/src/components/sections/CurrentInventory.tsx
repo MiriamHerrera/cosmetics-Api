@@ -50,7 +50,9 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
   const lowStockProducts = products.filter(p => p.stock <= 5 && p.stock > 0).length;
 
   return (
-    <section className="py-12 bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <section className="py-12" style={{
+      backgroundColor: 'rgb(244 249 255)'
+    }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header de la sección */}
@@ -124,7 +126,6 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-2xl font-bold text-gray-900">
-              Productos Disponibles
             </h3>
             <p className="text-gray-600">
               {sortedProducts.length} de {totalProducts} productos

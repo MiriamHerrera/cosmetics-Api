@@ -59,7 +59,9 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
   };
 
   return (
-    <section className="py-16 bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <section className="py-16" style={{
+      backgroundColor: 'rgb(244 245 255)'
+    }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header de la sección */}
@@ -74,7 +76,9 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
         </div>
 
         {/* Encuesta principal */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100" style={{
+          backgroundColor: '#aa94f7;'
+        }}>
           
           {/* Pregunta */}
           <div className="text-center mb-8">
