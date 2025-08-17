@@ -1,8 +1,9 @@
 'use client';
 
-import { Calendar, Clock, Package, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Package, ArrowRight, Plus } from 'lucide-react';
 import ProductCard from '@/components/ui/ProductCard';
 import type { Product } from '@/types';
+import { useState, useEffect } from 'react';
 
 interface UpcomingInventoryProps {
   arrivalDate: string;
@@ -15,6 +16,27 @@ export default function UpcomingInventory({
   arrivalTime, 
   expectedProducts 
 }: UpcomingInventoryProps) {
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
+
+  // Función para seleccionar 3 productos aleatorios
+  const selectRandomProducts = () => {
+    const shuffled = [...expectedProducts].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  };
+
+  // Efecto para rotar productos cada cierto tiempo
+  useEffect(() => {
+    // Seleccionar productos iniciales
+    setDisplayedProducts(selectRandomProducts());
+
+    // Rotar productos cada 8 segundos
+    const interval = setInterval(() => {
+      setDisplayedProducts(selectRandomProducts());
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [expectedProducts]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -30,119 +52,98 @@ export default function UpcomingInventory({
     console.log('Compra inmediata:', product);
   };
 
+  const handleViewAllProducts = () => {
+    // Aquí implementarías la navegación a la página de próximos productos
+    console.log('Navegar a página de próximos productos');
+  };
+
   return (
-    <section className="py-2 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header de la sección */}
-        <div className="text-center mb-6">
-          <h2 className="text-3xl sm:text-4xl text-gray-900 mb-4">
-            🚚 Próximo Inventario
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Nuevos productos llegando pronto. ¡Reserva los tuyos antes de que se agoten!
+        {/* Header minimalista */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <h2 className="text-2xl sm:text-3xl font-light text-gray-800">
+              Próximo Inventario
+            </h2>
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+          </div>
+          <p className="text-gray-600 max-w-lg mx-auto leading-relaxed">
+            Nuevos productos llegando el <span className="font-semibold text-blue-600">{formatDate(arrivalDate)}</span>
           </p>
         </div>
 
-        {/* Información de llegada */}
-        <div className="
-          bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-8
-          border border-gray-100
-        ">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Fecha de llegada */}
-            <div className="
-              flex flex-col items-center text-center
-              p-2 rounded-xl bg-blue-50
-              border border-blue-100
-            ">
-              <div className="
-                w-10 h-10 bg-blue-500 rounded-full
-                flex items-center justify-center mb-3
+        {/* Preview minimalista de productos con rotación aleatoria */}
+        <div className="mb-10">
+          <div className="
+            grid grid-cols-2 sm:grid-cols-4 gap-4
+          ">
+            {/* 3 productos aleatorios */}
+            {displayedProducts.map((product) => (
+              <div key={product.id} className="
+                bg-white rounded-lg p-4 shadow-sm border border-gray-100
+                hover:shadow-md transition-shadow duration-200
+                group cursor-pointer
+                animate-in fade-in-0 duration-500
               ">
-                <Calendar className="w-6 h-6 text-white" />
+                <div className="aspect-square bg-gray-100 rounded-md mb-3 overflow-hidden">
+                  <img
+                    src={product.image || '/placeholder-product.jpg'}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-1">
+                  {product.name}
+                </h3>
+                <p className="text-xs text-gray-500 line-clamp-1">
+                  {product.brand}
+                </p>
               </div>
-              <h3 className="text-gray-900 mb-1">
-                Fecha de Llegada
-              </h3>
-              <p className="text-blue-600 font-medium">
-                {formatDate(arrivalDate)}
-              </p>
-            </div>
+            ))}
 
-            {/* Horario */}
-            <div className="
-              flex flex-col items-center text-center
-              p-2 rounded-xl bg-purple-50
-              border border-purple-100
-            ">
+            {/* 4ta tarjeta - Indicador para ver todos */}
+            <div 
+              onClick={handleViewAllProducts}
+              className="
+                bg-gradient-to-br from-blue-50 to-purple-50
+                rounded-lg p-4 shadow-sm border-2 border-dashed border-blue-300
+                hover:shadow-md hover:border-blue-400 transition-all duration-300
+                cursor-pointer group
+                flex flex-col items-center justify-center
+                min-h-[140px]
+              "
+            >
               <div className="
-                w-10 h-10 bg-purple-500 rounded-full
+                w-12 h-12 bg-blue-500 rounded-full
                 flex items-center justify-center mb-3
+                group-hover:scale-110 transition-transform duration-300
               ">
-                <Clock className="w-6 h-6 text-white" />
+                <Plus className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-gray-900 mb-1">
-                Horario
+              <h3 className="font-medium text-blue-700 text-sm mb-1 text-center">
+                Ver Todos
               </h3>
-              <p className="text-purple-600 font-medium">
-                {arrivalTime}
+              <p className="text-xs text-blue-600 text-center">
+                {expectedProducts.length} productos más
               </p>
-            </div>
-
-            {/* Productos esperados */}
-            <div className="
-              flex flex-col items-center text-center
-              p-2 rounded-xl bg-green-50
-              border border-green-100
-            ">
-              <div className="
-                w-10 h-10 bg-green-500 rounded-full
-                flex items-center justify-center mb-3
-              ">
-                <Package className="w-6 h-6 text-white" />
+              
+              {/* Indicador de rotación */}
+              <div className="mt-2 flex gap-1">
+                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
-              <h3 className="text-gray-900 mb-1">
-                Productos Esperados
-              </h3>
-              <p className="text-green-600 font-medium">
-                {expectedProducts.length} productos
-              </p>
             </div>
           </div>
         </div>
-
-        {/* Lista de productos */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">
-              Productos que Llegan
-            </h3>
-            <button className="
-              flex items-center gap-2 text-pink-600 hover:text-purple-700
-              font-medium transition-colors
-              group
-            ">
-              Ver todos
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          {/* Grid de productos */}
-          <div className="
-            grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
-            gap-2 sm:gap-4 lg:gap-6
-          ">
-            {expectedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onQuickBuy={handleQuickBuy}
-              />
-            ))}
-          </div>
-        </div>        
+        <div className="text-center">          
+          <p className="text-sm text-gray-500" style={{ paddingBottom: '2rem' }}>
+            Descubre qué más está por llegar
+          </p>
+        </div>
       </div>
     </section>
   );
