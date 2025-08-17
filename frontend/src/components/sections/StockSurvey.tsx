@@ -65,11 +65,11 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
         {/* Header de la sección */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+            <div className="w-4 h-4 bg-rose-400 rounded-full"></div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800">
               ¡Tu Opinión Cuenta!
             </h2>
-            <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+            <div className="w-4 h-4 bg-rose-400 rounded-full"></div>
           </div>
         </div>
 
@@ -93,7 +93,7 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                   bg-gray-50 rounded-xl p-4 sm:p-6
                   hover:bg-gray-100 transition-colors duration-200
                   cursor-pointer
-                  ${option.isVoted ? 'ring-2 ring-purple-500 bg-purple-50' : ''}
+                  ${option.isVoted ? 'ring-2 ring-rose-400 bg-rose-50' : ''}
                 `}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -118,8 +118,8 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                         px-4 py-2 rounded-lg font-medium text-sm
                         transition-all duration-200
                         ${option.isVoted
-                          ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                          : 'bg-white text-gray-700 hover:bg-purple-50 hover:text-purple-700 border border-gray-200'
+                          ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                          : 'bg-white text-gray-700 hover:bg-rose-50 hover:text-rose-700 border border-gray-200'
                         }
                       `}
                     >
@@ -131,11 +131,11 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                   <div className="mb-2">
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
                       <span>{option.votes} votos</span>
-                      <span className="font-semibold text-purple-600">{percentage}%</span>
+                      <span className="font-semibold text-rose-600">{percentage}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div 
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 ease-out"
+                        className="bg-gradient-to-r from-rose-400 to-pink-500 h-3 rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
@@ -155,8 +155,8 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
           {/* Botón de sugerir producto */}
           <div className="text-center">
             <button className="
-              bg-gradient-to-r from-purple-600 to-pink-600
-              hover:from-purple-700 hover:to-pink-700
+              bg-gradient-to-r from-rose-400 to-pink-500
+              hover:from-rose-500 hover:to-pink-600
               text-white font-semibold
               px-8 py-4 rounded-xl
               transition-all duration-300

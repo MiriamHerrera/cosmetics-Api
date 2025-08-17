@@ -56,14 +56,14 @@ export default function Home() {
             
             {/* Botones de acción */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <button className="
-                bg-pink-600 text-white 
-                px-2 py-2 sm:px-4 sm:py-2 
-                text-xs sm:text-sm
-                rounded-lg hover:bg-pink-700 
-                transition-colors
-                whitespace-nowrap
-              ">
+                              <button className="
+                  bg-gradient-to-r from-rose-400 to-pink-500 text-white 
+                  px-2 py-2 sm:px-4 sm:py-2 
+                  text-xs sm:text-sm
+                  rounded-lg hover:from-rose-500 hover:to-pink-600 
+                  transition-all duration-300
+                  whitespace-nowrap shadow-sm hover:shadow-md
+                ">
                 <span className="hidden sm:inline">Iniciar Sesión</span>
                 <span className="sm:hidden">Login</span>
               </button>

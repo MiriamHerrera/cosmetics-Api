@@ -81,7 +81,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-gray-900">Total:</span>
-                <span className="text-2xl font-bold text-purple-600">${cartTotal.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-rose-600">${cartTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -93,14 +93,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 // Aquí iría la lógica para enviar por WhatsApp
                 console.log('Enviar por WhatsApp:', cart);
               }}
-              className="
-                w-full bg-green-500 hover:bg-green-600
-                text-white font-bold py-4 px-6 rounded-lg
-                transition-colors duration-200
-                flex items-center justify-center gap-3
-                focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
-                transform hover:scale-105
-              "
+                              className="
+                  w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
+                  text-white font-bold py-4 px-6 rounded-lg
+                  transition-all duration-300
+                  flex items-center justify-center gap-3
+                  focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2
+                  transform hover:scale-105 shadow-lg hover:shadow-xl
+                "
             >
               <MessageCircle className="w-5 h-5" />
               Finalizar compra

@@ -144,13 +144,14 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
             onClick={handleQuickBuy}
             disabled={product.stock === 0 || isLoading}
             className="
-              flex-1 bg-pink-600 hover:bg-pink-700
+              flex-1 bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
               disabled:bg-gray-300 disabled:cursor-not-allowed
               text-white text-xs sm:text-sm font-medium
               py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg
-              transition-colors duration-200
+              transition-all duration-300
               flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-2 focus:ring-pink-500
+              focus:outline-none focus:ring-2 focus:ring-rose-400
+              shadow-sm hover:shadow-md
             "
           >
             <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -162,19 +163,20 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           <button
             onClick={handleAddToCart}
             disabled={product.stock === 0 || isLoading}
-            className="
-              flex-1 border-2 border-pink-600 hover:bg-pink-700
+                        className="
+              flex-1 border-2 border-rose-400 hover:bg-gradient-to-r hover:from-rose-400 hover:to-pink-500 hover:text-white
               disabled:bg-gray-300 disabled:cursor-not-allowed
-              text-white text-xs sm:text-sm font-medium
+              text-rose-400 text-xs sm:text-sm font-medium
               py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg
-              transition-colors duration-200
+              transition-all duration-300
               flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-2 focus:ring-pink-500
-           "
+              focus:outline-none focus:ring-2 focus:ring-rose-400
+              shadow-sm hover:shadow-md
+            "
           >
-            <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-pink-600" />
-            <span className="hidden sm:inline text-pink-600">Carrito</span>
-            <span className="sm:hidden text-pink-600">+</span>
+            <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-rose-400 group-hover:text-white" />
+            <span className="hidden sm:inline text-rose-400 group-hover:text-white">Carrito</span>
+            <span className="sm:hidden text-rose-400 group-hover:text-white">+</span>
           </button>
         </div>
       </div>
