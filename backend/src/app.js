@@ -14,6 +14,8 @@ const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const reservationRoutes = require('./routes/reservations');
 const surveyRoutes = require('./routes/surveys');
+const statsRoutes = require('./routes/stats');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -59,6 +61,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/surveys', surveyRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -82,6 +86,8 @@ app.get('/', (req, res) => {
       cart: '/api/cart',
       reservations: '/api/reservations',
       surveys: '/api/surveys',
+      stats: '/api/stats',
+      admin: '/api/admin',
       health: '/api/health'
     }
   });
@@ -126,6 +132,8 @@ const startServer = async () => {
       console.log(`🛒 Endpoint: /api/cart`);
       console.log(`📅 Endpoint: /api/reservations`);
       console.log(`📊 Endpoint: /api/surveys`);
+      console.log(`📈 Endpoint: /api/stats`);
+      console.log(`👑 Endpoint: /api/admin`);
     });
 
   } catch (error) {
