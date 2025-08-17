@@ -4,6 +4,7 @@ import { Users, Package, BarChart3, Zap, Star } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import CartButton from '@/components/ui/CartButton';
 import UpcomingInventory from '@/components/sections/UpcomingInventory';
+import CurrentInventory from '@/components/sections/CurrentInventory';
 
 export default function Home() {
   const features = [
@@ -77,40 +78,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Sistema Completo de Inventario y Ventas
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Gestiona tu negocio de cosméticos con herramientas profesionales. 
-            Inventario inteligente, carrito con apartado, integración WhatsApp y mucho más.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-pink-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-pink-700 transition-colors">
-              Comenzar Ahora
-            </button>
-            <button className="border border-pink-600 text-pink-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-pink-50 transition-colors">
-              Ver Demo
-            </button>
-          </div>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {features.map((feature, index) => (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-                <feature.icon className="h-6 w-6 text-pink-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
+      
 
         {/* Próximo Inventario */}
         <UpcomingInventory
@@ -164,6 +132,90 @@ export default function Home() {
               stock: 40,
               category: "Skincare",
               brand: "HydraCare",
+              image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ]}
+        />
+
+        {/* Inventario en Stock */}
+        <CurrentInventory
+          products={[
+            {
+              id: "5",
+              name: "Base de Maquillaje HD",
+              description: "Base de maquillaje de larga duración con cobertura media a completa",
+              price: 34.99,
+              stock: 15,
+              category: "Maquillaje",
+              brand: "BeautyPro",
+              image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "6",
+              name: "Tónico Facial Sin Alcohol",
+              description: "Tónico suave que equilibra el pH de la piel sin irritar",
+              price: 18.99,
+              stock: 8,
+              category: "Skincare",
+              brand: "GlowEssence",
+              image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "7",
+              name: "Delineador de Ojos Líquido",
+              description: "Delineador de punta fina para crear líneas perfectas y definidas",
+              price: 22.99,
+              stock: 12,
+              category: "Maquillaje",
+              brand: "ColorStudio",
+              image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "8",
+              name: "Exfoliante Facial Suave",
+              description: "Exfoliante con microesferas que renueva la piel sin dañarla",
+              price: 26.99,
+              stock: 3,
+              category: "Skincare",
+              brand: "HydraCare",
+              image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "9",
+              name: "Polvos Compactos Mate",
+              description: "Polvos que controlan el brillo y fijan el maquillaje",
+              price: 19.99,
+              stock: 20,
+              category: "Maquillaje",
+              brand: "BeautyPro",
+              image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: "10",
+              name: "Mascarilla de Arcilla",
+              description: "Mascarilla purificante que absorbe impurezas y controla el aceite",
+              price: 32.99,
+              stock: 6,
+              category: "Skincare",
+              brand: "GlowEssence",
               image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
               isActive: true,
               createdAt: new Date(),
