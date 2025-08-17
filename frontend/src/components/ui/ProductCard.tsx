@@ -44,6 +44,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
       transform hover:-translate-y-1
       overflow-hidden
       group
+      font-sans
     ">
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-100">
@@ -109,44 +110,31 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
 
       {/* Información del producto */}
       <div className="p-3 sm:p-4">
-        {/* Categoría y marca */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-gray-500 uppercase tracking-wide">
-            {product.category}
-          </span>
-          <span className="text-xs text-gray-500 font-medium">
-            {product.brand}
-          </span>
-        </div>
-
         {/* Nombre del producto */}
         <h3 className="
-          font-semibold text-gray-900 mb-2
+          font-sans text-gray-900 mb-2
           line-clamp-2 text-sm sm:text-base
           leading-tight
         ">
           {product.name}
         </h3>
 
-        {/* Descripción - Solo visible en desktop */}
+        {/* Tipo/Variante del producto */}
         <p className="
-          hidden sm:block text-gray-600 text-sm mb-3
-          line-clamp-2 leading-relaxed
+          text-xs text-gray-500 mb-2
+          font-medium
         ">
-          {product.description}
+          {product.category}
         </p>
 
-        {/* Precio */}
+        {/* Precio y Stock en la misma línea */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <span className="text-base sm:text-lg font-bold text-gray-900">
+          <span className="text-base sm:text-lg " style={{ color: 'red' }}>
             ${product.price.toFixed(2)}
           </span>
-          {product.stock > 0 && (
-            <span className="text-xs text-green-600 font-medium">
-              <span className="hidden sm:inline">En stock</span>
-              <span className="sm:hidden">✓</span>
-            </span>
-          )}
+          <span className="text-xs text-gray-500 font-medium">
+            {product.stock}
+          </span>
         </div>
 
         {/* Botones de acción */}
@@ -175,18 +163,18 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
             onClick={handleAddToCart}
             disabled={product.stock === 0 || isLoading}
             className="
-              flex-1 bg-purple-600 hover:bg-purple-700
+              flex-1 border-2 border-pink-600 hover:bg-pink-700
               disabled:bg-gray-300 disabled:cursor-not-allowed
               text-white text-xs sm:text-sm font-medium
               py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg
               transition-colors duration-200
               flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-2 focus:ring-purple-500
-            "
+              focus:outline-none focus:ring-2 focus:ring-pink-500
+           "
           >
-            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Carrito</span>
-            <span className="sm:hidden">+</span>
+            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-600" />
+            <span className="hidden sm:inline text-pink-600">Carrito</span>
+            <span className="sm:hidden text-pink-600">+</span>
           </button>
         </div>
       </div>
