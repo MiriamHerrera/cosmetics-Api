@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const reservationRoutes = require('./routes/reservations');
+const surveyRoutes = require('./routes/surveys');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/surveys', surveyRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -79,6 +81,7 @@ app.get('/', (req, res) => {
       products: '/api/products',
       cart: '/api/cart',
       reservations: '/api/reservations',
+      surveys: '/api/surveys',
       health: '/api/health'
     }
   });
@@ -122,6 +125,7 @@ const startServer = async () => {
       console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🛒 Endpoint: /api/cart`);
       console.log(`📅 Endpoint: /api/reservations`);
+      console.log(`📊 Endpoint: /api/surveys`);
     });
 
   } catch (error) {
