@@ -70,7 +70,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.product.name}</h3>
                       <p className="text-sm text-gray-500">{item.product.category_name}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                      {/* <div className="flex items-center gap-2 mt-2">
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                           className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
@@ -86,7 +86,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                         >
                           <Plus className="w-3 h-3" />
                         </button>
-                      </div>
+                      </div> */}
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
