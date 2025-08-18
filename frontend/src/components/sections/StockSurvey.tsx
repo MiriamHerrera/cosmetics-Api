@@ -77,7 +77,7 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
 
         {/* Encuesta principal */}
         <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100" style={{
-          backgroundColor: '#aa94f7;'
+          backgroundColor: '#aa94f7'
         }}>
           
           {/* Pregunta */}

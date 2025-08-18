@@ -2,6 +2,7 @@ const http = require('http');
 const app = require('./src/app');
 const { initializeSocket } = require('./src/socket');
 const { testConnection } = require('./src/config/database');
+const cartCleanupService = require('./src/services/cartCleanupService');
 
 const PORT = process.env.PORT || 8000;
 
@@ -34,6 +35,15 @@ const startServer = async () => {
       console.log(`📊 Endpoint: /api/surveys`);
       console.log(`📈 Endpoint: /api/stats`);
       console.log(`👑 Endpoint: /api/admin`);
+      
+      // Iniciar servicio de limpieza automática de carritos
+      try {
+        cartCleanupService.start();
+        console.log(`🧹 Servicio de limpieza automática iniciado`);
+        console.log(`⏰ Carritos de invitados se limpiarán cada 15 minutos`);
+      } catch (error) {
+        console.error('❌ Error iniciando servicio de limpieza:', error);
+      }
     });
 
   } catch (error) {
@@ -45,6 +55,7 @@ const startServer = async () => {
 // Manejar señales de terminación
 process.on('SIGTERM', () => {
   console.log('🛑 Señal SIGTERM recibida, cerrando servidor...');
+  cartCleanupService.stop();
   server.close(() => {
     console.log('✅ Servidor cerrado correctamente');
     process.exit(0);
@@ -53,6 +64,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('🛑 Señal SIGINT recibida, cerrando servidor...');
+  cartCleanupService.stop();
   server.close(() => {
     console.log('✅ Servidor cerrado correctamente');
     process.exit(0);

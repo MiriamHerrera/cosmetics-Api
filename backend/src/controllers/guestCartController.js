@@ -100,7 +100,7 @@ class GuestCartController {
         console.log('➕ Agregando nuevo item al carrito...');
         // Agregar nuevo item al carrito
         await query(
-          'INSERT INTO guest_cart_items (guest_cart_id, product_id, quantity, reserved_until) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))',
+          'INSERT INTO guest_cart_items (guest_cart_id, product_id, quantity, reserved_until) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
           [cart.id, productId, quantity]
         );
       }
@@ -356,9 +356,13 @@ class GuestCartController {
   // Limpiar carrito invitado completo
   clearGuestCart = async (req, res) => {
     try {
+      console.log('🧹 Iniciando limpieza de carrito invitado...');
       const { sessionId } = req.body;
       
+      console.log('🆔 Session ID recibido:', sessionId);
+      
       if (!sessionId) {
+        console.log('❌ No se proporcionó sessionId');
         return res.status(400).json({
           success: false,
           message: 'Session ID es requerido'
@@ -366,57 +370,101 @@ class GuestCartController {
       }
 
       // Obtener carrito de invitado
+      console.log('🔍 Buscando carrito para sessionId:', sessionId);
       const [cart] = await query(
         'SELECT id FROM guest_carts WHERE session_id = ?',
         [sessionId]
       );
 
       if (!cart) {
+        console.log('❌ Carrito no encontrado para sessionId:', sessionId);
         return res.status(404).json({
           success: false,
           message: 'Carrito no encontrado'
         });
       }
 
+      console.log('✅ Carrito encontrado con ID:', cart.id);
+
       // Obtener todos los items del carrito para liberar stock
+      console.log('📦 Obteniendo items del carrito...');
       const cartItems = await query(
         'SELECT product_id, quantity FROM guest_cart_items WHERE guest_cart_id = ?',
         [cart.id]
       );
 
-      // Liberar todo el stock reservado
-      for (const item of cartItems) {
-        await query(
-          'UPDATE products SET stock_total = stock_total + ? WHERE id = ?',
-          [item.quantity, item.product_id]
-        );
+      console.log(`📋 Items encontrados: ${cartItems.length}`, cartItems);
+
+      if (cartItems.length === 0) {
+        console.log('⚠️ Carrito vacío, no hay stock que restaurar');
+      } else {
+        // Liberar todo el stock reservado
+        console.log('💰 Restaurando stock...');
+        for (const item of cartItems) {
+          try {
+            // Obtener stock actual antes de restaurar
+            const [currentStock] = await query(
+              'SELECT stock_total, name FROM products WHERE id = ?',
+              [item.product_id]
+            );
+            
+            console.log(`📊 Producto ID ${item.product_id} (${currentStock.name}):`);
+            console.log(`   Stock actual: ${currentStock.stock_total}`);
+            console.log(`   Cantidad a restaurar: ${item.quantity}`);
+            console.log(`   Stock después de restaurar: ${currentStock.stock_total + item.quantity}`);
+
+            // Restaurar stock
+            const result = await query(
+              'UPDATE products SET stock_total = stock_total + ? WHERE id = ?',
+              [item.quantity, item.product_id]
+            );
+
+            console.log(`✅ Stock restaurado para producto ${item.product_id}:`, result);
+
+            // Verificar stock después de la actualización
+            const [updatedStock] = await query(
+              'SELECT stock_total FROM products WHERE id = ?',
+              [item.product_id]
+            );
+            console.log(`   Stock verificado después de restaurar: ${updatedStock.stock_total}`);
+
+          } catch (error) {
+            console.error(`❌ Error restaurando stock del producto ${item.product_id}:`, error);
+          }
+        }
       }
 
       // Eliminar todos los items del carrito
-      await query(
+      console.log('🗑️ Eliminando items del carrito...');
+      const deletedItems = await query(
         'DELETE FROM guest_cart_items WHERE guest_cart_id = ?',
         [cart.id]
       );
+      console.log(`✅ Items eliminados: ${deletedItems.affectedRows}`);
 
       // Eliminar el carrito
-      await query(
+      console.log('🗑️ Eliminando carrito...');
+      const deletedCart = await query(
         'DELETE FROM guest_carts WHERE id = ?',
         [cart.id]
       );
+      console.log(`✅ Carrito eliminado: ${deletedCart.affectedRows}`);
       
-      console.log('✅ Carrito invitado limpiado, stock liberado');
+      const totalStockReleased = cartItems.reduce((total, item) => total + item.quantity, 0);
+      console.log(`✅ Carrito invitado limpiado, stock liberado: ${totalStockReleased} unidades`);
 
       res.json({
         success: true,
         message: 'Carrito limpiado',
         data: { 
           cleared: true,
-          stockReleased: cartItems.reduce((total, item) => total + item.quantity, 0)
+          stockReleased: totalStockReleased,
+          itemsCleaned: cartItems.length
         }
       });
 
     } catch (error) {
-      console.error('Error limpiando carrito invitado:', error);
+      console.error('❌ Error limpiando carrito invitado:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor'
@@ -532,29 +580,39 @@ class GuestCartController {
     }
   }
 
-  // Limpiar carritos expirados automáticamente
+  // Limpiar carritos expirados automáticamente (1 hora)
   cleanupExpiredCarts = async () => {
     try {
-      console.log('🧹 Iniciando limpieza automática de carritos expirados...');
+      console.log('🧹 Iniciando limpieza automática de carritos expirados (1 hora)...');
       
-      // Buscar carritos con items expirados (más de 24 horas)
+      // Buscar carritos con items expirados (más de 1 hora)
       const expiredItems = await query(`
         SELECT 
           gci.id,
           gci.guest_cart_id,
           gci.product_id,
           gci.quantity,
-          gci.reserved_until
+          gci.reserved_until,
+          p.name as product_name
         FROM guest_cart_items gci
-        WHERE gci.reserved_until < NOW()
+        INNER JOIN products p ON gci.product_id = p.id
+        WHERE gci.reserved_until < (NOW() - INTERVAL 1 HOUR)
       `);
 
       if (expiredItems.length === 0) {
         console.log('✅ No hay carritos expirados para limpiar');
-        return;
+        return {
+          success: true,
+          message: 'No hay carritos expirados',
+          cleaned: 0,
+          stockRestored: 0
+        };
       }
 
       console.log(`🔍 Encontrados ${expiredItems.length} items expirados`);
+
+      let totalStockRestored = 0;
+      let cleanedItems = 0;
 
       // Liberar stock de cada item expirado
       for (const item of expiredItems) {
@@ -565,7 +623,10 @@ class GuestCartController {
             [item.quantity, item.product_id]
           );
 
-          console.log(`✅ Stock restaurado: ${item.quantity} unidades del producto ${item.product_id}`);
+          totalStockRestored += item.quantity;
+          cleanedItems++;
+
+          console.log(`✅ Stock restaurado: ${item.quantity} unidades de "${item.product_name}" (ID: ${item.product_id})`);
         } catch (error) {
           console.error(`❌ Error restaurando stock del producto ${item.product_id}:`, error);
         }
@@ -573,7 +634,7 @@ class GuestCartController {
 
       // Eliminar items expirados
       const deletedItems = await query(
-        'DELETE FROM guest_cart_items WHERE reserved_until < NOW()'
+        'DELETE FROM guest_cart_items WHERE reserved_until < (NOW() - INTERVAL 1 HOUR)'
       );
 
       // Eliminar carritos vacíos
@@ -583,10 +644,46 @@ class GuestCartController {
         WHERE gci.id IS NULL
       `);
 
-      console.log(`🧹 Limpieza completada: ${deletedItems.affectedRows} items eliminados, ${deletedCarts.affectedRows} carritos eliminados`);
+      console.log(`🧹 Limpieza completada: ${deletedItems.affectedRows} items eliminados, ${deletedCarts.affectedRows} carritos eliminados, ${totalStockRestored} stock restaurado`);
+
+      return {
+        success: true,
+        message: 'Limpieza completada exitosamente',
+        cleaned: cleanedItems,
+        stockRestored: totalStockRestored,
+        deletedItems: deletedItems.affectedRows,
+        deletedCarts: deletedCarts.affectedRows
+      };
 
     } catch (error) {
       console.error('❌ Error en limpieza automática:', error);
+      return {
+        success: false,
+        message: 'Error en limpieza automática',
+        error: error.message
+      };
+    }
+  }
+
+  // Limpiar carritos expirados manualmente (para testing)
+  manualCleanup = async (req, res) => {
+    try {
+      console.log('🔧 Iniciando limpieza manual de carritos expirados...');
+      
+      const result = await this.cleanupExpiredCarts();
+      
+      res.json({
+        success: true,
+        message: 'Limpieza manual ejecutada',
+        data: result
+      });
+
+    } catch (error) {
+      console.error('Error en limpieza manual:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
     }
   }
 

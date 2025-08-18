@@ -27,6 +27,9 @@ router.get('/stock/:productId', guestCartController.checkProductStock);
 // Limpiar carritos expirados (admin)
 router.post('/cleanup', guestCartController.cleanupExpiredCarts);
 
+// Limpieza manual de carritos expirados (para testing)
+router.post('/cleanup/manual', guestCartController.manualCleanup);
+
 // Obtener estadísticas de carritos activos
 router.get('/stats', guestCartController.getGuestCartStats);
 

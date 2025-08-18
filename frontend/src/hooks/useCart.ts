@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/store/useStore';
 import { guestCartApi } from '@/lib/api';
+import { useGuestSession } from './useGuestSession';
 import type { Product } from '@/types';
 
 export const useCart = () => {
@@ -13,6 +14,7 @@ export const useCart = () => {
     clearCart: clearStoreCart
   } = useStore();
   
+  const { sessionId } = useGuestSession();
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +31,11 @@ export const useCart = () => {
       }
 
       // Llamar a la API para actualizar stock
-      const response = await guestCartApi.addItem(product.id, quantity);
+      if (!sessionId) {
+        setError('No se pudo obtener la sesión de invitado');
+        return false;
+      }
+      const response = await guestCartApi.addItem(product.id, quantity, sessionId);
 
       if (response.success) {
         // Actualizar el store local
@@ -61,7 +67,11 @@ export const useCart = () => {
       setError(null);
 
       // Llamar a la API para restaurar stock
-      const response = await guestCartApi.removeItem(productId);
+      if (!sessionId) {
+        setError('No se pudo obtener la sesión de invitado');
+        return false;
+      }
+      const response = await guestCartApi.removeItem(productId, sessionId);
 
       if (response.success) {
         removeFromStoreCart(productId);
@@ -100,7 +110,11 @@ export const useCart = () => {
       if (!currentItem) return false;
 
       // Llamar a la API para actualizar stock
-      const response = await guestCartApi.updateQuantity(productId, newQuantity);
+      if (!sessionId) {
+        setError('No se pudo obtener la sesión de invitado');
+        return false;
+      }
+      const response = await guestCartApi.updateQuantity(productId, newQuantity, sessionId);
 
       if (response.success) {
         updateStoreCartQuantity(productId, newQuantity);
@@ -135,7 +149,11 @@ export const useCart = () => {
       setError(null);
 
       // Llamar a la API para restaurar todo el stock
-      const response = await guestCartApi.clearCart();
+      if (!sessionId) {
+        setError('No se pudo obtener la sesión de invitado');
+        return false;
+      }
+      const response = await guestCartApi.clearCart(sessionId);
 
       if (response.success) {
         clearStoreCart();

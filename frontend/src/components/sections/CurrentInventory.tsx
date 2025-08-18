@@ -18,9 +18,9 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchTerm.toLowerCase());
+                         product.product_type_name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || product.category_name === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -35,19 +35,19 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
       case 'price-high':
         return b.price - a.price;
       case 'stock':
-        return b.stock - a.stock;
+        return b.stock_total - a.stock_total;
       default:
         return 0;
     }
   });
 
   // Obtener categorías únicas
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category_name)))];
 
   // Estadísticas
   const totalProducts = products.length;
-  const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
-  const lowStockProducts = products.filter(p => p.stock <= 5 && p.stock > 0).length;
+  const totalStock = products.reduce((sum, p) => sum + p.stock_total, 0);
+  const lowStockProducts = products.filter(p => p.stock_total <= 5 && p.stock_total > 0).length;
 
   return (
     <section className="py-12" style={{

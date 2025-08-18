@@ -90,7 +90,7 @@ export default function UpcomingInventory({
               ">
                 <div className="aspect-square bg-gray-100 rounded-md mb-3 overflow-hidden">
                   <img
-                    src={product.image || '/placeholder-product.jpg'}
+                    src={product.image_url || '/NoImage.jpg'}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -99,7 +99,7 @@ export default function UpcomingInventory({
                   {product.name}
                 </h3>
                 <p className="text-xs text-gray-500 line-clamp-1">
-                  {product.brand}
+                  {product.product_type_name}
                 </p>
               </div>
             ))}
