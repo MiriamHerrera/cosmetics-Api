@@ -9,7 +9,8 @@ export const useCart = () => {
     addToCart: addToStoreCart, 
     removeFromCart: removeFromStoreCart, 
     updateCartItemQuantity: updateStoreCartQuantity,
-    clearCart: clearStoreCart 
+    updateProductStock,
+    clearCart: clearStoreCart
   } = useStore();
   
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
@@ -34,9 +35,11 @@ export const useCart = () => {
         // Actualizar el store local
         addToStoreCart(product, quantity);
         
-        // Actualizar el stock del producto en la lista
-        // Esto se puede hacer emitiendo un evento o actualizando el store
-        console.log('✅ Producto agregado al carrito y stock actualizado');
+        // Actualizar el stock del producto en la lista en tiempo real
+        const newStock = product.stock_total - quantity;
+        updateProductStock(product.id, newStock);
+        
+        console.log('✅ Producto agregado al carrito y stock actualizado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al agregar al carrito');
@@ -62,7 +65,16 @@ export const useCart = () => {
 
       if (response.success) {
         removeFromStoreCart(productId);
-        console.log('✅ Producto removido del carrito y stock restaurado');
+        
+        // Actualizar el stock del producto en la lista en tiempo real
+        // Necesitamos encontrar el producto y su cantidad en el carrito
+        const cartItem = cart?.items.find(item => item.productId === productId);
+        if (cartItem) {
+          const newStock = cartItem.product.stock_total + cartItem.quantity;
+          updateProductStock(productId, newStock);
+        }
+        
+        console.log('✅ Producto removido del carrito y stock restaurado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al remover del carrito');
@@ -87,22 +99,21 @@ export const useCart = () => {
       const currentItem = cart?.items.find(item => item.productId === productId);
       if (!currentItem) return false;
 
-      const quantityDiff = newQuantity - currentItem.quantity;
-      
-      if (quantityDiff > 0) {
-        // Aumentando cantidad - verificar stock
-        if (currentItem.product.stock_total < quantityDiff) {
-          setError(`Stock insuficiente. Solo hay ${currentItem.product.stock_total} unidades disponibles.`);
-          return false;
-        }
-      }
-
       // Llamar a la API para actualizar stock
       const response = await guestCartApi.updateQuantity(productId, newQuantity);
 
       if (response.success) {
         updateStoreCartQuantity(productId, newQuantity);
-        console.log('✅ Cantidad actualizada y stock ajustado');
+        
+        // Actualizar el stock del producto en la lista en tiempo real
+        // Calcular la diferencia de stock
+        const quantityDiff = newQuantity - currentItem.quantity;
+        if (quantityDiff !== 0) {
+          const newStock = currentItem.product.stock_total - quantityDiff;
+          updateProductStock(productId, newStock);
+        }
+        
+        console.log('✅ Cantidad actualizada y stock ajustado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al actualizar cantidad');

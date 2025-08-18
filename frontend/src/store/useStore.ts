@@ -21,6 +21,9 @@ interface AppState {
   setCategories: (categories: string[]) => void;
   setLoading: (loading: boolean) => void;
   
+  // Actualizar stock de un producto específico
+  updateProductStock: (productId: number, newStock: number) => void;
+  
   // Computed values
   cartItemCount: number;
   cartTotal: number;
@@ -136,6 +139,14 @@ export const useStore = create<AppState>()(
       setCategories: (categories) => set({ categories }),
       
       setLoading: (loading) => set({ isLoading: loading }),
+      
+      // Actualizar stock de un producto específico
+      updateProductStock: (productId, newStock) => {
+        const updatedProducts = get().products.map(product =>
+          product.id === productId ? { ...product, stock_total: newStock } : product
+        );
+        set({ products: updatedProducts });
+      },
       
       // Computed values
       get cartItemCount() {
