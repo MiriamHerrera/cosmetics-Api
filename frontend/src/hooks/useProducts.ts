@@ -85,36 +85,33 @@ export const useProducts = () => {
     }
   }, [setProducts, setLoading]);
 
-  // Filtrar por categoría
-  const filterByCategory = useCallback(async (category: string) => {
+  // Filtrar por categoría (local - sin llamadas API)
+  const filterByCategory = useCallback((category: string) => {
     if (!category || category === 'all') {
-      await loadProducts();
+      // Si es "todas", mostrar todos los productos originales
+      setAllProducts(products);
+      setPagination(prev => ({
+        ...prev,
+        page: 1,
+        total: products.length,
+        totalPages: Math.ceil(products.length / 12)
+      }));
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response: ApiResponse<Product[]> = await productsApi.getByCategory(category);
-      
-      if (response.success && response.data) {
-        // Mapear los productos para que coincidan con la estructura esperada
-        const mappedProducts = response.data.map((product: any) => ({
-          ...product,
-          price: parseFloat(product.price) || 0,
-          stock_total: parseInt(product.stock_total) || 0
-        }));
-        setProducts(mappedProducts);
-      } else {
-        setError(response.error || 'Error al filtrar por categoría');
-      }
-    } catch (err) {
-      setError('Error de conexión al filtrar');
-      console.error('Error filtering by category:', err);
-      setLoading(false);
-    }
-  }, [setProducts, setLoading]);
+    // Filtrar localmente los productos ya cargados
+    const filteredProducts = products.filter(product => 
+      product.category_name === category
+    );
+    
+    setAllProducts(filteredProducts);
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      total: filteredProducts.length,
+      totalPages: Math.ceil(filteredProducts.length / 12)
+    }));
+  }, [products]);
 
   // Cargar productos al montar el componente
   useEffect(() => {

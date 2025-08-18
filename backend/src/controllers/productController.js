@@ -360,6 +360,49 @@ const getProductTypesByCategory = async (req, res) => {
   }
 };
 
+// Filtrar productos por categoría
+const getProductsByCategory = async (req, res) => {
+  try {
+    const { category_name } = req.params;
+
+    if (!category_name) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre de categoría es requerido'
+      });
+    }
+
+    const products = await query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p.image_url,
+        p.stock_total,
+        pt.name as product_type_name,
+        c.name as category_name
+      FROM products p
+      INNER JOIN product_types pt ON p.product_type_id = pt.id
+      INNER JOIN categories c ON pt.category_id = c.id
+      WHERE p.status = 'active' AND c.name = ?
+      ORDER BY p.name
+    `, [category_name]);
+
+    res.json({
+      success: true,
+      data: products
+    });
+
+  } catch (error) {
+    console.error('Error filtrando productos por categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 // Buscar productos por texto
 const searchProducts = async (req, res) => {
   try {
@@ -413,5 +456,6 @@ module.exports = {
   deleteProduct,
   getCategories,
   getProductTypesByCategory,
+  getProductsByCategory,
   searchProducts
 }; 
