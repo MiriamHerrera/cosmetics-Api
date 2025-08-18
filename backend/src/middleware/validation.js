@@ -50,6 +50,13 @@ const cartItemSchema = Joi.object({
   quantity: Joi.number().integer().positive().required()
 });
 
+// Validación de carrito para invitados
+const guestCartItemSchema = Joi.object({
+  productId: Joi.number().integer().positive().required(),
+  quantity: Joi.number().integer().positive().required(),
+  sessionId: Joi.string().optional()
+});
+
 // Validación de apartado
 const reservationSchema = Joi.object({
   product_id: Joi.number().integer().positive().required(),
@@ -100,6 +107,7 @@ module.exports = {
   loginSchema,
   productSchema,
   cartItemSchema,
+  guestCartItemSchema,
   reservationSchema,
   surveySchema,
   voteSchema,

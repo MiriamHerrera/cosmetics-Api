@@ -1,7 +1,7 @@
 // Tipos básicos para Cosmetics App
 
 export interface Product {
-  id: string;
+  id: number;  // Changed from string to number since database returns numeric IDs
   name: string;
   description: string;
   price: number;
@@ -15,7 +15,7 @@ export interface Product {
 }
 
 export interface User {
-  id: string;
+  id: number;  // Changed from string to number
   name: string;
   email: string;
   phone: string;
@@ -25,7 +25,7 @@ export interface User {
 }
 
 export interface CartItem {
-  productId: string;
+  productId: number;  // Changed from string to number
   quantity: number;
   product: Product;
 }
@@ -42,8 +42,8 @@ export interface Cart {
 }
 
 export interface Order {
-  id: string;
-  userId: string;
+  id: number;  // Changed from string to number
+  userId: number;  // Changed from string to number
   items: CartItem[];
   total: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered';
@@ -54,7 +54,7 @@ export interface Order {
 }
 
 export interface Category {
-  id: string;
+  id: number;  // Changed from string to number
   name: string;
   description: string;
   image: string;

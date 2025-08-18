@@ -12,6 +12,7 @@ const { testConnection } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
+const guestCartRoutes = require('./routes/guest-cart');
 const reservationRoutes = require('./routes/reservations');
 const surveyRoutes = require('./routes/surveys');
 const statsRoutes = require('./routes/stats');
@@ -59,6 +60,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/guest-cart', guestCartRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/stats', statsRoutes);
@@ -112,46 +114,5 @@ app.use('*', (req, res) => {
   });
 });
 
-// Función para iniciar el servidor
-const startServer = async () => {
-  try {
-    // Probar conexión a la base de datos
-    const dbConnected = await testConnection();
-    
-    if (!dbConnected) {
-      console.error('❌ No se pudo conectar a la base de datos. Verifique la configuración.');
-      process.exit(1);
-    }
-
-    // Iniciar servidor
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
-      console.log(`📱 API disponible en: http://localhost:${PORT}`);
-      console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🛒 Endpoint: /api/cart`);
-      console.log(`📅 Endpoint: /api/reservations`);
-      console.log(`📊 Endpoint: /api/surveys`);
-      console.log(`📈 Endpoint: /api/stats`);
-      console.log(`👑 Endpoint: /api/admin`);
-    });
-
-  } catch (error) {
-    console.error('❌ Error iniciando servidor:', error);
-    process.exit(1);
-  }
-};
-
-// Manejar señales de terminación
-process.on('SIGTERM', () => {
-  console.log('🛑 Señal SIGTERM recibida, cerrando servidor...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('🛑 Señal SIGINT recibida, cerrando servidor...');
-  process.exit(0);
-});
-
-// Iniciar servidor
-startServer(); 
+// Exportar la app para que server.js la use
+module.exports = app; 

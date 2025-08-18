@@ -11,20 +11,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
-  const { addToCart, loading: cartLoading } = useCart();
+  const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const handleAddToCart = async () => {
-    try {
-      const success = await addToCart(product, 1);
-      if (success) {
-        // Aquí podrías mostrar una notificación de éxito
-        console.log('Producto agregado al carrito');
-      }
-    } catch (error) {
-      console.error('Error al agregar al carrito:', error);
-    }
-  };
+
 
   const handleQuickBuy = () => {
     if (onQuickBuy) {
@@ -33,6 +23,13 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
       // Lógica por defecto: agregar al carrito y abrir modal de checkout
       addToCart(product, 1);
       // Aquí podrías abrir un modal de checkout rápido
+    }
+  };
+
+  const handleAddToCart = async () => {
+    const success = await addToCart(product, 1);
+    if (success) {
+      console.log('✅ Producto agregado al carrito');
     }
   };
 
@@ -137,12 +134,19 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           </span>
         </div>
 
+        {/* Mensaje de error */}
+        {error && (
+          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
+        )}
+
         {/* Botones de acción */}
         <div className="flex gap-1.5 sm:gap-2">
           {/* Botón de compra inmediata */}
           <button
             onClick={handleQuickBuy}
-            disabled={product.stock_total === 0 || cartLoading}
+            disabled={product.stock_total === 0}
             className="
               flex-1 bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
               disabled:bg-gray-300 disabled:cursor-not-allowed
@@ -162,8 +166,8 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           {/* Botón de agregar al carrito */}
           <button
             onClick={handleAddToCart}
-            disabled={product.stock_total === 0 || cartLoading}
-                        className="
+            disabled={product.stock_total === 0 || isUpdatingStock}
+            className="
               flex-1 border-2 border-rose-400 hover:bg-gradient-to-r hover:from-rose-400 hover:to-pink-500 hover:text-white
               disabled:bg-gray-300 disabled:cursor-not-allowed
               text-rose-400 text-xs sm:text-sm font-medium
@@ -174,9 +178,19 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
               shadow-sm hover:shadow-md
             "
           >
-            <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-rose-400 group-hover:text-white" />
-            <span className="hidden sm:inline text-rose-400 group-hover:text-white">Carrito</span>
-            <span className="sm:hidden text-rose-400 group-hover:text-white">+</span>
+            {isUpdatingStock ? (
+              <>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 inline animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
+                <span className="hidden sm:inline text-rose-400">Actualizando...</span>
+                <span className="sm:hidden text-rose-400">...</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-rose-400 group-hover:text-white" />
+                <span className="hidden sm:inline text-rose-400 group-hover:text-white">Carrito</span>
+                <span className="sm:hidden text-rose-400 group-hover:text-white">+</span>
+              </>
+            )}
           </button>
         </div>
       </div>

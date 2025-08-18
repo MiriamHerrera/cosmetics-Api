@@ -1,6 +1,7 @@
 const http = require('http');
 const app = require('./src/app');
 const { initializeSocket } = require('./src/socket');
+const { testConnection } = require('./src/config/database');
 
 const PORT = process.env.PORT || 8000;
 
@@ -13,6 +14,14 @@ const io = initializeSocket(server);
 // Función para iniciar el servidor
 const startServer = async () => {
   try {
+    // Probar conexión a la base de datos
+    const dbConnected = await testConnection();
+    
+    if (!dbConnected) {
+      console.error('❌ No se pudo conectar a la base de datos. Verifique la configuración.');
+      process.exit(1);
+    }
+
     // Iniciar servidor
     server.listen(PORT, () => {
       console.log(`🚀 Servidor iniciado en puerto ${PORT}`);

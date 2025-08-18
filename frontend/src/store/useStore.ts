@@ -15,8 +15,8 @@ interface AppState {
   setProducts: (products: Product[]) => void;
   setCart: (cart: Cart | null) => void;
   addToCart: (product: Product, quantity: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateCartItemQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: number) => void;
+  updateCartItemQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
   setCategories: (categories: string[]) => void;
   setLoading: (loading: boolean) => void;
@@ -75,7 +75,7 @@ export const useStore = create<AppState>()(
           
           const newCart: Cart = {
             id: `cart_${Date.now()}`,
-            userId: get().user?.id || 'anonymous',
+            userId: get().user?.id?.toString() || 'anonymous',
             items: [...(currentCart?.items || []), newItem],
             total: (currentCart?.total || 0) + (product.price * quantity),
             status: 'active',
@@ -139,11 +139,13 @@ export const useStore = create<AppState>()(
       
       // Computed values
       get cartItemCount() {
-        return get().cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        const cart = get().cart;
+        return cart ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
       },
       
       get cartTotal() {
-        return get().cart?.total || 0;
+        const cart = get().cart;
+        return cart ? cart.total : 0;
       }
     }),
     {

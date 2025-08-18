@@ -1,7 +1,7 @@
 'use client';
 
-import { ShoppingCart, X, MessageCircle } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { ShoppingCart, X, MessageCircle, Plus, Minus, Trash2 } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { cart, cartTotal, cartItemCount } = useStore();
+  const { cart, removeFromCart, updateQuantity, cartItemCount, cartTotal, error, clearError } = useCart();
 
   if (!isOpen) return null;
 
@@ -59,18 +59,45 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               <div className="space-y-4">
                 {/* Lista de productos */}
                 {cart?.items.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <ShoppingCart className="w-6 h-6 text-gray-500" />
+                      <img 
+                        src={item.product.image_url || '/NoImage.jpg'} 
+                        alt={item.product.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                      <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                      <p className="text-sm text-gray-500">{item.product.category_name}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-sm font-medium min-w-[20px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
                         ${(item.product.price * item.quantity).toFixed(2)}
                       </p>
+                      <button
+                        onClick={() => removeFromCart(item.product.id)}
+                        className="text-red-500 hover:text-red-700 p-1 mt-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}

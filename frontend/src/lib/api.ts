@@ -58,7 +58,7 @@ export const productsApi = {
   },
 
   // Obtener producto por ID
-  getById: async (id: string): Promise<ApiResponse<Product>> => {
+  getById: async (id: number): Promise<ApiResponse<Product>> => {
     const response = await api.get(`/products/${id}`);
     return response.data;
   },
@@ -82,13 +82,13 @@ export const productsApi = {
   },
 
   // Actualizar producto (admin)
-  update: async (id: string, product: Partial<Product>): Promise<ApiResponse<Product>> => {
+  update: async (id: number, product: Partial<Product>): Promise<ApiResponse<Product>> => {
     const response = await api.put(`/products/${id}`, product);
     return response.data;
   },
 
   // Eliminar producto (admin)
-  delete: async (id: string): Promise<ApiResponse<void>> => {
+  delete: async (id: number): Promise<ApiResponse<void>> => {
     const response = await api.delete(`/products/${id}`);
     return response.data;
   }
@@ -127,7 +127,7 @@ export const usersApi = {
   }
 };
 
-// API del Carrito
+// API del Carrito (con autenticación)
 export const cartApi = {
   // Obtener carrito del usuario
   getCart: async (): Promise<ApiResponse<Cart>> => {
@@ -136,19 +136,19 @@ export const cartApi = {
   },
 
   // Agregar producto al carrito
-  addItem: async (productId: string, quantity: number): Promise<ApiResponse<Cart>> => {
+  addItem: async (productId: number, quantity: number): Promise<ApiResponse<Cart>> => {
     const response = await api.post('/cart/items', { productId, quantity });
     return response.data;
   },
 
   // Actualizar cantidad de item
-  updateItemQuantity: async (productId: string, quantity: number): Promise<ApiResponse<Cart>> => {
+  updateItemQuantity: async (productId: number, quantity: number): Promise<ApiResponse<Cart>> => {
     const response = await api.put(`/cart/items/${productId}`, { quantity });
     return response.data;
   },
 
   // Remover item del carrito
-  removeItem: async (productId: string): Promise<ApiResponse<Cart>> => {
+  removeItem: async (productId: number): Promise<ApiResponse<Cart>> => {
     const response = await api.delete(`/cart/items/${productId}`);
     return response.data;
   },
@@ -162,6 +162,39 @@ export const cartApi = {
   // Reservar carrito (7 días)
   reserveCart: async (): Promise<ApiResponse<Cart>> => {
     const response = await api.post('/cart/reserve');
+    return response.data;
+  }
+};
+
+// API del Carrito para Invitados (sin autenticación)
+export const guestCartApi = {
+  // Agregar producto al carrito invitado (reserva stock)
+  addItem: async (productId: number, quantity: number): Promise<ApiResponse<any>> => {
+    const response = await api.post('/guest-cart/items', { productId, quantity });
+    return response.data;
+  },
+
+  // Actualizar cantidad en carrito invitado
+  updateQuantity: async (productId: number, quantity: number): Promise<ApiResponse<any>> => {
+    const response = await api.put(`/guest-cart/items/${productId}`, { quantity });
+    return response.data;
+  },
+
+  // Remover item del carrito invitado
+  removeItem: async (productId: number): Promise<ApiResponse<any>> => {
+    const response = await api.delete(`/guest-cart/items/${productId}`);
+    return response.data;
+  },
+
+  // Limpiar carrito invitado
+  clearCart: async (): Promise<ApiResponse<any>> => {
+    const response = await api.delete('/guest-cart');
+    return response.data;
+  },
+
+  // Verificar stock disponible
+  checkStock: async (productId: number): Promise<ApiResponse<any>> => {
+    const response = await api.get(`/guest-cart/items/${productId}`);
     return response.data;
   }
 };
@@ -181,7 +214,7 @@ export const ordersApi = {
   },
 
   // Obtener orden por ID
-  getById: async (id: string): Promise<ApiResponse<Order>> => {
+  getById: async (id: number): Promise<ApiResponse<Order>> => {
     const response = await api.get(`/orders/${id}`);
     return response.data;
   }

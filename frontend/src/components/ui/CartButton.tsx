@@ -1,13 +1,15 @@
 'use client';
 
 import { ShoppingCart } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useCart } from '@/hooks/useCart';
 import { useState } from 'react';
 import CartModal from './CartModal';
 
 export default function CartButton() {
-  const { cartItemCount } = useStore();
+  const { cartItemCount } = useCart();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
