@@ -53,37 +53,37 @@ export const useProducts = () => {
     }
   }, [setProducts, setLoading]);
 
-  // Buscar productos
-  const searchProducts = useCallback(async (query: string) => {
+  // Buscar productos (local - sin llamadas API)
+  const searchProducts = useCallback((query: string) => {
     if (!query.trim()) {
-      await loadProducts();
+      // Si no hay query, mostrar todos los productos originales
+      setAllProducts(products);
+      setPagination(prev => ({
+        ...prev,
+        page: 1,
+        total: products.length,
+        totalPages: Math.ceil(products.length / 12)
+      }));
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response: ApiResponse<Product[]> = await productsApi.search(query);
-      
-      if (response.success && response.data) {
-        // Mapear los productos para que coincidan con la estructura esperada
-        const mappedProducts = response.data.map((product: any) => ({
-          ...product,
-          price: parseFloat(product.price) || 0,
-          stock_total: parseInt(product.stock_total) || 0
-        }));
-        setProducts(mappedProducts);
-      } else {
-        setError(response.error || 'Error en la búsqueda');
-      }
-    } catch (err) {
-      setError('Error de conexión en la búsqueda');
-      console.error('Error searching products:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [setProducts, setLoading]);
+    // Filtrar localmente los productos ya cargados
+    const searchTerm = query.toLowerCase().trim();
+    const filteredProducts = products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm) ||
+      product.description.toLowerCase().includes(searchTerm) ||
+      product.category_name.toLowerCase().includes(searchTerm) ||
+      product.product_type_name.toLowerCase().includes(searchTerm)
+    );
+    
+    setAllProducts(filteredProducts);
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      total: filteredProducts.length,
+      totalPages: Math.ceil(filteredProducts.length / 12)
+    }));
+  }, [products]);
 
   // Filtrar por categoría (local - sin llamadas API)
   const filterByCategory = useCallback((category: string) => {

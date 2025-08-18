@@ -16,9 +16,18 @@ export default function ProductsSection() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1); // Resetear a la primera página
-    searchProducts(searchQuery);
+    // La búsqueda ya se hace en tiempo real, solo prevenimos el submit
   };
+
+  // Búsqueda en tiempo real
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1); // Resetear a la primera página
+      searchProducts(searchQuery);
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchProducts]);
 
   const handleCategoryFilter = (category: string) => {
     setSelectedCategory(category);
@@ -105,13 +114,15 @@ export default function ProductsSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Descubre nuestra amplia selección de cosméticos y productos de belleza de alta calidad
           </p>
+          
+
         </div>
 
         {/* Filtros y búsqueda */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             {/* Búsqueda */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md">
+            <div className="flex-1 max-w-md">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -121,8 +132,16 @@ export default function ProductsSection() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-            </form>
+            </div>
 
             {/* Filtro de categorías */}
             <div className="flex items-center gap-2">
@@ -207,10 +226,34 @@ export default function ProductsSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-800 mb-2">No hay productos disponibles</h3>
-              <p className="text-gray-600">
-                No se encontraron productos con los criterios de búsqueda actuales.
+              <h3 className="text-lg font-medium text-gray-800 mb-2">
+                {searchQuery || selectedCategory !== 'all' 
+                  ? 'No se encontraron productos' 
+                  : 'No hay productos disponibles'
+                }
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {searchQuery && selectedCategory !== 'all' 
+                  ? `No se encontraron productos que coincidan con "${searchQuery}" en la categoría "${selectedCategory}"`
+                  : searchQuery 
+                    ? `No se encontraron productos que coincidan con "${searchQuery}"`
+                    : selectedCategory !== 'all'
+                      ? `No hay productos en la categoría "${selectedCategory}"`
+                      : 'No se encontraron productos con los criterios de búsqueda actuales.'
+                }
               </p>
+              {(searchQuery || selectedCategory !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                    setCurrentPage(1);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Limpiar filtros
+                </button>
+              )}
             </div>
           </div>
         ) : null}
