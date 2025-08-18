@@ -593,14 +593,26 @@ class GuestCartController {
           gci.product_id,
           gci.quantity,
           gci.reserved_until,
-          p.name as product_name
+          p.name as product_name,
+          TIMESTAMPDIFF(MINUTE, gci.reserved_until, NOW()) as minutes_expired
         FROM guest_cart_items gci
         INNER JOIN products p ON gci.product_id = p.id
-        WHERE gci.reserved_until < (NOW() - INTERVAL 1 HOUR)
+        WHERE gci.reserved_until < NOW()
       `);
 
       if (expiredItems.length === 0) {
         console.log('✅ No hay carritos expirados para limpiar');
+        
+        // Verificar si hay carritos antiguos para debugging
+        const [oldCarts] = await query(`
+          SELECT COUNT(*) as total_carts, 
+                 MIN(reserved_until) as oldest_reservation,
+                 MAX(reserved_until) as newest_reservation
+          FROM guest_cart_items
+        `);
+        
+        console.log(`📊 Estado actual: ${oldCarts.total_carts} items en carritos, más antiguo: ${oldCarts.oldest_reservation}, más nuevo: ${oldCarts.newest_reservation}`);
+        
         return {
           success: true,
           message: 'No hay carritos expirados',
@@ -626,7 +638,7 @@ class GuestCartController {
           totalStockRestored += item.quantity;
           cleanedItems++;
 
-          console.log(`✅ Stock restaurado: ${item.quantity} unidades de "${item.product_name}" (ID: ${item.product_id})`);
+          console.log(`✅ Stock restaurado: ${item.quantity} unidades de "${item.product_name}" (ID: ${item.product_id}) - Expiró hace ${item.minutes_expired} minutos`);
         } catch (error) {
           console.error(`❌ Error restaurando stock del producto ${item.product_id}:`, error);
         }
@@ -634,7 +646,7 @@ class GuestCartController {
 
       // Eliminar items expirados
       const deletedItems = await query(
-        'DELETE FROM guest_cart_items WHERE reserved_until < (NOW() - INTERVAL 1 HOUR)'
+        'DELETE FROM guest_cart_items WHERE reserved_until < NOW()'
       );
 
       // Eliminar carritos vacíos

@@ -16,10 +16,10 @@ class CartCleanupService {
 
     console.log('🚀 Iniciando servicio de limpieza automática de carritos...');
 
-    // Programar limpieza cada 15 minutos
-    this.cleanupJob = cron.schedule('*/15 * * * *', async () => {
+    // Programar limpieza cada 1 minuto (para testing rápido)
+    this.cleanupJob = cron.schedule('* * * * *', async () => {
       try {
-        console.log('⏰ Ejecutando limpieza automática programada...');
+        console.log('⏰ Ejecutando limpieza automática programada (cada minuto)...');
         await this.executeCleanup();
       } catch (error) {
         console.error('❌ Error en limpieza automática programada:', error);
@@ -29,15 +29,15 @@ class CartCleanupService {
       timezone: 'America/Mexico_City' // Ajustar a tu zona horaria
     });
 
-    // Ejecutar limpieza inicial después de 1 minuto
+    // Ejecutar limpieza inicial después de 10 segundos
     setTimeout(async () => {
       console.log('🔄 Ejecutando limpieza inicial...');
       await this.executeCleanup();
-    }, 60000);
+    }, 10000);
 
     this.isRunning = true;
     console.log('✅ Servicio de limpieza automática iniciado correctamente');
-    console.log('📅 Programado para ejecutarse cada 15 minutos');
+    console.log('📅 Programado para ejecutarse cada 1 minuto (testing rápido)');
   }
 
   // Detener el servicio de limpieza
