@@ -8,6 +8,9 @@ require('dotenv').config();
 // Importar configuración de BD
 const { testConnection } = require('./config/database');
 
+// Importar controlador de carrito invitado para limpieza automática
+const guestCartController = require('./controllers/guestCartController');
+
 // Importar rutas
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -113,6 +116,50 @@ app.use('*', (req, res) => {
     message: 'Ruta no encontrada'
   });
 });
+
+// Función para iniciar el servidor
+const startServer = async () => {
+  try {
+    // Probar conexión a la base de datos
+    const dbConnected = await testConnection();
+    
+    if (!dbConnected) {
+      console.error('❌ No se pudo conectar a la base de datos. Verifique la configuración.');
+      process.exit(1);
+    }
+
+    // Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
+      console.log(`📱 API disponible en: http://localhost:${PORT}`);
+      console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🛒 Endpoint: /api/cart`);
+      console.log(`📅 Endpoint: /api/reservations`);
+      console.log(`📊 Endpoint: /api/surveys`);
+      console.log(`📈 Endpoint: /api/stats`);
+      console.log(`👑 Endpoint: /api/admin`);
+    });
+
+    // Configurar limpieza automática de carritos expirados cada hora
+    console.log('⏰ Configurando limpieza automática de carritos expirados...');
+    setInterval(async () => {
+      try {
+        await guestCartController.cleanupExpiredCarts();
+      } catch (error) {
+        console.error('❌ Error en limpieza automática programada:', error);
+      }
+    }, 60 * 60 * 1000); // Cada hora (60 minutos * 60 segundos * 1000 ms)
+
+    // Ejecutar limpieza inicial al iniciar el servidor
+    console.log('🧹 Ejecutando limpieza inicial de carritos expirados...');
+    await guestCartController.cleanupExpiredCarts();
+
+  } catch (error) {
+    console.error('❌ Error iniciando servidor:', error);
+    process.exit(1);
+  }
+};
 
 // Exportar la app para que server.js la use
 module.exports = app; 

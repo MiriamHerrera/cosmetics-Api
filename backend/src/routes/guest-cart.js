@@ -24,4 +24,10 @@ router.delete('/', guestCartController.clearGuestCart);
 // Verificar stock disponible
 router.get('/stock/:productId', guestCartController.checkProductStock);
 
+// Limpiar carritos expirados (admin)
+router.post('/cleanup', guestCartController.cleanupExpiredCarts);
+
+// Obtener estadísticas de carritos activos
+router.get('/stats', guestCartController.getGuestCartStats);
+
 module.exports = router; 

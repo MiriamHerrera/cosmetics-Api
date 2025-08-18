@@ -531,6 +531,95 @@ class GuestCartController {
       });
     }
   }
+
+  // Limpiar carritos expirados automáticamente
+  cleanupExpiredCarts = async () => {
+    try {
+      console.log('🧹 Iniciando limpieza automática de carritos expirados...');
+      
+      // Buscar carritos con items expirados (más de 24 horas)
+      const expiredItems = await query(`
+        SELECT 
+          gci.id,
+          gci.guest_cart_id,
+          gci.product_id,
+          gci.quantity,
+          gci.reserved_until
+        FROM guest_cart_items gci
+        WHERE gci.reserved_until < NOW()
+      `);
+
+      if (expiredItems.length === 0) {
+        console.log('✅ No hay carritos expirados para limpiar');
+        return;
+      }
+
+      console.log(`🔍 Encontrados ${expiredItems.length} items expirados`);
+
+      // Liberar stock de cada item expirado
+      for (const item of expiredItems) {
+        try {
+          // Restaurar stock del producto
+          await query(
+            'UPDATE products SET stock_total = stock_total + ? WHERE id = ?',
+            [item.quantity, item.product_id]
+          );
+
+          console.log(`✅ Stock restaurado: ${item.quantity} unidades del producto ${item.product_id}`);
+        } catch (error) {
+          console.error(`❌ Error restaurando stock del producto ${item.product_id}:`, error);
+        }
+      }
+
+      // Eliminar items expirados
+      const deletedItems = await query(
+        'DELETE FROM guest_cart_items WHERE reserved_until < NOW()'
+      );
+
+      // Eliminar carritos vacíos
+      const deletedCarts = await query(`
+        DELETE gc FROM guest_carts gc
+        LEFT JOIN guest_cart_items gci ON gc.id = gci.guest_cart_id
+        WHERE gci.id IS NULL
+      `);
+
+      console.log(`🧹 Limpieza completada: ${deletedItems.affectedRows} items eliminados, ${deletedCarts.affectedRows} carritos eliminados`);
+
+    } catch (error) {
+      console.error('❌ Error en limpieza automática:', error);
+    }
+  }
+
+  // Obtener estadísticas de carritos activos
+  getGuestCartStats = async (req, res) => {
+    try {
+      const [stats] = await query(`
+        SELECT 
+          COUNT(DISTINCT gc.id) as activeCarts,
+          COUNT(gci.id) as totalItems,
+          SUM(gci.quantity) as totalReservedStock
+        FROM guest_carts gc
+        LEFT JOIN guest_cart_items gci ON gc.id = gci.guest_cart_id
+        WHERE gci.reserved_until > NOW()
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          activeCarts: stats.activeCarts || 0,
+          totalItems: stats.totalItems || 0,
+          totalReservedStock: stats.totalReservedStock || 0
+        }
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo estadísticas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+  }
 }
 
 module.exports = new GuestCartController(); 
