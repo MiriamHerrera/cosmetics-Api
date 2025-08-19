@@ -19,6 +19,13 @@ const pool = mysql.createPool(dbConfig);
 // Función para probar la conexión
 const testConnection = async () => {
   try {
+    console.log('🔍 CONFIGURACIÓN DE BASE DE DATOS:');
+    console.log('Host:', process.env.DB_HOST || 'localhost');
+    console.log('Usuario:', process.env.DB_USER || 'root');
+    console.log('Base de datos:', process.env.DB_NAME || 'cosmetics_db');
+    console.log('Puerto:', process.env.DB_PORT || 3306);
+    console.log('¿Tiene contraseña?', process.env.DB_PASSWORD ? 'SÍ' : 'NO');
+    
     const connection = await pool.getConnection();
     console.log('✅ Conexión a MySQL establecida correctamente');
     connection.release();

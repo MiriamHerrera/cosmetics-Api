@@ -1,9 +1,9 @@
 'use client';
 
-import { Calendar, Clock, Package, ArrowRight, Plus } from 'lucide-react';
-import ProductCard from '@/components/ui/ProductCard';
+import { Plus } from 'lucide-react';
 import type { Product } from '@/types';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface UpcomingInventoryProps {
   arrivalDate: string;
@@ -13,19 +13,18 @@ interface UpcomingInventoryProps {
 
 export default function UpcomingInventory({ 
   arrivalDate, 
-  arrivalTime, 
   expectedProducts 
 }: UpcomingInventoryProps) {
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
 
-  // Función para seleccionar 3 productos aleatorios
-  const selectRandomProducts = () => {
-    const shuffled = [...expectedProducts].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  };
-
   // Efecto para rotar productos cada cierto tiempo
   useEffect(() => {
+    // Función para seleccionar 3 productos aleatorios
+    const selectRandomProducts = () => {
+      const shuffled = [...expectedProducts].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, 3);
+    };
+
     // Seleccionar productos iniciales
     setDisplayedProducts(selectRandomProducts());
 
@@ -47,10 +46,7 @@ export default function UpcomingInventory({
     });
   };
 
-  const handleQuickBuy = (product: Product) => {
-    // Aquí implementarías la lógica de compra inmediata
-    console.log('Compra inmediata:', product);
-  };
+
 
   const handleViewAllProducts = () => {
     // Aquí implementarías la navegación a la página de próximos productos
@@ -89,11 +85,15 @@ export default function UpcomingInventory({
                 animate-in fade-in-0 duration-500
               ">
                 <div className="aspect-square bg-gray-100 rounded-md mb-3 overflow-hidden">
-                  <img
-                    src={product.image_url || '/NoImage.jpg'}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={product.image_url || '/NoImage.jpg'}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
                 </div>
                 <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-1">
                   {product.name}

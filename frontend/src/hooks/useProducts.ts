@@ -6,7 +6,7 @@ import type { Product, PaginationParams, ApiResponse } from '@/types';
 export const useProducts = () => {
   const { products, setProducts, setLoading } = useStore();
   const [error, setError] = useState<string | null>(null);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 12,
@@ -24,12 +24,12 @@ export const useProducts = () => {
       
       if (response.success && response.data) {
         // Mapear los productos para que coincidan con la estructura esperada
-        const mappedProducts = response.data.map((product: any) => ({
+        const mappedProducts = response.data.map((product: Product) => ({
           ...product,
           // Asegurar que el precio sea un número
-          price: parseFloat(product.price) || 0,
+          price: parseFloat(product.price.toString()) || 0,
           // Asegurar que el stock sea un número
-          stock_total: parseInt(product.stock_total) || 0
+          stock_total: parseInt(product.stock_total.toString()) || 0
         }));
         
         // Guardar todos los productos para paginación local

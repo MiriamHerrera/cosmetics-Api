@@ -86,7 +86,7 @@ export const useLocalCart = () => {
   }, [calculateTotals]);
 
   // Remover producto del carrito
-  const removeFromCart = useCallback((productId: string) => {
+  const removeFromCart = useCallback((productId: number) => {
     setCart(prevCart => {
       const newItems = prevCart.items.filter(item => item.product.id !== productId);
       const { total, itemCount } = calculateTotals(newItems);
@@ -95,7 +95,7 @@ export const useLocalCart = () => {
   }, [calculateTotals]);
 
   // Actualizar cantidad de un producto
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -118,13 +118,13 @@ export const useLocalCart = () => {
   }, []);
 
   // Obtener cantidad de un producto específico
-  const getItemQuantity = useCallback((productId: string) => {
+  const getItemQuantity = useCallback((productId: number) => {
     const item = cart.items.find(item => item.product.id === productId);
     return item ? item.quantity : 0;
   }, [cart.items]);
 
   // Verificar si un producto está en el carrito
-  const isInCart = useCallback((productId: string) => {
+  const isInCart = useCallback((productId: number) => {
     return cart.items.some(item => item.product.id === productId);
   }, [cart.items]);
 

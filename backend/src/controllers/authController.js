@@ -67,32 +67,56 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
+    
+    console.log('🔍 DEBUG LOGIN:', { phone, password: password ? '***' : 'undefined' });
 
     // Buscar usuario por teléfono
     const users = await query(
-      'SELECT id, name, phone, email, password, role FROM users WHERE phone = ? AND is_active = true',
+      'SELECT id, name, phone, email, password, role FROM users WHERE phone = ?',
       [phone]
     );
 
+    console.log('🔍 Usuarios encontrados:', users.length);
+    if (users.length > 0) {
+      console.log('🔍 Usuario encontrado:', { 
+        id: users[0].id, 
+        name: users[0].name, 
+        phone: users[0].phone,
+        role: users[0].role,
+        passwordLength: users[0].password ? users[0].password.length : 0
+      });
+    }
+
     if (users.length === 0) {
+      console.log('❌ No se encontró usuario con teléfono:', phone);
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: 'Credenciales inválidas',
+        debug: { phone, usersFound: 0 }
       });
     }
 
     const user = users[0];
 
     // Verificar contraseña
+    console.log('🔍 Verificando contraseña...');
+    console.log('🔍 Contraseña recibida:', password);
+    console.log('🔍 Hash en BD:', user.password);
+    console.log('🔍 Longitud del hash en BD:', user.password ? user.password.length : 0);
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('🔍 Contraseña válida:', isPasswordValid);
+    
     if (!isPasswordValid) {
+      console.log('❌ Contraseña incorrecta para usuario:', phone);
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: 'Credenciales inválidas',
+        debug: { phone, userId: user.id, passwordValid: false }
       });
     }
 
     // Generar token
+    console.log('🔍 Generando token para usuario:', user.id);
     const token = generateToken({
       id: user.id,
       name: user.name,
@@ -101,6 +125,7 @@ const login = async (req, res) => {
       role: user.role
     });
 
+    console.log('✅ Login exitoso para usuario:', user.id);
     res.json({
       success: true,
       message: 'Login exitoso',
@@ -117,7 +142,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error en login:', error);
+    console.error('❌ Error en login:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
@@ -131,7 +156,7 @@ const getProfile = async (req, res) => {
     const userId = req.user.id;
 
     const users = await query(
-      'SELECT id, name, phone, email, role, created_at FROM users WHERE id = ? AND is_active = true',
+      'SELECT id, name, phone, email, role, created_at FROM users WHERE id = ?',
       [userId]
     );
 

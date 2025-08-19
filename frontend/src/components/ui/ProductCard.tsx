@@ -4,6 +4,7 @@ import { ShoppingCart, Zap, Heart } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import type { Product } from '@/types';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface ProductCardProps {
   product: Product;
@@ -44,19 +45,16 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
     ">
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-100">
-        <img
+        <Image
           src={product.image_url || '/NoImage.jpg'}
           alt={product.name}
-
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
           className="
-            w-full h-full object-cover
+            object-cover
             transition-transform duration-300
             group-hover:scale-105
           "
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = '/NoImage.jpg';
-          }}
         />
         
         {/* Botón de favorito */}

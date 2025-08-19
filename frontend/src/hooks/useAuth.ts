@@ -1,23 +1,34 @@
 import { useState, useCallback } from 'react';
 import { usersApi } from '@/lib/api';
 import { useStore } from '@/store/useStore';
+import { useCartMigration } from './useCartMigration';
 import type { User, ApiResponse } from '@/types';
 
 export const useAuth = () => {
   const { user, setUser } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { migrateGuestCart } = useCartMigration();
 
   // Login
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (phone: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response: ApiResponse<{ user: User; token: string }> = await usersApi.login(email, password);
+      console.log('🔍 FRONTEND - Intentando login con:', { phone, password: password ? '***' : 'undefined' });
+      alert(`🔍 FRONTEND - Intentando login con: ${phone}`);
+      
+      const response: ApiResponse<{ user: User; token: string }> = await usersApi.login(phone, password);
+      
+      console.log('🔍 FRONTEND - Respuesta del backend:', response);
+      alert(`🔍 FRONTEND - Respuesta del backend: ${JSON.stringify(response, null, 2)}`);
       
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
+        
+        console.log('✅ FRONTEND - Login exitoso, usuario:', userData.name);
+        alert(`✅ FRONTEND - Login exitoso, usuario: ${userData.name}`);
         
         // Guardar token en localStorage
         localStorage.setItem('auth_token', token);
@@ -25,22 +36,33 @@ export const useAuth = () => {
         // Actualizar estado del usuario
         setUser(userData);
         
+        // Migrar carrito de invitado si existe
+        try {
+          await migrateGuestCart();
+        } catch (error) {
+          console.error('Error migrando carrito:', error);
+          // No fallar el login si la migración falla
+        }
+        
         return true;
       } else {
+        console.log('❌ FRONTEND - Error en respuesta del backend:', response.error);
+        alert(`❌ FRONTEND - Error en respuesta del backend: ${response.error}`);
         setError(response.error || 'Error en el login');
         return false;
       }
     } catch (err) {
+      console.error('❌ FRONTEND - Error durante login:', err);
+      alert(`❌ FRONTEND - Error durante login: ${err instanceof Error ? err.message : 'Error desconocido'}`);
       setError('Error de conexión en el login');
-      console.error('Error during login:', err);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [setUser]);
+  }, [setUser, migrateGuestCart]);
 
   // Registro
-  const register = useCallback(async (userData: { name: string; email: string; password: string; phone: string }) => {
+  const register = useCallback(async (userData: { name: string; password: string; phone: string }) => {
     try {
       setLoading(true);
       setError(null);
@@ -61,7 +83,7 @@ export const useAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, [setUser]);
+  }, []);
 
   // Logout
   const logout = useCallback(async () => {
@@ -85,7 +107,7 @@ export const useAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, [setUser]);
+  }, []);
 
   // Obtener perfil del usuario
   const getProfile = useCallback(async () => {

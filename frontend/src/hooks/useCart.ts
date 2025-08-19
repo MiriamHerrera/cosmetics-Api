@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useStore } from '@/store/useStore';
 import { guestCartApi } from '@/lib/api';
 import { useGuestSession } from './useGuestSession';
@@ -58,7 +58,7 @@ export const useCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [addToStoreCart]);
+  }, [addToStoreCart, sessionId, updateProductStock]);
 
   // Función para remover del carrito
   const removeFromCart = useCallback(async (productId: number) => {
@@ -97,7 +97,7 @@ export const useCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [removeFromStoreCart]);
+  }, [removeFromStoreCart, sessionId, updateProductStock, cart?.items]);
 
   // Función para actualizar cantidad
   const updateQuantity = useCallback(async (productId: number, newQuantity: number) => {
@@ -140,7 +140,7 @@ export const useCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [cart, updateStoreCartQuantity]);
+  }, [cart, updateStoreCartQuantity, sessionId, updateProductStock]);
 
   // Función para limpiar carrito
   const clearCart = useCallback(async () => {
@@ -170,7 +170,7 @@ export const useCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [clearStoreCart]);
+  }, [clearStoreCart, sessionId]);
 
   return {
     cart,

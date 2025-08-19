@@ -1,7 +1,10 @@
 'use client';
 
-import { ShoppingCart, X, MessageCircle, Plus, Minus, Trash2 } from 'lucide-react';
+import { ShoppingCart, X, MessageCircle, Trash2 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useGuestMode } from '@/hooks/useGuestMode';
+import { LoginButton } from './index';
+import Image from 'next/image';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -9,7 +12,8 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { cart, removeFromCart, updateQuantity, cartItemCount, cartTotal, error, clearError } = useCart();
+  const { cart, removeFromCart, cartItemCount, cartTotal } = useCart();
+  const { isGuestMode } = useGuestMode();
 
   if (!isOpen) return null;
 
@@ -61,11 +65,15 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 {cart?.items.map((item) => (
                   <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <img 
-                        src={item.product.image_url || '/NoImage.jpg'} 
-                        alt={item.product.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
+                      <div className="relative w-12 h-12">
+                        <Image 
+                          src={item.product.image_url || '/NoImage.jpg'} 
+                          alt={item.product.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.product.name}</h3>
@@ -114,20 +122,37 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </div>
 
           {/* Footer con botón de WhatsApp */}
-          <div className="p-4 sm:p-6 border-t border-gray-200">
+          <div className="p-4 sm:p-6 border-t border-gray-200 space-y-3">
+            {/* Botón de login para usuarios invitados */}
+            {isGuestMode && cartItemCount > 0 && (
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-2">
+                  💡 Inicia sesión para guardar tu carrito
+                </p>
+                <LoginButton 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  showIcon={false}
+                >
+                  Guardar Carrito
+                </LoginButton>
+              </div>
+            )}
+            
             <button
               onClick={() => {
                 // Aquí iría la lógica para enviar por WhatsApp
                 console.log('Enviar por WhatsApp:', cart);
               }}
-                              className="
-                  w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
-                  text-white font-bold py-4 px-6 rounded-lg
-                  transition-all duration-300
-                  flex items-center justify-center gap-3
-                  focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2
-                  transform hover:scale-105 shadow-lg hover:shadow-xl
-                "
+              className="
+                w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
+                text-white font-bold py-4 px-6 rounded-lg
+                transition-all duration-300
+                flex items-center justify-center gap-3
+                focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2
+                transform hover:scale-105 shadow-lg hover:shadow-xl
+              "
             >
               <MessageCircle className="w-5 h-5" />
               Finalizar compra

@@ -7,4 +7,5 @@ export { useBeforeUnload } from './useBeforeUnload';
 export { useNavigationGuard } from './useNavigationGuard';
 export { useGuestMode } from './useGuestMode';
 export { usePageReloadGuard } from './usePageReloadGuard';
-export { useGuestSession } from './useGuestSession'; 
+export { useGuestSession } from './useGuestSession';
+export { useCartMigration } from './useCartMigration'; 

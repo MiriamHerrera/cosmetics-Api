@@ -1,43 +1,11 @@
 'use client';
 
-import { Users, Package, BarChart3, Zap, Star } from 'lucide-react';
+
 import CartButton from '@/components/ui/CartButton';
-import { ProtectedReloadButton } from '@/components/ui';
+import { LoginButton } from '@/components/ui';
 import { UpcomingInventory, CurrentInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
 export default function Home() {
-  const features = [
-    {
-      icon: Package,
-      title: "Inventario Inteligente",
-      description: "Gestión completa de productos con filtros avanzados y control de stock"
-    },
-    {
-      icon: Package,
-      title: "Carrito con Apartado",
-      description: "Reserva productos por 7 días mientras decides tu compra"
-    },
-    {
-      icon: Zap,
-      title: "WhatsApp Automático",
-      description: "Notificaciones automáticas para recordatorios y confirmaciones"
-    },
-    {
-      icon: BarChart3,
-      title: "Dashboard Completo",
-      description: "Estadísticas detalladas de ventas, clientes y productos"
-    },
-    {
-      icon: Users,
-      title: "Gestión de Clientes",
-      description: "Sistema completo de usuarios con perfiles y historial"
-    },
-    {
-      icon: Star,
-      title: "Encuestas y Feedback",
-      description: "Recopila opiniones y mejora la experiencia del cliente"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
@@ -54,17 +22,14 @@ export default function Home() {
             
             {/* Botones de acción */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-                              <button className="
-                  bg-gradient-to-r from-rose-400 to-pink-500 text-white 
-                  px-2 py-2 sm:px-4 sm:py-2 
-                  text-xs sm:text-sm
-                  rounded-lg hover:from-rose-500 hover:to-pink-600 
-                  transition-all duration-300
-                  whitespace-nowrap shadow-sm hover:shadow-md
-                ">
+              <LoginButton 
+                variant="default"
+                size="md"
+                className="bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 shadow-sm hover:shadow-md"
+              >
                 <span className="hidden sm:inline">Iniciar Sesión</span>
                 <span className="sm:hidden">Login</span>
-              </button>
+              </LoginButton>
             </div>
           </div>
         </div>

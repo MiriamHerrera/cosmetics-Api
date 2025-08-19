@@ -68,7 +68,7 @@ export const usePageReloadGuard = () => {
   useEffect(() => {
     if (!isGuestMode) return;
 
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    const handleBeforeUnload = () => {
       // Este evento se maneja en useBeforeUnload
       // Solo agregamos logging adicional aquí
       console.log('🔄 Evento beforeunload detectado para usuario invitado');

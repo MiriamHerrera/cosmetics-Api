@@ -1,6 +1,6 @@
 'use client';
 
-import { Palette, Droplets, Brush, MessageSquare, CheckCircle } from 'lucide-react';
+import { Palette, Droplets, Brush, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 interface SurveyOption {

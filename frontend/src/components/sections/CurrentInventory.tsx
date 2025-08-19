@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Filter, Package, TrendingUp } from 'lucide-react';
+import { Search, Filter, Package } from 'lucide-react';
 import ProductCard from '@/components/ui/ProductCard';
 import type { Product } from '@/types';
 import { useState } from 'react';
@@ -46,8 +46,6 @@ export default function CurrentInventory({ products }: CurrentInventoryProps) {
 
   // Estadísticas
   const totalProducts = products.length;
-  const totalStock = products.reduce((sum, p) => sum + p.stock_total, 0);
-  const lowStockProducts = products.filter(p => p.stock_total <= 5 && p.stock_total > 0).length;
 
   return (
     <section className="py-12" style={{

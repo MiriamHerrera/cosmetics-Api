@@ -18,7 +18,7 @@ export const useCategories = () => {
       
       if (response.success && response.data) {
         // Extraer solo los nombres de las categorías para mantener compatibilidad con el store actual
-        const categoryNames = response.data.map((cat: any) => cat.name);
+        const categoryNames = response.data.map((cat: Category) => cat.name);
         setCategories(categoryNames);
       } else {
         setError(response.error || 'Error al cargar categorías');

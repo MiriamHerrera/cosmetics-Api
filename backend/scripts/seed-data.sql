@@ -130,13 +130,12 @@ INSERT INTO products (product_type_id, name, description, price, image_url, stoc
 -- Estuches
 (22, 'Estuche Profesional', 'Estuche grande para organizar productos', 49.99, 'https://example.com/estuche-profesional.jpg', 20),
 (22, 'Estuche Compacto', 'Estuche pequeño para viajes', 29.99, 'https://example.com/estuche-compacto.jpg', 35);
-
 -- =========================
 -- 4. Insertar usuario administrador
 -- =========================
 -- Contraseña: admin123 (hasheada con bcrypt)
 INSERT INTO users (name, phone, email, password, role) VALUES
-('Administrador', '+1234567890', 'admin@cosmetics.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj3ZxQQxq6re', 'admin');
+('Administrador', '+1234567890', 'admin@cosmetics.com', '$2a$12$Jl4zC7Oj53pq8FALHTf1yuaLWNZjshqY206Amq8gjCCf.3crc0sWi', 'admin');
 
 -- =========================
 -- 5. Insertar encuesta de ejemplo

@@ -14,10 +14,7 @@ export default function ProductsSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // La búsqueda ya se hace en tiempo real, solo prevenimos el submit
-  };
+
 
   // Búsqueda en tiempo real
   useEffect(() => {
