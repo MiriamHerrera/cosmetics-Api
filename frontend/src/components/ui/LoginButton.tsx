@@ -57,7 +57,7 @@ export default function LoginButton({
       <button
         onClick={() => setIsLoginModalOpen(true)}
         className={buttonClasses}
-        title={isGuestMode ? "Iniciar sesión para guardar tu carrito" : "Iniciar sesión"}
+        title="Iniciar sesión"
       >
         {showIcon && <LogIn className="w-4 h-4" />}
         {children || 'Iniciar Sesión'}
