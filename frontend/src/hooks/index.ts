@@ -8,4 +8,5 @@ export { useNavigationGuard } from './useNavigationGuard';
 export { useGuestMode } from './useGuestMode';
 export { usePageReloadGuard } from './usePageReloadGuard';
 export { useGuestSession } from './useGuestSession';
-export { useCartMigration } from './useCartMigration'; 
+export { useCartMigration } from './useCartMigration';
+export { useAdmin } from './useAdmin'; 

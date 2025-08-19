@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Users, 
   Package, 
@@ -10,10 +10,18 @@ import {
   Calendar,
   FileText,
   Shield,
-  LogOut
+  LogOut,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
+import { useAdmin } from '@/hooks/useAdmin';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -24,6 +32,56 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const { user, logout } = useAuth();
   const { clearCart } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Hook del admin
+  const {
+    loading,
+    error,
+    dashboardData,
+    users,
+    products,
+    carts,
+    reservations,
+    surveys,
+    loadUsers,
+    loadProducts,
+    loadCarts,
+    loadReservations,
+    loadSurveys,
+    updateUserStatus,
+    clearError
+  } = useAdmin();
+
+  // Estados para filtros y búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  // Cargar datos cuando cambie la pestaña
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      switch (activeTab) {
+        case 'dashboard':
+          // Dashboard se carga automáticamente
+          break;
+        case 'users':
+          loadUsers();
+          break;
+        case 'products':
+          loadProducts();
+          break;
+        case 'carts':
+          loadCarts();
+          break;
+        case 'reservations':
+          loadReservations();
+          break;
+        case 'surveys':
+          loadSurveys();
+          break;
+      }
+    }
+  }, [activeTab, user]);
 
   // Estilos CSS personalizados para ocultar scrollbar en móvil
   const scrollbarHideStyles = `
@@ -45,6 +103,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     if (success) {
       clearCart();
       onClose();
+    }
+  };
+
+  const handleUserStatusToggle = async (userId: number, currentStatus: number) => {
+    try {
+      await updateUserStatus(userId, currentStatus === 0);
+    } catch (error) {
+      console.error('Error actualizando estado de usuario:', error);
     }
   };
 
@@ -98,58 +164,71 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       case 'dashboard':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-              <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">Total Productos</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">156</p>
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800">{error}</p>
+                <button 
+                  onClick={clearError}
+                  className="mt-2 text-red-600 hover:text-red-800 underline"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : dashboardData ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600">Nuevos Usuarios Hoy</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_users_today}</p>
+                      </div>
+                      <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+                    </div>
                   </div>
-                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                </div>
-              </div>
-              
-              <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">Pedidos Hoy</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">23</p>
+                  
+                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600">Carritos Hoy</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_carts_today}</p>
+                      </div>
+                      <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+                    </div>
                   </div>
-                  <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
-                </div>
-              </div>
-              
-              <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 sm:col-span-2 lg:col-span-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">Usuarios Activos</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">89</p>
+                  
+                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 sm:col-span-2 lg:col-span-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600">Reservas Hoy</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_reservations_today}</p>
+                      </div>
+                      <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+                    </div>
                   </div>
-                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
                 </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Actividad Reciente</h3>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                  <span className="text-xs sm:text-sm text-gray-600 flex-1">Nuevo pedido recibido - #1234</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">2 min</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                  <span className="text-xs sm:text-sm text-gray-600 flex-1">Producto agregado al inventario</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">15 min</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                  <span className="text-xs sm:text-sm text-gray-600 flex-1">Stock bajo detectado</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">1 hora</span>
-                </div>
-              </div>
-            </div>
+                
+                {dashboardData.low_stock_products.length > 0 && (
+                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Productos con Bajo Stock</h3>
+                    <div className="space-y-2">
+                      {dashboardData.low_stock_products.map((product) => (
+                        <div key={product.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                          <span className="text-sm text-gray-700">{product.name}</span>
+                          <span className="text-sm font-medium text-red-600">Stock: {product.stock_total}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-gray-500">No hay datos disponibles</div>
+            )}
           </div>
         );
       
@@ -162,10 +241,144 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 Agregar Usuario
               </button>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se mostrará la lista de usuarios con opciones para editar, eliminar y gestionar permisos.</p>
+
+            {/* Filtros y búsqueda */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar usuarios..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Todos los roles</option>
+                  <option value="client">Cliente</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="1">Activo</option>
+                  <option value="0">Inactivo</option>
+                </select>
+                <button
+                  onClick={() => loadUsers(1, 20, searchTerm, selectedRole, selectedStatus)}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Filtrar
+                </button>
               </div>
+            </div>
+
+            {/* Lista de usuarios */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : error ? (
+                <div className="p-4 text-red-600">{error}</div>
+              ) : users.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividad</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              <div className="text-sm text-gray-500">ID: {user.id}</div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm text-gray-900">{user.phone}</div>
+                              {user.email && (
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.role === 'admin' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {user.role === 'admin' ? 'Administrador' : 'Cliente'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.is_active === 1 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.is_active === 1 ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="text-xs text-gray-500">
+                              Carritos: {user.total_carts} | Reservas: {user.total_reservations}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Encuestas: {user.surveys_participated}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleUserStatusToggle(user.id, user.is_active)}
+                                className={`p-1 rounded ${
+                                  user.is_active === 1 
+                                    ? 'text-red-600 hover:text-red-800' 
+                                    : 'text-green-600 hover:text-green-800'
+                                }`}
+                                title={user.is_active === 1 ? 'Desactivar' : 'Activar'}
+                              >
+                                {user.is_active === 1 ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                              </button>
+                              <button className="text-blue-600 hover:text-blue-800 p-1 rounded" title="Ver detalles">
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button className="text-green-600 hover:text-green-800 p-1 rounded" title="Editar">
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  No se encontraron usuarios
+                </div>
+              )}
             </div>
           </div>
         );
@@ -181,7 +394,32 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se mostrará el inventario completo con opciones para agregar, editar y gestionar stock.</p>
+                {loading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  </div>
+                ) : products.length > 0 ? (
+                  <div className="space-y-4">
+                    {products.map((product) => (
+                      <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">{product.name}</h4>
+                          <p className="text-sm text-gray-600">{product.category} - {product.product_type}</p>
+                          <p className="text-sm text-gray-500">Stock: {product.stock_total} | Precio: ${product.price}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            product.stock_total <= 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {product.stock_total <= 10 ? 'Stock Bajo' : 'Stock OK'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm sm:text-base text-gray-600">No hay productos disponibles</p>
+                )}
               </div>
             </div>
           </div>
@@ -215,7 +453,32 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se mostrarán las reservas activas y se podrán gestionar las citas.</p>
+                {loading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                  </div>
+                ) : reservations.length > 0 ? (
+                  <div className="space-y-4">
+                    {reservations.map((reservation) => (
+                      <div key={reservation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">{reservation.product_name}</h4>
+                          <p className="text-sm text-gray-600">Cliente: {reservation.user_name}</p>
+                          <p className="text-sm text-gray-500">Cantidad: {reservation.quantity} | Total: ${reservation.total_value}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            reservation.days_remaining <= 1 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {reservation.days_remaining <= 1 ? 'Expira hoy' : `${reservation.days_remaining} días`}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm sm:text-base text-gray-600">No hay reservas disponibles</p>
+                )}
               </div>
             </div>
           </div>
