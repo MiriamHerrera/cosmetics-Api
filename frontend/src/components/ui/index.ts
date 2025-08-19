@@ -7,4 +7,5 @@ export { default as ProtectedReloadButton } from './ProtectedReloadButton';
 export { default as LoginModal } from './LoginModal';
 export { default as LoginButton } from './LoginButton';
 export { default as LogoutButton } from './LogoutButton';
-export { default as AuthButton } from './AuthButton'; 
+export { default as AuthButton } from './AuthButton';
+export { default as AdminPanel } from './AdminPanel'; 

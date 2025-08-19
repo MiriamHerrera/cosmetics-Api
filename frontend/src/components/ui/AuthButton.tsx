@@ -2,6 +2,8 @@
 
 import { LoginButton, LogoutButton } from './index';
 import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import AdminPanel from './AdminPanel';
 
 interface AuthButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
@@ -21,6 +23,7 @@ export default function AuthButton({
   children 
 }: AuthButtonProps) {
   const { user, isAuthenticated, isInitialized } = useAuth();
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   
 
   
@@ -51,10 +54,17 @@ export default function AuthButton({
           className={className}
           showIcon={showIcon}
           showUserInfo={showUserInfo}
+          onAdminPanelOpen={() => setIsAdminPanelOpen(true)}
         >
           {children}
         </LogoutButton>
       )}
+      
+      {/* Panel Administrativo */}
+      <AdminPanel 
+        isOpen={isAdminPanelOpen} 
+        onClose={() => setIsAdminPanelOpen(false)} 
+      />
     </>
   );
 } 

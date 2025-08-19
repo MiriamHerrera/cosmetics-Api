@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 
@@ -12,6 +12,7 @@ interface LogoutButtonProps {
   showIcon?: boolean;
   children?: React.ReactNode;
   showUserInfo?: boolean;
+  onAdminPanelOpen?: () => void;
 }
 
 export default function LogoutButton({ 
@@ -20,7 +21,8 @@ export default function LogoutButton({
   className = '',
   showIcon = true,
   children,
-  showUserInfo = false
+  showUserInfo = false,
+  onAdminPanelOpen
 }: LogoutButtonProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
@@ -84,6 +86,19 @@ export default function LogoutButton({
             </span>
           )}
         </div>
+      )}
+      
+      {/* Botón del Panel Administrativo para usuarios admin */}
+      {user?.role === 'admin' && onAdminPanelOpen && (
+        <button
+          onClick={onAdminPanelOpen}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+          title="Abrir Panel Administrativo"
+        >
+          <Shield className="w-4 h-4" />
+          <span className="hidden sm:inline">Panel Admin</span>
+          <span className="sm:hidden">Admin</span>
+        </button>
       )}
       
       <button
