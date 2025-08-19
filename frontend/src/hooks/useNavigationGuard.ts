@@ -8,18 +8,12 @@ export const useNavigationGuard = () => {
 
   // Interceptar navegación programática
   const guardedPush = useCallback(async (href: string) => {
-    console.log(`🧭 Intentando navegar a: ${href}`);
-    
     const canProceed = await confirmAndClearCart(() => {
-      console.log(`✅ Navegación confirmada, ejecutando: router.push(${href})`);
       router.push(href);
     });
     
     if (canProceed) {
-      console.log(`🚀 Navegación permitida inmediatamente: ${href}`);
       router.push(href);
-    } else {
-      console.log(`⏳ Navegación en espera de confirmación del usuario`);
     }
   }, [confirmAndClearCart, router]);
 

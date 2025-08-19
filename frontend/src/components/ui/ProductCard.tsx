@@ -30,7 +30,7 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
   const handleAddToCart = async () => {
     const success = await addToCart(product, 1);
     if (success) {
-      console.log('✅ Producto agregado al carrito');
+      // Opcional: mostrar notificación de éxito
     }
   };
 

@@ -18,21 +18,21 @@ export const useAuth = () => {
         const token = localStorage.getItem('auth_token');
         
         if (token && !user) {
-          console.log('🔍 useAuth - Token encontrado, verificando perfil...');
+  
           
           // Verificar el perfil del usuario con el token
           const response: ApiResponse<User> = await usersApi.getProfile();
           
           if (response.success && response.data) {
-            console.log('✅ useAuth - Perfil restaurado:', response.data.name);
+
             setUser(response.data);
           } else {
-            console.log('❌ useAuth - Error al restaurar perfil, limpiando token');
+
             localStorage.removeItem('auth_token');
           }
         }
       } catch (error) {
-        console.error('❌ useAuth - Error al inicializar autenticación:', error);
+
         localStorage.removeItem('auth_token');
       } finally {
         setIsInitialized(true);
@@ -48,19 +48,16 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 FRONTEND - Intentando login con:', { phone, password: password ? '***' : 'undefined' });
-      alert(`🔍 FRONTEND - Intentando login con: ${phone}`);
+
       
       const response: ApiResponse<{ user: User; token: string }> = await usersApi.login(phone, password);
       
-      console.log('🔍 FRONTEND - Respuesta del backend:', response);
-      alert(`🔍 FRONTEND - Respuesta del backend: ${JSON.stringify(response, null, 2)}`);
+
       
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         
-        console.log('✅ FRONTEND - Login exitoso, usuario:', userData.name);
-        alert(`✅ FRONTEND - Login exitoso, usuario: ${userData.name}`);
+
         
         // Guardar token en localStorage
         localStorage.setItem('auth_token', token);
@@ -78,14 +75,12 @@ export const useAuth = () => {
         
         return true;
       } else {
-        console.log('❌ FRONTEND - Error en respuesta del backend:', response.error);
-        alert(`❌ FRONTEND - Error en respuesta del backend: ${response.error}`);
+
         setError(response.error || 'Error en el login');
         return false;
       }
     } catch (err) {
-      console.error('❌ FRONTEND - Error durante login:', err);
-      alert(`❌ FRONTEND - Error durante login: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+
       setError('Error de conexión en el login');
       return false;
     } finally {
@@ -196,13 +191,7 @@ export const useAuth = () => {
   // Verificar si el usuario está autenticado
   const isAuthenticated = !!user;
   
-  // Debug logs
-  console.log('🔍 useAuth - Estado actual:', {
-    user,
-    isAuthenticated,
-    hasToken: typeof window !== 'undefined' ? !!localStorage.getItem('auth_token') : false,
-    tokenValue: typeof window !== 'undefined' ? localStorage.getItem('auth_token')?.substring(0, 20) + '...' : 'N/A'
-  });
+
 
   // Verificar si el usuario es admin
   const isAdmin = user?.role === 'admin';

@@ -22,13 +22,7 @@ export default function AuthButton({
 }: AuthButtonProps) {
   const { user, isAuthenticated, isInitialized } = useAuth();
   
-  // Debug logs
-  console.log('🔍 AuthButton - Estado de autenticación:', {
-    user,
-    isAuthenticated,
-    isInitialized,
-    hasToken: typeof window !== 'undefined' ? !!localStorage.getItem('auth_token') : false
-  });
+
   
   // No renderizar nada hasta que la autenticación esté inicializada
   if (!isInitialized) {

@@ -30,17 +30,10 @@ export const useGuestSession = () => {
           // Crear nuevo sessionId
           currentSessionId = generateSessionId();
           localStorage.setItem(GUEST_SESSION_KEY, currentSessionId);
-          console.log('🆔 Nuevo sessionId de invitado creado:', currentSessionId);
-        } else {
-          // Solo log en desarrollo para evitar spam
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🆔 SessionId de invitado recuperado:', currentSessionId);
-          }
         }
       } else {
         // En SSR, generar un sessionId temporal
         currentSessionId = generateSessionId();
-        console.log('🆔 SessionId temporal generado para SSR:', currentSessionId);
       }
       
       setSessionId(currentSessionId);
@@ -55,7 +48,6 @@ export const useGuestSession = () => {
       localStorage.removeItem(GUEST_SESSION_KEY);
     }
     setSessionId(null);
-    console.log('🧹 SessionId de invitado limpiado');
   }, []);
 
   // Inicializar sessionId

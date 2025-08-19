@@ -21,7 +21,8 @@ export const useBeforeUnload = () => {
   const handleVisibilityChange = useCallback(() => {
     // Detectar cuando la página se oculta (usuario cambia de pestaña o minimiza)
     if (document.hidden && isGuestMode && cartItemCount > 0) {
-      console.log('⚠️ Usuario invitado cambió de pestaña con artículos en carrito');
+      // Usuario cambió de pestaña con artículos en carrito
+      setShowExitModal(true);
     }
   }, [cartItemCount, isGuestMode]);
 
@@ -58,24 +59,16 @@ export const useBeforeUnload = () => {
   // Función para confirmar la salida
   const handleConfirmExit = useCallback(async () => {
     try {
-      console.log('🧹 Limpiando carrito de invitado antes de salir...');
+      // Limpiar carrito de invitado antes de salir
+      clearCart();
       
-      // Limpiar carrito y restaurar stock
-      await clearCart();
-      
-      console.log('✅ Carrito de invitado limpiado y stock restaurado exitosamente');
-      setShowExitModal(false);
-      
-      // Ejecutar la acción pendiente si existe
+      // Ejecutar la acción pendiente después de limpiar
       if (pendingAction) {
-        console.log('🚀 Ejecutando acción pendiente después de limpiar carrito...');
         pendingAction();
         setPendingAction(null);
       }
       
-      // Mostrar mensaje de confirmación
-      console.log('✅ Usuario confirmó salida, carrito limpiado y stock restaurado');
-      
+      setShowExitModal(false);
     } catch (error) {
       console.error('❌ Error al limpiar carrito de invitado:', error);
       

@@ -58,16 +58,15 @@ export default function LogoutButton({
         // Limpiar carrito local
         clearCart();
         
-        // Mostrar mensaje de éxito
-        console.log('✅ Logout exitoso');
+
         
         // Opcional: mostrar notificación o redirigir
         // Puedes agregar aquí un toast o notificación
       } else {
-        console.log('⚠️ Logout completado pero con advertencias');
+
       }
     } catch (error) {
-      console.error('❌ Error durante logout:', error);
+      
     } finally {
       setIsLoggingOut(false);
     }

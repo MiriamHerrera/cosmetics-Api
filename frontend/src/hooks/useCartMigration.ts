@@ -11,13 +11,11 @@ export const useCartMigration = () => {
   // Migrar carrito de invitado al servidor cuando el usuario se autentica
   const migrateGuestCart = useCallback(async () => {
     if (isGuestMode || !localCart.items.length) {
-      return;
+      return false;
     }
 
     try {
-      console.log('🔄 Migrando carrito de invitado al servidor...');
-      
-      // Agregar cada item del carrito local al carrito del servidor
+      // Migrar cada item del carrito local al carrito del servidor
       for (const item of localCart.items) {
         await addToServerCart(item.product, item.quantity);
       }
@@ -25,11 +23,9 @@ export const useCartMigration = () => {
       // Limpiar carrito local después de migrar exitosamente
       clearLocalCart();
       
-      console.log('✅ Carrito migrado exitosamente');
-      
       return true;
     } catch (error) {
-      console.error('❌ Error migrando carrito:', error);
+      console.error('Error migrando carrito:', error);
       return false;
     }
   }, [isGuestMode, localCart.items, addToServerCart, clearLocalCart]);

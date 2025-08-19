@@ -7,7 +7,6 @@ export default function ProtectedReloadButton() {
   const { reloadWithConfirmation, isGuestMode } = usePageReloadGuard();
 
   const handleReload = async () => {
-    console.log('🔄 Botón de recarga presionado');
     await reloadWithConfirmation();
   };
 

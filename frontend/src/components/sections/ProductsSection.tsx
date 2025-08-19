@@ -34,7 +34,6 @@ export default function ProductsSection() {
 
   const handleQuickBuy = (product: Product) => {
     // Aquí podrías implementar la lógica de compra rápida
-    console.log('Compra rápida:', product);
   };
 
   const goToPage = (page: number) => {
@@ -48,15 +47,7 @@ export default function ProductsSection() {
     // Los productos se cargan automáticamente en el hook
   }, []);
 
-  // Debug: mostrar productos cuando cambien
-  useEffect(() => {
-    if (allProducts.length > 0) {
-      console.log('Productos cargados:', allProducts);
-    }
-    if (categories.length > 0) {
-      console.log('Categorías cargadas:', categories);
-    }
-  }, [allProducts, categories]);
+
 
   // Calcular productos para la página actual
   const indexOfLastProduct = currentPage * productsPerPage;

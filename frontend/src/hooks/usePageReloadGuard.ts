@@ -14,18 +14,12 @@ export const usePageReloadGuard = () => {
       return;
     }
 
-    console.log('🔄 Usuario invitado intentando recargar página...');
-    
     const canProceed = await confirmAndClearCart(() => {
-      console.log('✅ Usuario confirmó recarga, ejecutando...');
       window.location.reload();
     });
 
     if (canProceed) {
-      console.log('🚀 Recarga permitida inmediatamente');
       window.location.reload();
-    } else {
-      console.log('⏳ Recarga en espera de confirmación del usuario');
     }
   }, [confirmAndClearCart, isGuestMode]);
 
@@ -41,10 +35,7 @@ export const usePageReloadGuard = () => {
       return;
     }
 
-    console.log('🚪 Usuario invitado intentando salir de la página...');
-    
     const canProceed = await confirmAndClearCart(() => {
-      console.log('✅ Usuario confirmó salida, ejecutando...');
       if (url) {
         window.location.href = url;
       } else {
@@ -53,14 +44,11 @@ export const usePageReloadGuard = () => {
     });
 
     if (canProceed) {
-      console.log('🚀 Salida permitida inmediatamente');
       if (url) {
         window.location.href = url;
       } else {
         window.close();
       }
-    } else {
-      console.log('⏳ Salida en espera de confirmación del usuario');
     }
   }, [confirmAndClearCart, isGuestMode]);
 
@@ -68,14 +56,16 @@ export const usePageReloadGuard = () => {
   useEffect(() => {
     if (!isGuestMode) return;
 
-    const handleBeforeUnload = () => {
-      // Este evento se maneja en useBeforeUnload
-      // Solo agregamos logging adicional aquí
-      console.log('🔄 Evento beforeunload detectado para usuario invitado');
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isGuestMode) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
     };
 
     const handleUnload = () => {
-      console.log('🚪 Usuario invitado saliendo de la página');
+      // Este evento se maneja en useBeforeUnload
+      // Solo agregamos logging adicional aquí
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

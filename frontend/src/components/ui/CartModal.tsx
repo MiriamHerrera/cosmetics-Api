@@ -143,7 +143,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             <button
               onClick={() => {
                 // Aquí iría la lógica para enviar por WhatsApp
-                console.log('Enviar por WhatsApp:', cart);
               }}
               className="
                 w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600

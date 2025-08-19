@@ -45,7 +45,6 @@ export const useCart = () => {
         const newStock = product.stock_total - quantity;
         updateProductStock(product.id, newStock);
         
-        console.log('✅ Producto agregado al carrito y stock actualizado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al agregar al carrito');
@@ -84,7 +83,6 @@ export const useCart = () => {
           updateProductStock(productId, newStock);
         }
         
-        console.log('✅ Producto removido del carrito y stock restaurado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al remover del carrito');
@@ -127,7 +125,6 @@ export const useCart = () => {
           updateProductStock(productId, newStock);
         }
         
-        console.log('✅ Cantidad actualizada y stock ajustado en tiempo real');
         return true;
       } else {
         setError(response.message || 'Error al actualizar cantidad');
@@ -155,11 +152,17 @@ export const useCart = () => {
       }
       const response = await guestCartApi.clearCart(sessionId);
 
-      if (response.success) {
-        clearStoreCart();
-        console.log('✅ Carrito limpiado y stock restaurado');
-        return true;
-      } else {
+              if (response.success) {
+          clearStoreCart();
+          // Restaurar stock de todos los productos
+          if (cart) {
+            for (const item of cart.items) {
+              const currentStock = item.product.stock_total;
+              updateProductStock(item.product.id, currentStock + item.quantity);
+            }
+          }
+          return true;
+        } else {
         setError(response.message || 'Error al limpiar carrito');
         return false;
       }
@@ -170,7 +173,7 @@ export const useCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [clearStoreCart, sessionId]);
+  }, [clearStoreCart, sessionId, cart, updateProductStock]);
 
   return {
     cart,

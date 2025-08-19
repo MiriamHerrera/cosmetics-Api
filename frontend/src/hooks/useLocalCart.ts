@@ -37,7 +37,6 @@ export const useLocalCart = () => {
 
   // Guardar carrito en localStorage cada vez que cambie
   useEffect(() => {
-    console.log('💾 Guardando carrito en localStorage:', cart);
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   }, [cart]);
 
@@ -50,11 +49,7 @@ export const useLocalCart = () => {
 
   // Agregar producto al carrito
   const addToCart = useCallback((product: Product, quantity: number = 1) => {
-    console.log('🛒 Hook: Agregando producto:', product.name, 'cantidad:', quantity);
-    
     setCart(prevCart => {
-      console.log('🛒 Hook: Carrito anterior:', prevCart);
-      
       const existingItemIndex = prevCart.items.findIndex(
         item => item.product.id === product.id
       );
@@ -68,17 +63,14 @@ export const useLocalCart = () => {
           ...newItems[existingItemIndex],
           quantity: newItems[existingItemIndex].quantity + quantity
         };
-        console.log('🛒 Hook: Producto existente, cantidad actualizada');
       } else {
         // Producto nuevo, agregarlo
         newItems = [...prevCart.items, { product, quantity }];
-        console.log('🛒 Hook: Producto nuevo agregado');
       }
 
       const { total, itemCount } = calculateTotals(newItems);
       const newCart = { items: newItems, total, itemCount };
       
-      console.log('🛒 Hook: Nuevo carrito:', newCart);
       return newCart;
     });
 

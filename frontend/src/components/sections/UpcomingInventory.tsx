@@ -50,7 +50,6 @@ export default function UpcomingInventory({
 
   const handleViewAllProducts = () => {
     // Aquí implementarías la navegación a la página de próximos productos
-    console.log('Navegar a página de próximos productos');
   };
 
   return (

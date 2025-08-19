@@ -49,7 +49,6 @@ export default function LoginButton({
   const handleLoginSuccess = () => {
     // El modal se cierra automáticamente
     // El carrito se migra automáticamente en useAuth
-    console.log('✅ Login exitoso, carrito migrado');
   };
 
   return (
