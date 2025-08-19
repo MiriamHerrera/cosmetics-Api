@@ -124,9 +124,9 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
             <div className="flex items-center gap-2 sm:gap-3">
               {isLoginMode ? (
-                <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-pink-600" />
               ) : (
-                <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-pink-600" />
               )}
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                 {isLoginMode ? 'Iniciar Sesión' : 'Crear Cuenta'}
@@ -146,13 +146,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
           {/* Contenido */}
           <div className="p-4 sm:p-6">
-            {isGuestMode && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  💡 <strong>Modo invitado activo:</strong> Al iniciar sesión, tu carrito se mantendrá intacto.
-                </p>
-              </div>
-            )}
 
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -174,7 +167,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`
-                        w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
+                        w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500
                         ${errors.name ? 'border-red-300' : 'border-gray-300'}
                       `}
                       placeholder="Tu nombre completo"
@@ -196,7 +189,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     className={`
-                      w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
+                      w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500
                       ${errors.phone ? 'border-red-300' : 'border-gray-300'}
                     `}
                     placeholder="Tu número de teléfono"
@@ -219,7 +212,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     className={`
-                      w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
+                      w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500
                       ${errors.password ? 'border-red-300' : 'border-gray-300'}
                     `}
                     placeholder="Tu contraseña"
@@ -241,7 +234,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       className={`
-                        w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
+                        w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500
                         ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'}
                       `}
                       placeholder="Confirma tu contraseña"
@@ -255,8 +248,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 type="submit"
                 disabled={loading}
                 className="
-                  w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium
-                  hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                  w-full bg-gradient-to-r from-rose-400 to-pink-500 text-white py-2 px-4 rounded-lg font-medium
+                  hover:from-rose-500 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2
                   disabled:opacity-50 disabled:cursor-not-allowed
                   transition-colors duration-200
                 "
@@ -277,7 +270,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               <button
                 type="button"
                 onClick={switchMode}
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                className="text-sm text-pink-600 hover:text-pink-800 transition-colors"
               >
                 {isLoginMode 
                   ? '¿No tienes cuenta? Crear una nueva' 
