@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usersApi } from '@/lib/api';
 import { useStore } from '@/store/useStore';
 import { useCartMigration } from './useCartMigration';
@@ -8,7 +8,39 @@ export const useAuth = () => {
   const { user, setUser } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { migrateGuestCart } = useCartMigration();
+
+  // Verificar y restaurar el estado de autenticación al inicializar
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        
+        if (token && !user) {
+          console.log('🔍 useAuth - Token encontrado, verificando perfil...');
+          
+          // Verificar el perfil del usuario con el token
+          const response: ApiResponse<User> = await usersApi.getProfile();
+          
+          if (response.success && response.data) {
+            console.log('✅ useAuth - Perfil restaurado:', response.data.name);
+            setUser(response.data);
+          } else {
+            console.log('❌ useAuth - Error al restaurar perfil, limpiando token');
+            localStorage.removeItem('auth_token');
+          }
+        }
+      } catch (error) {
+        console.error('❌ useAuth - Error al inicializar autenticación:', error);
+        localStorage.removeItem('auth_token');
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    initializeAuth();
+  }, [user, setUser]);
 
   // Login
   const login = useCallback(async (phone: string, password: string) => {
@@ -163,6 +195,14 @@ export const useAuth = () => {
 
   // Verificar si el usuario está autenticado
   const isAuthenticated = !!user;
+  
+  // Debug logs
+  console.log('🔍 useAuth - Estado actual:', {
+    user,
+    isAuthenticated,
+    hasToken: typeof window !== 'undefined' ? !!localStorage.getItem('auth_token') : false,
+    tokenValue: typeof window !== 'undefined' ? localStorage.getItem('auth_token')?.substring(0, 20) + '...' : 'N/A'
+  });
 
   // Verificar si el usuario es admin
   const isAdmin = user?.role === 'admin';
@@ -173,6 +213,7 @@ export const useAuth = () => {
     isAdmin,
     loading,
     error,
+    isInitialized,
     login,
     register,
     logout,

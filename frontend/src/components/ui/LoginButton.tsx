@@ -60,7 +60,7 @@ export default function LoginButton({
         title={isGuestMode ? "Iniciar sesión para guardar tu carrito" : "Iniciar sesión"}
       >
         {showIcon && <LogIn className="w-4 h-4" />}
-        {children || (isGuestMode ? 'Guardar Carrito' : 'Iniciar Sesión')}
+        {children || 'Iniciar Sesión'}
       </button>
 
       <LoginModal

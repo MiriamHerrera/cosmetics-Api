@@ -2,7 +2,7 @@
 
 
 import CartButton from '@/components/ui/CartButton';
-import { LoginButton } from '@/components/ui';
+import { AuthButton } from '@/components/ui';
 import { UpcomingInventory, CurrentInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
 export default function Home() {
@@ -22,14 +22,14 @@ export default function Home() {
             
             {/* Botones de acción */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <LoginButton 
+              <AuthButton 
                 variant="default"
                 size="md"
                 className="bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 shadow-sm hover:shadow-md"
+                showUserInfo={true}
               >
-                <span className="hidden sm:inline">Iniciar Sesión</span>
-                <span className="sm:hidden">Login</span>
-              </LoginButton>
+                {/* El texto se maneja dinámicamente en LoginButton y LogoutButton */}
+              </AuthButton>
             </div>
           </div>
         </div>
