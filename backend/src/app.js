@@ -24,16 +24,61 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Configuración de CORS - DEBE ir ANTES de cualquier otro middleware
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
+
+// Middleware adicional para CORS headers
+app.use((req, res, next) => {
+  // Log CORS requests for debugging
+  if (req.method === 'OPTIONS') {
+    console.log('CORS Preflight request received:', req.headers.origin);
+  }
+  
+  // Ensure CORS headers are set
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:3000');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('Sending CORS preflight response');
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
+
 // Configuración de rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // máximo 100 requests por ventana
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000), // 1 minuto en desarrollo, 15 en producción
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100), // 1000 requests por minuto en desarrollo, 100 por 15 min en producción
   message: {
     success: false,
-    message: 'Demasiadas solicitudes, intente más tarde'
+    message: 'Demasiadas solicitudes, intente más tarde',
+    retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000)) / 1000)
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for health check endpoint
+  skip: (req) => req.path === '/api/health',
+  // Custom handler for rate limit exceeded
+  handler: (req, res) => {
+    console.warn(`⚠️ Rate limit exceeded for ${req.ip} - ${req.method} ${req.path}`);
+    res.status(429).json({
+      success: false,
+      message: 'Demasiadas solicitudes, intente más tarde',
+      retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000)) / 1000),
+      limit: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100),
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000)
+    });
+  }
 });
 
 // Middleware de seguridad y optimización
@@ -41,13 +86,7 @@ app.use(helmet());
 app.use(compression());
 app.use(limiter);
 
-// Configuración de CORS
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+
 
 // Middleware para parsear JSON
 app.use(express.json({ limit: '10mb' }));
@@ -139,6 +178,11 @@ const startServer = async () => {
       console.log(`📊 Endpoint: /api/surveys`);
       console.log(`📈 Endpoint: /api/stats`);
       console.log(`👑 Endpoint: /api/admin`);
+      
+      // Log rate limiting configuration
+      const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000);
+      const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100);
+      console.log(`🚦 Rate Limiting: ${rateLimitMax} requests per ${Math.ceil(rateLimitWindow / 1000)} seconds`);
     });
 
     // Configurar limpieza automática de carritos expirados cada hora

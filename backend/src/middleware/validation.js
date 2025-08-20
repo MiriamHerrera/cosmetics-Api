@@ -24,7 +24,8 @@ const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]+$/).min(10).max(20).required(),
   email: Joi.string().email().max(120).optional(),
-  password: Joi.string().min(6).max(255).required()
+  password: Joi.string().min(6).max(255).required(),
+  role: Joi.string().valid('client', 'admin').default('client')
 });
 
 // Validación de login

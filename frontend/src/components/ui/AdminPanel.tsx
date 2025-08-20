@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, 
   Package, 
@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 import { useAdmin } from '@/hooks/useAdmin';
+import AddUserModal from './AddUserModal';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -32,8 +33,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const { user, logout } = useAuth();
   const { clearCart } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   
-  // Hook del admin
+  // Estados para filtros y búsqueda
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  
+  // Hook del admin - solo cargar cuando sea necesario
   const {
     loading,
     error,
@@ -52,14 +59,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     clearError
   } = useAdmin();
 
-  // Estados para filtros y búsqueda
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  // Debug: Log cuando cambia el estado del modal - solo en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log('AdminPanel render - showAddUserModal:', showAddUserModal, 'activeTab:', activeTab);
+  }
 
-  // Cargar datos cuando cambie la pestaña
+  // Cargar datos cuando cambie la pestaña - optimizado para evitar re-renders
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' && isOpen) {
       switch (activeTab) {
         case 'dashboard':
           // Dashboard se carga automáticamente
@@ -81,40 +88,62 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           break;
       }
     }
-  }, [activeTab, user]);
+  }, [activeTab, user?.role, isOpen]); // Solo dependencias esenciales, las funciones ya están memoizadas
 
-  // Estilos CSS personalizados para ocultar scrollbar en móvil
-  const scrollbarHideStyles = `
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-  `;
-
-  if (!isOpen || !user || user.role !== 'admin') {
-    return null;
-  }
-
-  const handleLogout = async () => {
+  // Memoizar las funciones callback para evitar re-renders
+  const handleLogout = useCallback(async () => {
     const success = await logout();
     if (success) {
       clearCart();
       onClose();
     }
-  };
+  }, [logout, clearCart, onClose]);
 
-  const handleUserStatusToggle = async (userId: number, currentStatus: number) => {
+  const handleUserStatusToggle = useCallback(async (userId: number, currentStatus: number) => {
     try {
       await updateUserStatus(userId, currentStatus === 0);
     } catch (error) {
       console.error('Error actualizando estado de usuario:', error);
     }
-  };
+  }, [updateUserStatus]);
 
-  const adminMenuItems = [
+  const handleUserAdded = useCallback(async () => {
+    // Recargar la lista de usuarios
+    await loadUsers();
+    // Cerrar el modal
+    setShowAddUserModal(false);
+  }, [loadUsers]);
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+  }, []);
+
+  const handleShowAddUserModal = useCallback(() => {
+    setShowAddUserModal(true);
+  }, []);
+
+  const handleCloseAddUserModal = useCallback(() => {
+    setShowAddUserModal(false);
+  }, []);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleRoleFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRole(e.target.value);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStatus(e.target.value);
+  }, []);
+
+  const handleFilterUsers = useCallback(() => {
+    loadUsers(1, 20, searchTerm, selectedRole, selectedStatus);
+  }, [loadUsers, searchTerm, selectedRole, selectedStatus]);
+
+  // Memoizar el menú de admin para evitar re-renders
+  const adminMenuItems = useMemo(() => [
     {
       id: 'dashboard',
       label: 'Dashboard',
@@ -157,8 +186,24 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       icon: Settings,
       description: 'Ajustes del sistema'
     }
-  ];
+  ], []);
 
+  // Estilos CSS personalizados para ocultar scrollbar en móvil
+  const scrollbarHideStyles = `
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+  `;
+
+  if (!isOpen || !user || user.role !== 'admin') {
+    return null;
+  }
+
+  // Función para renderizar el contenido de las pestañas
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -187,44 +232,25 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                         <p className="text-xs sm:text-sm font-medium text-gray-600">Nuevos Usuarios Hoy</p>
                         <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_users_today}</p>
                       </div>
-                      <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
                     </div>
                   </div>
-                  
                   <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-600">Carritos Hoy</p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600">Nuevos Carritos Hoy</p>
                         <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_carts_today}</p>
                       </div>
-                      <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                     </div>
                   </div>
-                  
-                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200 sm:col-span-2 lg:col-span-1">
+                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm font-medium text-gray-600">Reservas Hoy</p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600">Nuevas Reservas Hoy</p>
                         <p className="text-xl sm:text-2xl font-bold text-gray-900">{dashboardData.today_stats.new_reservations_today}</p>
                       </div>
-                      <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
                     </div>
                   </div>
                 </div>
-                
-                {dashboardData.low_stock_products.length > 0 && (
-                  <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Productos con Bajo Stock</h3>
-                    <div className="space-y-2">
-                      {dashboardData.low_stock_products.map((product) => (
-                        <div key={product.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                          <span className="text-sm text-gray-700">{product.name}</span>
-                          <span className="text-sm font-medium text-red-600">Stock: {product.stock_total}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center text-gray-500">No hay datos disponibles</div>
@@ -237,7 +263,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Usuarios</h3>
-              <button className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
+              <button 
+                onClick={handleShowAddUserModal}
+                className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              >
                 Agregar Usuario
               </button>
             </div>
@@ -252,14 +281,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                       type="text"
                       placeholder="Buscar usuarios..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={handleSearchChange}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>
                 <select
                   value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
+                  onChange={handleRoleFilterChange}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos los roles</option>
@@ -268,7 +297,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 </select>
                 <select
                   value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  onChange={handleStatusFilterChange}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos los estados</option>
@@ -276,7 +305,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   <option value="0">Inactivo</option>
                 </select>
                 <button
-                  onClick={() => loadUsers(1, 20, searchTerm, selectedRole, selectedStatus)}
+                  onClick={handleFilterUsers}
                   className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Filtrar
@@ -333,41 +362,31 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              user.is_active === 1 
+                              user.is_active 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {user.is_active === 1 ? 'Activo' : 'Inactivo'}
+                              {user.is_active ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="text-xs text-gray-500">
-                              Carritos: {user.total_carts} | Reservas: {user.total_reservations}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Encuestas: {user.surveys_participated}
+                            <div className="space-y-1">
+                              <div>Carritos: {user.total_carts}</div>
+                              <div>Reservas: {user.total_reservations}</div>
+                              <div>Encuestas: {user.surveys_participated}</div>
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleUserStatusToggle(user.id, user.is_active)}
-                                className={`p-1 rounded ${
-                                  user.is_active === 1 
-                                    ? 'text-red-600 hover:text-red-800' 
-                                    : 'text-green-600 hover:text-green-800'
-                                }`}
-                                title={user.is_active === 1 ? 'Desactivar' : 'Activar'}
-                              >
-                                {user.is_active === 1 ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                              </button>
-                              <button className="text-blue-600 hover:text-blue-800 p-1 rounded" title="Ver detalles">
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button className="text-green-600 hover:text-green-800 p-1 rounded" title="Editar">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleUserStatusToggle(user.id, user.is_active)}
+                              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                                user.is_active
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              }`}
+                            >
+                              {user.is_active ? 'Desactivar' : 'Activar'}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -375,151 +394,68 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   </table>
                 </div>
               ) : (
-                <div className="p-4 text-center text-gray-500">
-                  No se encontraron usuarios
-                </div>
+                <div className="text-center text-gray-500 p-8">No hay usuarios disponibles</div>
               )}
             </div>
           </div>
         );
-      
+
       case 'products':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Productos</h3>
-              <button className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base">
-                Agregar Producto
-              </button>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                {loading ? (
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                  </div>
-                ) : products.length > 0 ? (
-                  <div className="space-y-4">
-                    {products.map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{product.name}</h4>
-                          <p className="text-sm text-gray-600">{product.category} - {product.product_type}</p>
-                          <p className="text-sm text-gray-500">Stock: {product.stock_total} | Precio: ${product.price}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            product.stock_total <= 10 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                          }`}>
-                            {product.stock_total <= 10 ? 'Stock Bajo' : 'Stock OK'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm sm:text-base text-gray-600">No hay productos disponibles</p>
-                )}
-              </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Productos</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <p className="text-gray-600">Funcionalidad de productos en desarrollo...</p>
             </div>
           </div>
         );
-      
+
       case 'orders':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Pedidos</h3>
-              <button className="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base">
-                Ver Todos
-              </button>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se mostrarán todos los pedidos con opciones para gestionar estados y procesar.</p>
-              </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Pedidos</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <p className="text-gray-600">Funcionalidad de pedidos en desarrollo...</p>
             </div>
           </div>
         );
-      
+
       case 'reservations':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Sistema de Reservas</h3>
-              <button className="bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm sm:text-base">
-                Nueva Reserva
-              </button>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                {loading ? (
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-                  </div>
-                ) : reservations.length > 0 ? (
-                  <div className="space-y-4">
-                    {reservations.map((reservation) => (
-                      <div key={reservation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{reservation.product_name}</h4>
-                          <p className="text-sm text-gray-600">Cliente: {reservation.user_name}</p>
-                          <p className="text-sm text-gray-500">Cantidad: {reservation.quantity} | Total: ${reservation.total_value}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            reservation.days_remaining <= 1 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {reservation.days_remaining <= 1 ? 'Expira hoy' : `${reservation.days_remaining} días`}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm sm:text-base text-gray-600">No hay reservas disponibles</p>
-                )}
-              </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Reservas</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <p className="text-gray-600">Funcionalidad de reservas en desarrollo...</p>
             </div>
           </div>
         );
-      
+
       case 'reports':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Reportes y Estadísticas</h3>
-              <button className="bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base">
-                Generar Reporte
-              </button>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se mostrarán gráficos, estadísticas de ventas y análisis del negocio.</p>
-              </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Reportes y Estadísticas</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <p className="text-gray-600">Funcionalidad de reportes en desarrollo...</p>
             </div>
           </div>
         );
-      
+
       case 'settings':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Configuración del Sistema</h3>
-              <button className="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base">
-                Guardar Cambios
-              </button>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-3 sm:p-4 lg:p-6">
-                <p className="text-sm sm:text-base text-gray-600">Aquí se podrán configurar parámetros del sistema, notificaciones y preferencias.</p>
-              </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Configuración del Sistema</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <p className="text-gray-600">Funcionalidad de configuración en desarrollo...</p>
             </div>
           </div>
         );
-      
+
       default:
-        return null;
+        return (
+          <div className="text-center text-gray-500">
+            <p>Selecciona una pestaña para comenzar</p>
+          </div>
+        );
     }
   };
 
@@ -549,7 +485,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           <div className="flex items-center gap-2">
             {/* Botón de menú para móvil muy pequeño */}
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabChange('dashboard')}
               className="lg:hidden p-2 text-blue-100 hover:text-white transition-colors rounded-full hover:bg-white/20"
               title="Ir al Dashboard"
             >
@@ -577,7 +513,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleTabChange(item.id)}
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
                       ${activeTab === item.id 
@@ -619,7 +555,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => handleTabChange(item.id)}
                       className={`
                         flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs transition-all duration-200 whitespace-nowrap min-w-[80px] touch-manipulation
                         ${activeTab === item.id 
@@ -656,6 +592,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         </div>
       </div>
     </div>
+
+    {/* Modal para agregar usuario */}
+    <AddUserModal
+      isOpen={showAddUserModal}
+      onClose={handleCloseAddUserModal}
+      onUserAdded={handleUserAdded}
+    />
     </>
   );
 } 

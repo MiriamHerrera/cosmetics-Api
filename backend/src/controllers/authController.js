@@ -5,7 +5,9 @@ const { query } = require('../config/database');
 // Registro de usuario
 const register = async (req, res) => {
   try {
-    const { name, phone, email, password } = req.body;
+    const { name, phone, email, password, role = 'client' } = req.body;
+    
+    console.log('🔍 DEBUG REGISTER:', { name, phone, email, role, passwordLength: password ? password.length : 0 });
 
     // Verificar si el usuario ya existe
     const existingUser = await query(
@@ -14,6 +16,7 @@ const register = async (req, res) => {
     );
 
     if (existingUser.length > 0) {
+      console.log('❌ Usuario ya existe:', { phone, email });
       return res.status(400).json({
         success: false,
         message: 'El teléfono o email ya está registrado'
@@ -24,10 +27,12 @@ const register = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    console.log('✅ Creando usuario con rol:', role);
+
     // Crear usuario
     const result = await query(
       'INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
-      [name, phone, email, hashedPassword, 'client']
+      [name, phone, email, hashedPassword, role]
     );
 
     // Generar token
@@ -36,8 +41,10 @@ const register = async (req, res) => {
       name,
       phone,
       email,
-      role: 'client'
+      role
     });
+
+    console.log('✅ Usuario creado exitosamente:', { id: result.insertId, role });
 
     res.status(201).json({
       success: true,
@@ -48,14 +55,14 @@ const register = async (req, res) => {
           name,
           phone,
           email,
-          role: 'client'
+          role
         },
         token
       }
     });
 
   } catch (error) {
-    console.error('Error en registro:', error);
+    console.error('❌ Error en registro:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'

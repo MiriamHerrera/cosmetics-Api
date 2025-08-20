@@ -3,7 +3,10 @@ const { query, getConnection } = require('../config/database');
 // Dashboard principal del administrador
 const getDashboard = async (req, res) => {
   try {
+    console.log('🔍 Iniciando carga del dashboard...');
+    
     // Métricas principales del día
+    console.log('📊 Cargando estadísticas del día...');
     const todayStats = await query(`
       SELECT 
         COUNT(DISTINCT u.id) as new_users_today,
@@ -16,8 +19,10 @@ const getDashboard = async (req, res) => {
       LEFT JOIN survey_votes sv ON DATE(sv.created_at) = CURDATE()
       WHERE DATE(u.created_at) = CURDATE() AND u.role = 'client'
     `);
+    console.log('✅ Estadísticas del día cargadas:', todayStats);
 
     // Métricas de la semana
+    console.log('📊 Cargando estadísticas de la semana...');
     const weekStats = await query(`
       SELECT 
         COUNT(DISTINCT u.id) as new_users_week,
@@ -31,8 +36,10 @@ const getDashboard = async (req, res) => {
       LEFT JOIN survey_votes sv ON sv.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
       WHERE u.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND u.role = 'client'
     `);
+    console.log('✅ Estadísticas de la semana cargadas:', weekStats);
 
     // Productos con bajo stock
+    console.log('📦 Cargando productos con bajo stock...');
     const lowStockProducts = await query(`
       SELECT 
         p.id,
@@ -48,8 +55,10 @@ const getDashboard = async (req, res) => {
       ORDER BY p.stock_total ASC
       LIMIT 10
     `);
+    console.log('✅ Productos con bajo stock cargados:', lowStockProducts.length);
 
     // Apartados próximos a expirar
+    console.log('⏰ Cargando apartados próximos a expirar...');
     const expiringReservations = await query(`
       SELECT 
         r.id,
@@ -66,6 +75,7 @@ const getDashboard = async (req, res) => {
       ORDER BY r.expires_at ASC
       LIMIT 10
     `);
+    console.log('✅ Apartados próximos a expirar cargados:', expiringReservations.length);
 
     // Actividad reciente
     const recentActivity = await query(`
@@ -148,11 +158,102 @@ const getDashboard = async (req, res) => {
       }
     });
 
+    console.log('✅ Dashboard cargado exitosamente');
+
   } catch (error) {
-    console.error('Error obteniendo dashboard:', error);
+    console.error('❌ Error obteniendo dashboard:', error);
+    console.error('❌ Stack trace:', error.stack);
+    
+    // Proporcionar información más detallada del error
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno',
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Dashboard simplificado para evitar errores
+const getDashboardSimple = async (req, res) => {
+  try {
+    console.log('🔍 Iniciando dashboard simplificado...');
+    
+    // Solo consultas básicas y seguras
+    let dashboardData = {
+      today_stats: {
+        new_users_today: 0,
+        new_carts_today: 0,
+        new_reservations_today: 0,
+        new_votes_today: 0
+      },
+      week_stats: {
+        new_users_week: 0,
+        new_carts_week: 0,
+        new_reservations_week: 0,
+        new_votes_week: 0,
+        completed_orders_week: 0
+      },
+      low_stock_products: [],
+      expiring_reservations: [],
+      recent_activity: [],
+      top_products_today: [],
+      last_updated: new Date().toISOString()
+    };
+    
+    try {
+      // Contar usuarios totales
+      const totalUsers = await query('SELECT COUNT(*) as total FROM users WHERE role = "client"');
+      dashboardData.total_users = totalUsers[0]?.total || 0;
+      console.log('✅ Usuarios totales:', dashboardData.total_users);
+    } catch (error) {
+      console.error('❌ Error contando usuarios:', error.message);
+      dashboardData.total_users = 0;
+    }
+    
+    try {
+      // Contar productos totales
+      const totalProducts = await query('SELECT COUNT(*) as total FROM products WHERE status = "active"');
+      dashboardData.total_products = totalProducts[0]?.total || 0;
+      console.log('✅ Productos totales:', dashboardData.total_products);
+    } catch (error) {
+      console.error('❌ Error contando productos:', error.message);
+      dashboardData.total_products = 0;
+    }
+    
+    try {
+      // Contar carritos activos
+      const activeCarts = await query('SELECT COUNT(*) as total FROM carts WHERE status = "active"');
+      dashboardData.active_carts = activeCarts[0]?.total || 0;
+      console.log('✅ Carritos activos:', dashboardData.active_carts);
+    } catch (error) {
+      console.error('❌ Error contando carritos:', error.message);
+      dashboardData.active_carts = 0;
+    }
+    
+    try {
+      // Contar reservas activas
+      const activeReservations = await query('SELECT COUNT(*) as total FROM reservations WHERE status = "active"');
+      dashboardData.active_reservations = activeReservations[0]?.total || 0;
+      console.log('✅ Reservas activas:', dashboardData.active_reservations);
+    } catch (error) {
+      console.error('❌ Error contando reservas:', error.message);
+      dashboardData.active_reservations = 0;
+    }
+    
+    res.json({
+      success: true,
+      data: dashboardData
+    });
+    
+    console.log('✅ Dashboard simplificado cargado exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error en dashboard simplificado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
     });
   }
 };
@@ -573,6 +674,7 @@ const getSurveysWithStats = async (req, res) => {
 
 module.exports = {
   getDashboard,
+  getDashboardSimple,
   getUsers,
   updateUserStatus,
   getProductsWithStats,

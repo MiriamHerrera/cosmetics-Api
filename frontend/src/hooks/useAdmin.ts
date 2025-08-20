@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 
 interface User {
@@ -124,21 +124,23 @@ export const useAdmin = () => {
   };
 
   // Cargar dashboard
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await apiCall('dashboard');
       setDashboardData(data.data);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
+      throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Cargar usuarios
-  const loadUsers = async (page = 1, limit = 20, search = '', role = '', status = '') => {
+  const loadUsers = useCallback(async (page = 1, limit = 20, search = '', role = '', status = '') => {
     try {
       setLoading(true);
       setError(null);
@@ -159,10 +161,10 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Cargar productos
-  const loadProducts = async (page = 1, limit = 20, search = '', category = '', status = '') => {
+  const loadProducts = useCallback(async (page = 1, limit = 20, search = '', category = '', status = '') => {
     try {
       setLoading(true);
       setError(null);
@@ -183,10 +185,10 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Cargar carritos
-  const loadCarts = async (page = 1, limit = 20, status = '', period = '7') => {
+  const loadCarts = useCallback(async (page = 1, limit = 20, status = '', period = '7') => {
     try {
       setLoading(true);
       setError(null);
@@ -206,10 +208,10 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Cargar reservas
-  const loadReservations = async (page = 1, limit = 20, status = '', period = '7') => {
+  const loadReservations = useCallback(async (page = 1, limit = 20, status = '', period = '7') => {
     try {
       setLoading(true);
       setError(null);
@@ -229,10 +231,10 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Cargar encuestas
-  const loadSurveys = async (page = 1, limit = 20, status = '') => {
+  const loadSurveys = useCallback(async (page = 1, limit = 20, status = '') => {
     try {
       setLoading(true);
       setError(null);
@@ -251,10 +253,10 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Actualizar estado de usuario
-  const updateUserStatus = async (userId: number, isActive: boolean) => {
+  const updateUserStatus = useCallback(async (userId: number, isActive: boolean) => {
     try {
       setLoading(true);
       setError(null);
@@ -271,14 +273,14 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadUsers]);
 
   // Cargar datos iniciales
   useEffect(() => {
     if (user?.role === 'admin') {
       loadDashboard();
     }
-  }, [user]);
+  }, [user, loadDashboard]);
 
   return {
     // Estados
