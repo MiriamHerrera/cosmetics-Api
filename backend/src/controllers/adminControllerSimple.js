@@ -201,8 +201,191 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+// Gestión de productos
+const getProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', category = '', status = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE 1=1';
+    const whereParams = [];
+
+    if (search) {
+      whereClause += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+      whereParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (category) {
+      whereClause += ' AND c.name = ?';
+      whereParams.push(category);
+    }
+
+    if (status) {
+      whereClause += ' AND p.status = ?';
+      whereParams.push(status);
+    }
+
+    // Obtener productos
+    const products = await query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p.stock_total,
+        p.status,
+        p.image_url,
+        p.created_at,
+        p.updated_at,
+        pt.name as product_type,
+        c.name as category
+      FROM products p
+      LEFT JOIN product_types pt ON p.product_type_id = pt.id
+      LEFT JOIN categories c ON pt.category_id = c.id
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...whereParams, parseInt(limit), offset]);
+
+    // Contar total para paginación
+    const countResult = await query(`
+      SELECT COUNT(*) as total
+      FROM products p
+      LEFT JOIN product_types pt ON p.product_type_id = pt.id
+      LEFT JOIN categories c ON pt.category_id = c.id
+      ${whereClause}
+    `, whereParams);
+
+    const total = countResult[0].total;
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo productos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Crear producto
+const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, stock_total, product_type_id, image_url, status = 'active' } = req.body;
+
+    // Validaciones básicas
+    if (!name || !price || !product_type_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre, precio y tipo de producto son requeridos'
+      });
+    }
+
+    // Crear producto
+    const result = await query(`
+      INSERT INTO products (name, description, price, stock_total, product_type_id, image_url, status) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [name, description, price, stock_total || 0, product_type_id, image_url, status]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Producto creado exitosamente',
+      data: { id: result.insertId }
+    });
+
+  } catch (error) {
+    console.error('Error creando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Actualizar producto
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, price, stock_total, product_type_id, image_url, status } = req.body;
+
+    // Verificar que el producto existe
+    const products = await query('SELECT id FROM products WHERE id = ?', [id]);
+    if (products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Actualizar producto
+    await query(`
+      UPDATE products 
+      SET name = ?, description = ?, price = ?, stock_total = ?, 
+          product_type_id = ?, image_url = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [name, description, price, stock_total, product_type_id, image_url, status, id]);
+
+    res.json({
+      success: true,
+      message: 'Producto actualizado correctamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Eliminar producto
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el producto existe
+    const products = await query('SELECT id FROM products WHERE id = ?', [id]);
+    if (products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Eliminar producto (soft delete - cambiar status a inactive)
+    await query('UPDATE products SET status = "inactive", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: 'Producto eliminado correctamente'
+    });
+
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   getDashboardSimple,
   getUsers,
-  updateUserStatus
+  updateUserStatus,
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct
 }; 

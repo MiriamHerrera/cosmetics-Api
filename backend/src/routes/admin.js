@@ -14,4 +14,10 @@ router.get('/dashboard', adminController.getDashboardSimple);
 router.get('/users', adminController.getUsers);
 router.put('/users/:id/status', adminController.updateUserStatus);
 
+// Gestión de productos
+router.get('/products', adminController.getProducts);
+router.post('/products', adminController.createProduct);
+router.put('/products/:id', adminController.updateProduct);
+router.delete('/products/:id', adminController.deleteProduct);
+
 module.exports = router; 
