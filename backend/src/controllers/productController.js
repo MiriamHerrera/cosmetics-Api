@@ -333,6 +333,30 @@ const getCategories = async (req, res) => {
   }
 };
 
+// Obtener todos los tipos de productos
+const getAllProductTypes = async (req, res) => {
+  try {
+    const productTypes = await query(`
+      SELECT pt.id, pt.name, c.name as category
+      FROM product_types pt
+      INNER JOIN categories c ON pt.category_id = c.id
+      ORDER BY c.name, pt.name
+    `);
+
+    res.json({
+      success: true,
+      data: productTypes
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo tipos de producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 // Obtener tipos de producto por categoría
 const getProductTypesByCategory = async (req, res) => {
   try {
@@ -455,6 +479,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getCategories,
+  getAllProductTypes,
   getProductTypesByCategory,
   getProductsByCategory,
   searchProducts

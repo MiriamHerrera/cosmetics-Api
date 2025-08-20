@@ -8,8 +8,11 @@ const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware
 router.get('/', optionalAuth, productController.getAllProducts);
 router.get('/search', optionalAuth, productController.searchProducts);
 router.get('/categories', productController.getCategories);
+router.get('/types', productController.getAllProductTypes);
 router.get('/categories/:category_id/types', productController.getProductTypesByCategory);
 router.get('/category/:category_name', productController.getProductsByCategory);
+
+// IMPORTANTE: Las rutas con parámetros deben ir al final
 router.get('/:id', optionalAuth, productController.getProductById);
 
 // Rutas protegidas (solo admin)

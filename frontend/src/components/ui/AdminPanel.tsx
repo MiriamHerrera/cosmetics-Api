@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 import { useAdmin } from '@/hooks/useAdmin';
 import AddUserModal from './AddUserModal';
+import AddProductModal from './AddProductModal';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const { clearCart } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
   
   // Estados para filtros y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
@@ -421,6 +423,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   <Search className="w-4 h-4 inline mr-2" />
                   Buscar
                 </button>
+                <button 
+                  onClick={() => setShowAddProductModal(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Agregar Producto
+                </button>
               </div>
             </div>
 
@@ -725,6 +734,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       isOpen={showAddUserModal}
       onClose={handleCloseAddUserModal}
       onUserAdded={handleUserAdded}
+    />
+
+    {/* Modal para agregar producto */}
+    <AddProductModal
+      isOpen={showAddProductModal}
+      onClose={() => setShowAddProductModal(false)}
+      onProductAdded={loadProducts}
     />
     </>
   );
