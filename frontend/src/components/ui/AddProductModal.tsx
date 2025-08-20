@@ -88,7 +88,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
           ...formData,
@@ -250,36 +250,85 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
               </div>
             </div>
 
-            {/* URL de Imagen y Estado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de Imagen
-                </label>
-                <input
-                  type="url"
-                  name="image_url"
-                  value={formData.image_url}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
+            {/* Imagen del Producto */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Imagen del Producto
+              </label>
+              <div className="space-y-3">
+                {/* Vista previa de imagen */}
+                {formData.image_url && (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={formData.image_url} 
+                      alt="Vista previa" 
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Eliminar imagen
+                    </button>
+                  </div>
+                )}
+                
+                {/* Opciones de imagen */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-2">
+                      Seleccionar archivo
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Por ahora solo mostramos el nombre del archivo
+                          // En el siguiente paso implementaremos la subida real
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            image_url: `Archivo seleccionado: ${file.name}` 
+                          }));
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-2">
+                      O usar URL
+                    </label>
+                    <input
+                      type="url"
+                      name="image_url"
+                      value={formData.image_url}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                    />
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </div>
+            </div>
+
+            {/* Estado */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estado
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+              </select>
             </div>
 
             {/* Botones */}
