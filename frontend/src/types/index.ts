@@ -10,8 +10,25 @@ export interface Product {
   product_type_name: string;
   image_url: string;
   status: string;
+  is_approved?: boolean;  // Campo para aprobación de productos
   created_at: string;
   updated_at: string;
+}
+
+// Tipo específico para productos en el AdminPanel
+export interface AdminProduct {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  stock_total: number;
+  status: string;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  product_type: string;
+  category: string;
+  is_approved?: boolean;
 }
 
 export interface User {

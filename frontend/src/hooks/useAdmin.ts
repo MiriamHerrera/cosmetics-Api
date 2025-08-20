@@ -26,6 +26,7 @@ interface Product {
   status: string;
   product_type: string;
   category: string;
+  is_approved?: boolean;
   total_reservations: number;
   total_carts: number;
   active_reservations: number;

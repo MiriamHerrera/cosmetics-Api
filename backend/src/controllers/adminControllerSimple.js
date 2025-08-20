@@ -316,7 +316,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock_total, product_type_id, image_url, status } = req.body;
+    const { name, description, price, stock_total, product_type_id, image_url, status, is_approved } = req.body;
 
     // Verificar que el producto existe
     const products = await query('SELECT id FROM products WHERE id = ?', [id]);
@@ -331,9 +331,9 @@ const updateProduct = async (req, res) => {
     await query(`
       UPDATE products 
       SET name = ?, description = ?, price = ?, stock_total = ?, 
-          product_type_id = ?, image_url = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+          product_type_id = ?, image_url = ?, status = ?, is_approved = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [name, description, price, stock_total, product_type_id, image_url, status, id]);
+    `, [name, description, price, stock_total, product_type_id, image_url, status, is_approved, id]);
 
     res.json({
       success: true,
@@ -349,13 +349,14 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Eliminar producto
-const deleteProduct = async (req, res) => {
+// Aprobar/Rechazar producto
+const approveProduct = async (req, res) => {
   try {
     const { id } = req.params;
+    const { is_approved } = req.body;
 
     // Verificar que el producto existe
-    const products = await query('SELECT id FROM products WHERE id = ?', [id]);
+    const products = await query('SELECT id, name FROM products WHERE id = ?', [id]);
     if (products.length === 0) {
       return res.status(404).json({
         success: false,
@@ -363,12 +364,58 @@ const deleteProduct = async (req, res) => {
       });
     }
 
-    // Eliminar producto (soft delete - cambiar status a inactive)
-    await query('UPDATE products SET status = "inactive", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    // Actualizar estado de aprobación
+    await query(`
+      UPDATE products 
+      SET is_approved = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [is_approved ? 1 : 0, id]);
 
     res.json({
       success: true,
-      message: 'Producto eliminado correctamente'
+      message: `Producto "${products[0].name}" ${is_approved ? 'aprobado' : 'rechazado'} correctamente`
+    });
+
+  } catch (error) {
+    console.error('Error aprobando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Eliminar producto
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el producto existe
+    const products = await query('SELECT id, name FROM products WHERE id = ?', [id]);
+    if (products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Verificar que no esté en uso (carritos, reservas, etc.)
+    const [cartItems] = await query('SELECT COUNT(*) as count FROM cart_items WHERE product_id = ?', [id]);
+    const [reservations] = await query('SELECT COUNT(*) as count FROM reservations WHERE product_id = ?', [id]);
+    
+    if (cartItems.count > 0 || reservations.count > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede eliminar el producto porque está en uso (carritos o reservas activas)'
+      });
+    }
+
+    // Eliminar producto completamente
+    await query('DELETE FROM products WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: `Producto "${products[0].name}" eliminado correctamente`
     });
 
   } catch (error) {
@@ -387,5 +434,6 @@ module.exports = {
   getProducts,
   createProduct,
   updateProduct,
+  approveProduct,
   deleteProduct
 }; 

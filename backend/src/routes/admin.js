@@ -18,6 +18,7 @@ router.put('/users/:id/status', adminController.updateUserStatus);
 router.get('/products', adminController.getProducts);
 router.post('/products', adminController.createProduct);
 router.put('/products/:id', adminController.updateProduct);
+router.patch('/products/:id/approve', adminController.approveProduct);
 router.delete('/products/:id', adminController.deleteProduct);
 
 module.exports = router; 

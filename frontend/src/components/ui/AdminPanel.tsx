@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 import { useAdmin } from '@/hooks/useAdmin';
+import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 
@@ -60,6 +61,66 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     updateUserStatus,
     clearError
   } = useAdmin();
+
+  // Función para eliminar producto
+  const handleDeleteProduct = async (productId: number, productName: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${productName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+
+      if (response.ok) {
+        // Recargar productos después de eliminar
+        loadProducts();
+        // Mostrar mensaje de éxito (podrías usar un toast aquí)
+        alert('Producto eliminado correctamente');
+      } else {
+        const errorData = await response.json();
+        alert(`Error al eliminar: ${errorData.message || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      alert('Error de conexión al eliminar el producto');
+    }
+  };
+
+  // Función para aprobar/rechazar producto
+  const handleApproveProduct = async (productId: number, productName: string, isApproved: boolean) => {
+    const action = isApproved ? 'aprobar' : 'rechazar';
+    if (!confirm(`¿Estás seguro de que quieres ${action} "${productName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/admin/products/${productId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ is_approved: isApproved })
+      });
+
+      if (response.ok) {
+        // Recargar productos después de aprobar/rechazar
+        loadProducts();
+        alert(`Producto ${action} correctamente`);
+      } else {
+        const errorData = await response.json();
+        alert(`Error al ${action}: ${errorData.message || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error(`Error ${action} producto:`, error);
+      alert(`Error de conexión al ${action} el producto`);
+    }
+  };
 
   // Debug: Log cuando cambia el estado del modal - solo en desarrollo
   if (process.env.NODE_ENV === 'development') {
@@ -324,77 +385,142 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               ) : error ? (
                 <div className="p-4 text-red-600">{error}</div>
               ) : users.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividad</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                              <div className="text-sm text-gray-500">ID: {user.id}</div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm text-gray-900">{user.phone}</div>
-                              {user.email && (
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              user.role === 'admin' 
-                                ? 'bg-purple-100 text-purple-800' 
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {user.role === 'admin' ? 'Administrador' : 'Cliente'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              user.is_active 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {user.is_active ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="space-y-1">
-                              <div>Carritos: {user.total_carts}</div>
-                              <div>Reservas: {user.total_reservations}</div>
-                              <div>Encuestas: {user.surveys_participated}</div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => handleUserStatusToggle(user.id, user.is_active)}
-                              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                                user.is_active
-                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-                              }`}
-                            >
-                              {user.is_active ? 'Desactivar' : 'Activar'}
-                            </button>
-                          </td>
+                <>
+                  {/* Tabla para pantallas grandes */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividad</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {users.map((user) => (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                <div className="text-sm text-gray-500">ID: {user.id}</div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm text-gray-900">{user.phone}</div>
+                                {user.email && (
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user.role === 'admin' 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {user.role === 'admin' ? 'Administrador' : 'Cliente'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user.is_active 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {user.is_active ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <div className="space-y-1">
+                                <div>Carritos: {user.total_carts}</div>
+                                <div>Reservas: {user.total_reservations}</div>
+                                <div>Encuestas: {user.surveys_participated}</div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => handleUserStatusToggle(user.id, user.is_active)}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                                  user.is_active
+                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
+                              >
+                                {user.is_active ? 'Desactivar' : 'Activar'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Cards para móvil */}
+                  <div className="md:hidden space-y-3 p-4">
+                    {users.map((user) => (
+                      <div key={user.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-medium text-gray-900 truncate">{user.name}</h4>
+                              <span className="text-xs text-gray-500">ID: {user.id}</span>
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                              <div>📱 {user.phone}</div>
+                              {user.email && <div>📧 {user.email}</div>}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user.role === 'admin' 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {user.role === 'admin' ? '👑 Admin' : '👤 Cliente'}
+                              </span>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user.is_active 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {user.is_active ? '✅ Activo' : '❌ Inactivo'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mt-3 text-xs text-gray-600">
+                              <div className="text-center">
+                                <div className="font-medium">{user.total_carts || 0}</div>
+                                <div>Carritos</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-medium">{user.total_reservations || 0}</div>
+                                <div>Reservas</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-medium">{user.surveys_participated || 0}</div>
+                                <div>Encuestas</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-3 pt-3 border-t border-gray-200">
+                          <button
+                            onClick={() => handleUserStatusToggle(user.id, user.is_active)}
+                            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                              user.is_active
+                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                            }`}
+                          >
+                            {user.is_active ? 'Desactivar' : 'Activar'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center text-gray-500 p-8">No hay usuarios disponibles</div>
               )}
@@ -451,65 +577,70 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   </button>
                 </div>
               ) : products && products.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Producto
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Categoría
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Precio
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Stock
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <>
+                  {/* Tabla para pantallas grandes */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Producto
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Categoría
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Precio
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Stock
+                          </th>
+                                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Estado
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Aprobación
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Acciones
                         </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {products.map((product) => (
-                        <tr key={product.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                {product.image_url ? (
-                                  <img 
-                                    className="h-10 w-10 rounded-full object-cover" 
-                                    src={product.image_url} 
-                                    alt={product.name}
-                                  />
-                                ) : (
-                                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                    <Package className="w-5 h-5 text-gray-400" />
-                                  </div>
-                                )}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {products.map((product) => (
+                          <tr key={product.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  {product.image_url ? (
+                                    <img 
+                                      className="h-10 w-10 rounded-full object-cover" 
+                                      src={product.image_url} 
+                                      alt={product.name}
+                                    />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                      <Package className="w-5 h-5 text-gray-400" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                  <div className="text-sm text-gray-500">{product.description}</div>
+                                </div>
                               </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                <div className="text-sm text-gray-500">{product.description}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{product.category}</div>
-                            <div className="text-sm text-gray-500">{product.product_type}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">${product.price}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{product.stock_total}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{product.category}</div>
+                              <div className="text-sm text-gray-500">{product.product_type}</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">${product.price}</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{product.stock_total}</div>
+                            </td>
+                                                      <td className="px-4 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               product.status === 'active' 
                                 ? 'bg-green-100 text-green-800' 
@@ -518,24 +649,109 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                               {product.status === 'active' ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button className="text-indigo-600 hover:text-indigo-900">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button className="text-red-600 hover:text-red-900">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                product.is_approved 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {product.is_approved ? '✅ Aprobado' : '⏳ Pendiente'}
+                              </span>
+                              {!product.is_approved && (
+                                <button
+                                  onClick={() => handleApproveProduct(product.id, product.name, true)}
+                                  className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                                >
+                                  Aprobar
+                                </button>
+                              )}
+                              {product.is_approved && (
+                                <button
+                                  onClick={() => handleApproveProduct(product.id, product.name, false)}
+                                  className="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 transition-colors"
+                                >
+                                  Rechazar
+                                </button>
+                              )}
                             </div>
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button className="text-blue-600 hover:text-blue-900">
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button className="text-indigo-600 hover:text-indigo-900">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                                              <button 
+                                onClick={() => handleDeleteProduct(product.id, product.name)}
+                                className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1 rounded transition-colors"
+                                title="Eliminar producto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Cards para móvil */}
+                  <div className="md:hidden space-y-3 p-4">
+                    {products.map((product) => (
+                      <div key={product.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 h-16 w-16">
+                            {product.image_url ? (
+                              <img 
+                                className="h-16 w-16 rounded-lg object-cover" 
+                                src={product.image_url} 
+                                alt={product.name}
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                                <Package className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                              <span>${product.price}</span>
+                              <span>Stock: {product.stock_total}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                product.status === 'active' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {product.status === 'active' ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
+                          <button className="p-2 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50">
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            className="p-2 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50 transition-colors"
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="p-8 text-center text-gray-500">
                   <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
@@ -608,7 +824,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         />
       
       {/* Panel administrativo */}
-      <div className="fixed inset-0 w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
+      <div className="fixed inset-0 w-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -720,7 +936,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           </div>
 
           {/* Contenido principal */}
-          <div className="flex-1 overflow-y-auto bg-gray-100">
+          <div className="flex-1 overflow-y-auto bg-gray-100" style={{ maxHeight: 'calc(100vh - 140px)' }}>
             <div className="p-3 sm:p-4 lg:p-6">
               {renderTabContent()}
             </div>
