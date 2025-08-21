@@ -16,9 +16,12 @@ import {
   Truck,
   Eye,
   Edit,
-  X
+  X,
+  MessageCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { config } from '@/lib/config';
 
 interface OrderItem {
   id: number;
@@ -196,26 +199,50 @@ export default function OrdersSection() {
     }
   };
 
-  // Cargar órdenes al montar el componente
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  // Formatear fecha
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Función helper para formatear montos de manera segura
+  const formatAmount = (amount: any): string => {
+    if (amount === null || amount === undefined) return '0.00';
+    const numAmount = Number(amount);
+    return isNaN(numAmount) ? '0.00' : numAmount.toFixed(2);
   };
 
-  // Formatear hora
-  const formatTime = (timeString: string) => {
-    return timeString;
+  // Función para abrir WhatsApp con el mensaje del pedido
+  const openWhatsApp = (order: Order) => {
+    if (!order.whatsapp_message) {
+      alert('Este pedido no tiene mensaje de WhatsApp generado');
+      return;
+    }
+
+    const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(order.whatsapp_message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
-  // Obtener color del estado
+  // Función para reenviar mensaje a WhatsApp
+  const resendWhatsApp = async (order: Order) => {
+    try {
+      // Aquí podrías implementar la lógica para regenerar el mensaje
+      // Por ahora, solo abrimos WhatsApp con el mensaje existente
+      openWhatsApp(order);
+    } catch (error) {
+      console.error('Error reenviando WhatsApp:', error);
+      alert('Error al reenviar el mensaje de WhatsApp');
+    }
+  };
+
+  // Función para obtener el estado de WhatsApp
+  const getWhatsAppStatus = (order: Order) => {
+    if (!order.whatsapp_message) {
+      return { status: 'not-sent', label: 'No enviado', color: 'text-gray-500', bgColor: 'bg-gray-100' };
+    }
+    
+    if (order.whatsapp_sent_at) {
+      return { status: 'sent', label: 'Enviado', color: 'text-green-600', bgColor: 'bg-green-100' };
+    }
+    
+    return { status: 'pending', label: 'Pendiente', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
+  };
+
+  // Función para obtener el color del estado
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -251,6 +278,64 @@ export default function OrdersSection() {
       case 'delivered': return <Truck className="w-4 h-4" />;
       case 'cancelled': return <XCircle className="w-4 h-4" />;
       default: return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  // Cargar órdenes al montar el componente
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  // Formatear fecha
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Formatear hora
+  const formatTime = (timeString: string) => {
+    return timeString;
+  };
+
+  // Función para cambiar el estado de manera rápida
+  const handleQuickStatusChange = async (orderId: number, newStatus: string) => {
+    const orderToUpdate = orders.find(order => order.id === orderId);
+    if (!orderToUpdate) return;
+
+    setUpdatingStatus(true);
+
+    try {
+      const response = await fetch(`${config.apiUrl}/orders/${orderToUpdate.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          adminNotes: orderToUpdate.admin_notes || null
+        })
+      });
+
+      if (response.ok) {
+        setOrders(prev => prev.map(order => 
+          order.id === orderToUpdate.id 
+            ? { ...order, status: newStatus as any, admin_notes: orderToUpdate.admin_notes }
+            : order
+        ));
+        alert('Estado de la orden actualizado exitosamente');
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.message || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error actualizando estado rápidamente:', error);
+      alert('Error de conexión');
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -389,6 +474,9 @@ export default function OrdersSection() {
                       Estado
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      WhatsApp
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -442,7 +530,7 @@ export default function OrdersSection() {
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            ${order.total_amount.toFixed(2)}
+                            ${formatAmount(order.total_amount)}
                           </div>
                           <div className="text-sm text-gray-500">
                             {order.item_count} productos
@@ -450,10 +538,43 @@ export default function OrdersSection() {
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                          {getStatusIcon(order.status)}
-                          {getStatusText(order.status)}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            {getStatusIcon(order.status)}
+                            {getStatusText(order.status)}
+                          </span>
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleQuickStatusChange(order.id, e.target.value)}
+                            className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="preparing">En Preparación</option>
+                            <option value="ready">Listo</option>
+                            <option value="delivered">Entregado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openWhatsApp(order)}
+                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+                            title="Enviar WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => resendWhatsApp(order)}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                            title="Reenviar WhatsApp"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -478,6 +599,13 @@ export default function OrdersSection() {
                             title="Cambiar estado"
                           >
                             <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openWhatsApp(order)}
+                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+                            title="Enviar WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -529,7 +657,15 @@ export default function OrdersSection() {
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-gray-400" />
                       <span className="text-gray-600">
-                        {order.item_count} productos • ${order.total_amount.toFixed(2)}
+                        {order.item_count} productos • ${formatAmount(order.total_amount)}
+                      </span>
+                    </div>
+                    
+                    {/* Estado de WhatsApp */}
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 text-gray-400" />
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getWhatsAppStatus(order).bgColor} ${getWhatsAppStatus(order).color}`}>
+                        {getWhatsAppStatus(order).label}
                       </span>
                     </div>
                   </div>
@@ -540,20 +676,23 @@ export default function OrdersSection() {
                         setSelectedOrder(order);
                         setShowOrderDetails(true);
                       }}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       Ver Detalles
                     </button>
                     <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setNewStatus(order.status);
-                        setAdminNotes(order.admin_notes || '');
-                        setShowStatusModal(true);
-                      }}
-                      className="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
+                      onClick={() => openWhatsApp(order)}
+                      className="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      title="Enviar WhatsApp"
                     >
-                      Cambiar Estado
+                      <MessageCircle className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => resendWhatsApp(order)}
+                      className="px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      title="Reenviar WhatsApp"
+                    >
+                      <RefreshCw className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -681,8 +820,45 @@ export default function OrdersSection() {
                     <div className="space-y-2">
                       {/* Aquí se mostrarían los productos de la orden */}
                       <p className="text-sm text-gray-600">
-                        {selectedOrder.item_count} productos • Total: ${selectedOrder.total_amount.toFixed(2)}
+                        {selectedOrder.item_count} productos • Total: ${formatAmount(selectedOrder.total_amount)}
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Estado de WhatsApp */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Estado de WhatsApp</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Estado:</span>
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getWhatsAppStatus(selectedOrder).bgColor} ${getWhatsAppStatus(selectedOrder).color}`}>
+                          {getWhatsAppStatus(selectedOrder).label}
+                        </span>
+                      </div>
+                      {selectedOrder.whatsapp_sent_at && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Enviado:</span>
+                          <span className="text-sm text-gray-900">
+                            {formatDate(selectedOrder.whatsapp_sent_at)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => openWhatsApp(selectedOrder)}
+                          className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4 inline mr-2" />
+                          Enviar WhatsApp
+                        </button>
+                        <button
+                          onClick={() => resendWhatsApp(selectedOrder)}
+                          className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <RefreshCw className="w-4 h-4 inline mr-2" />
+                          Reenviar
+                        </button>
+                      </div>
                     </div>
                   </div>
 

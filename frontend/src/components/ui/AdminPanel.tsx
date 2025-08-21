@@ -26,7 +26,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
-import { WhatsAppOrdersSection, OrdersSection } from '@/components/sections';
+import { OrdersSection } from '@/components/sections';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -211,12 +211,6 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       label: 'Pedidos',
       icon: ShoppingCart,
       description: 'Gestión de pedidos y ventas'
-    },
-    {
-      id: 'whatsapp-orders',
-      label: 'Pedidos WhatsApp',
-      icon: MessageCircle,
-      description: 'Pedidos enviados por WhatsApp'
     },
     {
       id: 'reservations',
@@ -783,13 +777,6 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         return (
           <div className="space-y-4 sm:space-y-6">
             <OrdersSection />
-          </div>
-        );
-
-      case 'whatsapp-orders':
-        return (
-          <div className="space-y-4 sm:space-y-6">
-            <WhatsAppOrdersSection />
           </div>
         );
 
