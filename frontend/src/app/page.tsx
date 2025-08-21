@@ -3,7 +3,7 @@
 
 import CartButton from '@/components/ui/CartButton';
 import { AuthButton } from '@/components/ui';
-import { UpcomingInventory, CurrentInventory, StockSurvey, ProductsSection } from '@/components/sections';
+import { UpcomingInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
 export default function Home() {
 
@@ -109,89 +109,7 @@ export default function Home() {
           ]}
         />
 
-        {/* Inventario en Stock */}
-        <CurrentInventory
-          products={[
-            {
-              id: 5,
-              name: "Base de Maquillaje HD",
-              description: "Base de maquillaje de larga duración con cobertura media a completa",
-              price: 34.99,
-              stock_total: 15,
-              category_name: "Maquillaje",
-              product_type_name: "Base",
-              image_url: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: 6,
-              name: "Tónico Facial Sin Alcohol",
-              description: "Tónico suave que equilibra el pH de la piel sin irritar",
-              price: 18.99,
-              stock_total: 8,
-              category_name: "Skincare",
-              product_type_name: "Tónico",
-              image_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: 7,
-              name: "Delineador de Ojos Líquido",
-              description: "Delineador de punta fina para crear líneas perfectas y definidas",
-              price: 22.99,
-              stock_total: 12,
-              category_name: "Maquillaje",
-              product_type_name: "Delineador",
-              image_url: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: 8,
-              name: "Exfoliante Facial Suave",
-              description: "Exfoliante con microesferas que renueva la piel sin dañarla",
-              price: 26.99,
-              stock_total: 3,
-              category_name: "Skincare",
-              product_type_name: "Exfoliante",
-              image_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: 9,
-              name: "Polvos Compactos Mate",
-              description: "Polvos que controlan el brillo y fijan el maquillaje",
-              price: 19.99,
-              stock_total: 20,
-              category_name: "Maquillaje",
-              product_type_name: "Polvos",
-              image_url: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: 10,
-              name: "Mascarilla de Arcilla",
-              description: "Mascarilla purificante que absorbe impurezas y controla el aceite",
-              price: 32.99,
-              stock_total: 6,
-              category_name: "Skincare",
-              product_type_name: "Mascarilla",
-              image_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-              status: "active",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ]}
-        />
+
 
         {/* Encuesta de Stock */}
         <StockSurvey totalVotes={156} />
