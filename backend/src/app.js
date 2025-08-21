@@ -21,6 +21,7 @@ const surveyRoutes = require('./routes/surveys');
 const statsRoutes = require('./routes/stats');
 const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -109,6 +110,7 @@ app.use('/api/surveys', surveyRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -201,6 +203,21 @@ const startServer = async () => {
     // Ejecutar limpieza inicial al iniciar el servidor
     console.log('🧹 Ejecutando limpieza inicial de carritos expirados...');
     await guestCartController.cleanupExpiredCarts();
+
+    // Configurar limpieza automática de reservas expiradas cada 15 minutos
+    console.log('⏰ Configurando limpieza automática de reservas expiradas...');
+    const ReservationService = require('./services/reservationService');
+    setInterval(async () => {
+      try {
+        await ReservationService.cleanupExpiredReservations();
+      } catch (error) {
+        console.error('❌ Error en limpieza automática de reservas:', error);
+      }
+    }, 15 * 60 * 1000); // Cada 15 minutos
+
+    // Ejecutar limpieza inicial de reservas al iniciar el servidor
+    console.log('🧹 Ejecutando limpieza inicial de reservas expiradas...');
+    await ReservationService.cleanupExpiredReservations();
 
   } catch (error) {
     console.error('❌ Error iniciando servidor:', error);

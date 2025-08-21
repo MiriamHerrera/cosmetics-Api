@@ -112,7 +112,10 @@ export default function OrdersSection() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await fetch(`http://localhost:8000/api/orders?${params}`, {
+      console.log('📡 Enviando parámetros al backend:', params.toString());
+      console.log('🔗 URL completa:', `${config.apiUrl}/orders?${params}`);
+
+      const response = await fetch(`${config.apiUrl}/orders?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
@@ -138,12 +141,21 @@ export default function OrdersSection() {
 
   // Aplicar filtros
   const applyFilters = () => {
+    console.log('🔍 Aplicando filtros:', {
+      searchTerm,
+      selectedStatus,
+      selectedCustomerType,
+      selectedLocation,
+      startDate,
+      endDate
+    });
     setCurrentPage(1);
-    loadOrders(1);
+    // No llamar a loadOrders aquí, se ejecutará automáticamente por el useEffect
   };
 
   // Limpiar filtros
   const clearFilters = () => {
+    console.log('🧹 Limpiando filtros...');
     setSearchTerm('');
     setSelectedStatus('');
     setSelectedCustomerType('');
@@ -151,7 +163,7 @@ export default function OrdersSection() {
     setStartDate('');
     setEndDate('');
     setCurrentPage(1);
-    loadOrders(1);
+    // No llamar a loadOrders aquí, se ejecutará automáticamente por el useEffect
   };
 
   // Actualizar estado de la orden
@@ -285,6 +297,14 @@ export default function OrdersSection() {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  // Recargar órdenes cuando cambien los filtros
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      console.log('🔄 Filtros cambiaron, recargando órdenes...');
+      loadOrders(1);
+    }
+  }, [searchTerm, selectedStatus, selectedCustomerType, selectedLocation, startDate, endDate]);
 
   // Formatear fecha
   const formatDate = (dateString: string) => {
@@ -439,11 +459,72 @@ export default function OrdersSection() {
           >
             Limpiar
           </button>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Los filtros se aplican automáticamente</span>
+          </div>
         </div>
+
+        {/* Indicador de filtros activos */}
+        {(searchTerm || selectedStatus || selectedCustomerType || selectedLocation || startDate || endDate) && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filtros activos:</span>
+              <div className="flex flex-wrap gap-2">
+                {searchTerm && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Búsqueda: "{searchTerm}"
+                  </span>
+                )}
+                {selectedStatus && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Estado: {getStatusText(selectedStatus)}
+                  </span>
+                )}
+                {selectedCustomerType && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Tipo: {selectedCustomerType === 'guest' ? 'Invitado' : 'Registrado'}
+                  </span>
+                )}
+                {selectedLocation && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Ubicación: {selectedLocation}
+                  </span>
+                )}
+                {startDate && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Desde: {formatDate(startDate)}
+                  </span>
+                )}
+                {endDate && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    Hasta: {formatDate(endDate)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lista de órdenes */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Header con contador */}
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">
+              Pedidos {totalOrders > 0 && `(${totalOrders} total)`}
+            </h3>
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                Cargando...
+              </div>
+            )}
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

@@ -223,8 +223,25 @@ export const useAdmin = () => {
         period,
       });
       
-      const data = await apiCall(`reservations?${params}`);
-      setReservations(data.data);
+      // Usar la ruta correcta para reservas
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:8000/api/reservations/admin/all?${params}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setReservations(data.data.reservations || data.data);
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');

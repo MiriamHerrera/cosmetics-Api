@@ -26,7 +26,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
-import { OrdersSection } from '@/components/sections';
+import { OrdersSection, ReservationsSection, ReportsSection } from '@/components/sections';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -783,20 +783,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       case 'reservations':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Reservas</h3>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <p className="text-gray-600">Funcionalidad de reservas en desarrollo...</p>
-            </div>
+            <ReservationsSection />
           </div>
         );
 
       case 'reports':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Reportes y Estadísticas</h3>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <p className="text-gray-600">Funcionalidad de reportes en desarrollo...</p>
-            </div>
+            <ReportsSection />
           </div>
         );
 

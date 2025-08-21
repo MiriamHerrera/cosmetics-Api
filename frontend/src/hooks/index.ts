@@ -9,4 +9,6 @@ export { useGuestMode } from './useGuestMode';
 export { usePageReloadGuard } from './usePageReloadGuard';
 export { useGuestSession } from './useGuestSession';
 export { useCartMigration } from './useCartMigration';
-export { useAdmin } from './useAdmin'; 
+export { useAdmin } from './useAdmin';
+export { useReservations } from './useReservations';
+export { default as useReports } from './useReports'; 
