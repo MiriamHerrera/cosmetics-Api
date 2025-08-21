@@ -117,8 +117,8 @@ class ReportService {
           p.cost_price,
           p.stock_total,
           p.image_url,
-          c.name as category_name,
-          pt.name as product_type_name,
+          'Sin categoría' as category_name,
+          'Sin tipo' as product_type_name,
           COUNT(oi.id) as times_ordered,
           SUM(oi.quantity) as total_quantity_sold,
           SUM(oi.quantity * p.price) as total_revenue,
@@ -137,11 +137,9 @@ class ReportService {
         FROM products p
         LEFT JOIN order_items oi ON p.id = oi.product_id
         LEFT JOIN orders o ON oi.order_id = o.id
-        LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN product_types pt ON p.product_type_id = pt.id
         WHERE (o.status = 'completed' OR o.status IS NULL)
           AND (o.created_at BETWEEN ? AND ? OR o.created_at IS NULL)
-        GROUP BY p.id, p.name, p.description, p.price, p.cost_price, p.stock_total, p.image_url, c.name, pt.name
+        GROUP BY p.id, p.name, p.description, p.price, p.cost_price, p.stock_total, p.image_url
         HAVING total_revenue > 0
         ORDER BY total_profit DESC
         LIMIT ?
@@ -207,11 +205,12 @@ class ReportService {
     try {
       console.log('🏷️ Generando reporte de ventas por categoría...');
 
+      // Como no hay categorías en la base de datos, creamos un reporte general de productos
       const categories = await query(`
         SELECT 
-          c.id,
-          c.name as category_name,
-          c.description,
+          1 as id,
+          'Todos los Productos' as category_name,
+          'Reporte general de todos los productos vendidos' as description,
           COUNT(DISTINCT o.id) as total_orders,
           COUNT(oi.id) as total_items,
           SUM(oi.quantity) as total_quantity_sold,
@@ -226,13 +225,12 @@ class ReportService {
           ) as markup_percentage,
           COUNT(DISTINCT p.id) as unique_products_sold,
           AVG(p.price) as average_price
-        FROM categories c
-        LEFT JOIN products p ON c.id = p.category_id
+        FROM products p
         LEFT JOIN order_items oi ON p.id = oi.product_id
         LEFT JOIN orders o ON oi.order_id = o.id
         WHERE o.status = 'completed'
           AND o.created_at BETWEEN ? AND ?
-        GROUP BY c.id, c.name, c.description
+        GROUP BY 1
         HAVING total_revenue > 0
         ORDER BY total_profit DESC
       `, [startDate, endDate]);
@@ -319,8 +317,8 @@ class ReportService {
           p.cost_price,
           p.stock_total,
           p.image_url,
-          c.name as category_name,
-          pt.name as product_type_name,
+          'Sin categoría' as category_name,
+          'Sin tipo' as product_type_name,
           (p.stock_total * p.cost_price) as inventory_cost_value,
           (p.stock_total * p.price) as inventory_retail_value,
           (p.stock_total * (p.price - p.cost_price)) as potential_profit,
@@ -337,8 +335,6 @@ class ReportService {
             ELSE 'high_stock'
           END as stock_status
         FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN product_types pt ON p.product_type_id = pt.id
         WHERE p.status = 'active'
         ORDER BY inventory_cost_value DESC
       `);
