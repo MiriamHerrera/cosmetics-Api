@@ -234,6 +234,7 @@ const getProducts = async (req, res) => {
         p.price,
         p.stock_total,
         p.status,
+        p.is_approved,
         p.image_url,
         p.created_at,
         p.updated_at,

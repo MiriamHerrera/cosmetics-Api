@@ -417,6 +417,7 @@ const getProductsWithStats = async (req, res) => {
         p.image_url,
         p.stock_total,
         p.status,
+        p.is_approved,
         p.created_at,
         p.updated_at,
         pt.name as product_type,
@@ -431,7 +432,7 @@ const getProductsWithStats = async (req, res) => {
       LEFT JOIN reservations r ON p.id = r.product_id
       LEFT JOIN cart_items ci ON p.id = ci.product_id
       ${whereClause}
-      GROUP BY p.id, p.name, p.description, p.price, p.image_url, p.stock_total, p.status, p.created_at, p.updated_at, pt.name, c.name
+      GROUP BY p.id, p.name, p.description, p.price, p.image_url, p.stock_total, p.status, p.is_approved, p.created_at, p.updated_at, pt.name, c.name
       ORDER BY p.created_at DESC
       LIMIT ? OFFSET ?
     `, [...whereParams, parseInt(limit), offset]);

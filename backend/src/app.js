@@ -20,6 +20,7 @@ const reservationRoutes = require('./routes/reservations');
 const surveyRoutes = require('./routes/surveys');
 const statsRoutes = require('./routes/stats');
 const adminRoutes = require('./routes/admin');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -107,6 +108,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -124,16 +126,17 @@ app.get('/', (req, res) => {
     success: true,
     message: 'Cosmetics API Backend',
     version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      products: '/api/products',
-      cart: '/api/cart',
-      reservations: '/api/reservations',
-      surveys: '/api/surveys',
-      stats: '/api/stats',
-      admin: '/api/admin',
-      health: '/api/health'
-    }
+          endpoints: {
+        auth: '/api/auth',
+        products: '/api/products',
+        cart: '/api/cart',
+        reservations: '/api/reservations',
+        surveys: '/api/surveys',
+        stats: '/api/stats',
+        admin: '/api/admin',
+        orders: '/api/orders',
+        health: '/api/health'
+      }
   });
 });
 

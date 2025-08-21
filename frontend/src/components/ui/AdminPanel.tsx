@@ -26,7 +26,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
-import { WhatsAppOrdersSection } from '@/components/sections';
+import { WhatsAppOrdersSection, OrdersSection } from '@/components/sections';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -61,6 +61,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     loadReservations,
     loadSurveys,
     updateUserStatus,
+    updateProductApproval,
     clearError
   } = useAdmin();
 
@@ -95,32 +96,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
   // Función para aprobar/rechazar producto
   const handleApproveProduct = async (productId: number, productName: string, isApproved: boolean) => {
-    const action = isApproved ? 'aprobar' : 'rechazar';
-    if (!confirm(`¿Estás seguro de que quieres ${action} "${productName}"?`)) {
-      return;
-    }
-
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/products/${productId}/approve`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({ is_approved: isApproved })
-      });
-
-      if (response.ok) {
-        // Recargar productos después de aprobar/rechazar
-        loadProducts();
-        alert(`Producto ${action} correctamente`);
-      } else {
-        const errorData = await response.json();
-        alert(`Error al ${action}: ${errorData.message || 'Error desconocido'}`);
-      }
+      await updateProductApproval(productId, isApproved);
     } catch (error) {
-      console.error(`Error ${action} producto:`, error);
-      alert(`Error de conexión al ${action} el producto`);
+      console.error('Error actualizando aprobación del producto:', error);
     }
   };
 
@@ -660,13 +639,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex flex-col gap-1">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                product.is_approved 
+                                product.is_approved === 1
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}>
-                                {product.is_approved ? '✅ Aprobado' : '⏳ Pendiente'}
+                                {product.is_approved === 1 ? '✅ Aprobado' : '⏳ Pendiente'}
                               </span>
-                              {!product.is_approved && (
+                              {product.is_approved !== 1 && (
                                 <button
                                   onClick={() => handleApproveProduct(product.id, product.name, true)}
                                   className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
@@ -674,12 +653,12 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                   Aprobar
                                 </button>
                               )}
-                              {product.is_approved && (
+                              {product.is_approved === 1 && (
                                 <button
                                   onClick={() => handleApproveProduct(product.id, product.name, false)}
                                   className="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 transition-colors"
                                 >
-                                  Rechazar
+                                  Desaprobar
                                 </button>
                               )}
                             </div>
@@ -741,20 +720,50 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
-                          <button className="p-2 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="p-2 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50 transition-colors"
-                            title="Eliminar producto"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+                          {/* Estado de aprobación */}
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              product.is_approved === 1
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {product.is_approved === 1 ? '✅ Aprobado' : '⏳ Pendiente'}
+                            </span>
+                            {product.is_approved !== 1 && (
+                              <button
+                                onClick={() => handleApproveProduct(product.id, product.name, true)}
+                                className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                              >
+                                Aprobar
+                              </button>
+                            )}
+                            {product.is_approved === 1 && (
+                              <button
+                                onClick={() => handleApproveProduct(product.id, product.name, false)}
+                                className="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 transition-colors"
+                              >
+                                Rechazar
+                              </button>
+                            )}
+                          </div>
+                          
+                          {/* Acciones */}
+                          <div className="flex gap-2">
+                            <button className="p-2 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button className="p-2 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="p-2 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50 transition-colors"
+                              title="Eliminar producto"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -773,10 +782,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       case 'orders':
         return (
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Gestión de Pedidos</h3>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <p className="text-gray-600">Funcionalidad de pedidos en desarrollo...</p>
-            </div>
+            <OrdersSection />
           </div>
         );
 

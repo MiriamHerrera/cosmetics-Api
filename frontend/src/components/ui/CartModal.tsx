@@ -6,7 +6,7 @@ import { useGuestMode } from '@/hooks/useGuestMode';
 import { LoginButton } from './index';
 import Image from 'next/image';
 import { useState } from 'react';
-import WhatsAppOrderModal from './WhatsAppOrderModal';
+import CheckoutModal from './CheckoutModal';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface CartModalProps {
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { cart, removeFromCart, cartItemCount, cartTotal, clearCart } = useCart();
   const { isGuestMode } = useGuestMode();
-  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -144,7 +144,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             )}
             
             <button
-              onClick={() => setShowWhatsAppModal(true)}
+              onClick={() => setShowCheckoutModal(true)}
               className="
                 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
                 text-white font-bold py-4 px-6 rounded-lg
@@ -155,24 +155,18 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               "
             >
               <MessageCircle className="w-5 h-5" />
-              Finalizar compra por WhatsApp
+              Finalizar Compra
             </button>
           </div>
         </div>
       </div>
       
-      {/* Modal de WhatsApp */}
-      <WhatsAppOrderModal
-        isOpen={showWhatsAppModal}
-        onClose={() => setShowWhatsAppModal(false)}
-        cartItems={cart?.items || []}
-        cartTotal={cartTotal}
-        onOrderSent={() => {
-          // Vaciar el carrito y cerrar el modal
-          clearCart();
-          setShowWhatsAppModal(false);
-          console.log('Pedido enviado por WhatsApp - Carrito vaciado');
-        }}
+      {/* Modal de Checkout */}
+      <CheckoutModal
+        isOpen={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        cart={cart}
+        sessionId={null}
       />
     </div>
   );

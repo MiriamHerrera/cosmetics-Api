@@ -26,7 +26,7 @@ interface Product {
   status: string;
   product_type: string;
   category: string;
-  is_approved?: boolean;
+  is_approved?: number;
   total_reservations: number;
   total_carts: number;
   active_reservations: number;
@@ -276,6 +276,34 @@ export const useAdmin = () => {
     }
   }, [loadUsers]);
 
+  // Actualizar estado de aprobación de producto
+  const updateProductApproval = useCallback(async (productId: number, isApproved: boolean) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await apiCall(`products/${productId}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_approved: isApproved ? 1 : 0 }),
+      });
+      
+      // Actualizar el estado local del producto
+      setProducts(prevProducts => 
+        prevProducts.map(product => 
+          product.id === productId 
+            ? { ...product, is_approved: isApproved ? 1 : 0 }
+            : product
+        )
+      );
+      
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Cargar datos iniciales
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -302,6 +330,7 @@ export const useAdmin = () => {
     loadReservations,
     loadSurveys,
     updateUserStatus,
+    updateProductApproval,
     
     // Utilidades
     clearError: () => setError(null),
