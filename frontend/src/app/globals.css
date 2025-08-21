@@ -3,6 +3,72 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Colores personalizados para la app */
+  --color-darkmagenta: #8B008B;
+  --color-cosmetic-pink: #FF69B4;
+  --color-cosmetic-rose: #FF1493;
+  --color-cosmetic-purple: #9370DB;
+  --color-cosmetic-gold: #FFD700;
+}
+
+/* Clases personalizadas para colores */
+.text-darkmagenta {
+  color: var(--color-darkmagenta) !important;
+}
+
+.text-cosmetic-pink {
+  color: var(--color-cosmetic-pink) !important;
+}
+
+.text-cosmetic-rose {
+  color: var(--color-cosmetic-rose) !important;
+}
+
+.text-cosmetic-purple {
+  color: var(--color-cosmetic-purple) !important;
+}
+
+.text-cosmetic-gold {
+  color: var(--color-cosmetic-gold) !important;
+}
+
+/* Estilos específicos para inputs del modal de WhatsApp */
+.whatsapp-modal input,
+.whatsapp-modal textarea {
+  color: #8b008b !important;
+}
+
+/* Estilos más específicos para asegurar que se apliquen */
+.whatsapp-modal input[type="text"],
+.whatsapp-modal input[type="tel"],
+.whatsapp-modal textarea {
+  color: #8b008b !important;
+}
+
+/* Estilos GLOBALES para TODOS los inputs de la aplicación */
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+textarea,
+select {
+  color: #8b008b !important;
+}
+
+/* Estilos específicos para inputs de búsqueda */
+input[placeholder*="Buscar"],
+input[placeholder*="buscar"] {
+  color: #8b008b !important;
+}
+
+/* Estilos para inputs con clases específicas */
+.w-full input,
+.rounded-lg input,
+.border input {
+  color: #8b008b !important;
 }
 
 @theme inline {
@@ -23,4 +89,34 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Estilos globales para inputs - MÁXIMA PRIORIDAD */
+* input,
+* textarea,
+* select {
+  color: #8b008b !important;
+}
+
+/* Estilos específicos para inputs de búsqueda y formularios */
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  color: #8b008b !important;
+}
+
+/* Estilos para inputs con placeholders específicos */
+input[placeholder*="Buscar"],
+input[placeholder*="buscar"],
+input[placeholder*="Nombre"],
+input[placeholder*="Teléfono"],
+input[placeholder*="Email"],
+input[placeholder*="Dirección"] {
+  color: #8b008b !important;
 }

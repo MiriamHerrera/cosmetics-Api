@@ -98,7 +98,7 @@ export default function WhatsAppOrderModal({
           relative w-full max-w-md bg-white rounded-lg shadow-xl
           transform transition-all duration-300 ease-in-out
           animate-in fade-in-0 zoom-in-95
-          mx-2
+          mx-2 whatsapp-modal
         ">
           {/* Header */}
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
@@ -157,6 +157,7 @@ export default function WhatsAppOrderModal({
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   required
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  style={{ color: '#8b008b' }}
                 />
               </div>
               
@@ -172,6 +173,7 @@ export default function WhatsAppOrderModal({
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   required
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  style={{ color: '#8b008b' }}
                 />
               </div>
               
@@ -187,6 +189,7 @@ export default function WhatsAppOrderModal({
                   required
                   rows={3}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
+                  style={{ color: '#8b008b' }}
                 />
               </div>
 
