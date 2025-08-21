@@ -533,8 +533,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Cliente</p>
-                      <p className="font-medium">{customerInfo.name}</p>
-                      <p className="text-sm text-gray-600">{customerInfo.phone}</p>
+                      <p className="font-medium text-gray-900">{customerInfo.name}</p>
+                      <p className="text-sm text-gray-700">{customerInfo.phone}</p>
                       {customerInfo.email && (
                         <p className="text-sm text-gray-600">{customerInfo.email}</p>
                       )}
@@ -542,10 +542,10 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                     
                     <div>
                       <p className="text-sm text-gray-600">Entrega</p>
-                      <p className="font-medium">
+                      <p className="font-medium text-gray-900">
                         {deliveryLocations.find(l => l.id === selectedLocation)?.name}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-700">
                         {formatDate(selectedDate)} a las {selectedTime}
                       </p>
                       {deliveryAddress && (
@@ -573,19 +573,19 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                               </div>
                             )}
                             <div>
-                              <p className="font-medium text-sm">{item.product.name}</p>
+                              <p className="font-medium text-sm text-gray-700">{item.product.name}</p>
                               <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                             </div>
                           </div>
-                          <p className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-medium text-gray-800">${(item.product.price * item.quantity).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
                     
                     <div className="border-t border-gray-200 pt-3 mt-3">
                       <div className="flex justify-between items-center font-bold text-lg">
-                        <span>Total</span>
-                        <span>${cart.total.toFixed(2)}</span>
+                        <span className="text-gray-900">Total</span>
+                        <span className="text-gray-900">${cart.total.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
