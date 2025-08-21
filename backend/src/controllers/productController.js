@@ -19,7 +19,7 @@ const getAllProducts = async (req, res) => {
     const offset = (page - 1) * limit;
     
     // Construir WHERE clause dinámicamente
-    let whereClause = 'WHERE p.status = "active"';
+    let whereClause = 'WHERE p.status = "active" AND p.is_approved = 1';
     const whereParams = [];
     
     if (q) {
@@ -139,7 +139,7 @@ const getProductById = async (req, res) => {
       FROM products p
       INNER JOIN product_types pt ON p.product_type_id = pt.id
       INNER JOIN categories c ON pt.category_id = c.id
-      WHERE p.id = ? AND p.status = 'active'
+      WHERE p.id = ? AND p.status = 'active' AND p.is_approved = 1
     `, [id]);
 
     if (products.length === 0) {
@@ -219,8 +219,8 @@ const createProduct = async (req, res) => {
     }
 
     const result = await query(`
-      INSERT INTO products (product_type_id, name, description, price, cost_price, image_url, stock_total)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (product_type_id, name, description, price, cost_price, image_url, stock_total, is_approved)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0)
     `, [product_type_id, name, description, price, cost_price, image_url, stock_total || 0]);
 
     res.status(201).json({
@@ -234,7 +234,8 @@ const createProduct = async (req, res) => {
         price,
         cost_price,
         image_url,
-        stock_total: stock_total || 0
+        stock_total: stock_total || 0,
+        is_approved: 0
       }
     });
 
@@ -440,7 +441,7 @@ const getProductsByCategory = async (req, res) => {
       FROM products p
       INNER JOIN product_types pt ON p.product_type_id = pt.id
       INNER JOIN categories c ON pt.category_id = c.id
-      WHERE p.status = 'active' AND c.name = ?
+      WHERE p.status = 'active' AND p.is_approved = 1 AND c.name = ?
       ORDER BY p.name
     `, [category_name]);
 
@@ -483,7 +484,7 @@ const searchProducts = async (req, res) => {
       FROM products p
       INNER JOIN product_types pt ON p.product_type_id = pt.id
       INNER JOIN categories c ON pt.category_id = c.id
-      WHERE p.status = 'active' 
+      WHERE p.status = 'active' AND p.is_approved = 1
         AND (p.name LIKE ? OR p.description LIKE ? OR pt.name LIKE ? OR c.name LIKE ?)
       ORDER BY p.name
       LIMIT 20

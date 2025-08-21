@@ -50,7 +50,34 @@ api.interceptors.response.use(
   }
 );
 
-// API de Productos
+// API de Productos Públicos (solo aprobados)
+export const publicProductsApi = {
+  // Obtener todos los productos públicos con paginación
+  getAll: async (params: PaginationParams): Promise<ApiResponse<Product[]>> => {
+    const response = await api.get('/public/products', { params });
+    return response.data;
+  },
+
+  // Obtener producto público por ID
+  getById: async (id: number): Promise<ApiResponse<Product>> => {
+    const response = await api.get(`/public/products/${id}`);
+    return response.data;
+  },
+
+  // Buscar productos públicos
+  search: async (query: string): Promise<ApiResponse<Product[]>> => {
+    const response = await api.get('/public/products/search', { params: { q: query } });
+    return response.data;
+  },
+
+  // Obtener productos públicos por categoría
+  getByCategory: async (category: string): Promise<ApiResponse<Product[]>> => {
+    const response = await api.get(`/public/products/category/${category}`);
+    return response.data;
+  }
+};
+
+// API de Productos (admin)
 export const productsApi = {
   // Obtener todos los productos con paginación
   getAll: async (params: PaginationParams): Promise<ApiResponse<Product[]>> => {

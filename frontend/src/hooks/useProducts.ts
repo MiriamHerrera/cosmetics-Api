@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { productsApi } from '@/lib/api';
+import { publicProductsApi } from '@/lib/api';
 import { useStore } from '@/store/useStore';
 import type { Product, PaginationParams, ApiResponse } from '@/types';
 
@@ -20,7 +20,7 @@ export const useProducts = () => {
       setLoading(true);
       setError(null);
       
-      const response: ApiResponse<Product[]> = await productsApi.getAll(params);
+      const response: ApiResponse<Product[]> = await publicProductsApi.getAll(params);
       
       if (response.success && response.data) {
         // Mapear los productos para que coincidan con la estructura esperada

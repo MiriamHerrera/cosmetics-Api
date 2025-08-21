@@ -13,6 +13,7 @@ const guestCartController = require('./controllers/guestCartController');
 
 // Importar rutas
 const authRoutes = require('./routes/auth');
+const publicProductRoutes = require('./routes/publicProducts');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const guestCartRoutes = require('./routes/guest-cart');
@@ -102,6 +103,7 @@ app.use((req, res, next) => {
 
 // Registrar rutas de la API
 app.use('/api/auth', authRoutes);
+app.use('/api/public/products', publicProductRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/guest-cart', guestCartRoutes);
