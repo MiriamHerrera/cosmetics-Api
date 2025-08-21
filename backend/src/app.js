@@ -99,7 +99,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rutas de la API
+// Registrar rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);

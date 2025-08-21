@@ -1,4 +1,5 @@
 const { query, getConnection } = require('../config/database');
+const whatsappConfig = require('../config/whatsapp');
 
 class OrderController {
   // Obtener lugares de entrega disponibles
@@ -334,6 +335,19 @@ class OrderController {
       }
 
       console.log('✅ Datos requeridos validados correctamente');
+      
+      // Validar número de WhatsApp
+      if (!whatsappConfig.validateNumber(whatsappConfig.number)) {
+        console.log('❌ Número de WhatsApp inválido:', whatsappConfig.number);
+        await connection.rollback();
+        return res.status(500).json({
+          success: false,
+          message: 'Error de configuración: Número de WhatsApp inválido'
+        });
+      }
+      
+      console.log('✅ Número de WhatsApp válido:', whatsappConfig.number);
+
       console.log('🛒 Estructura del carrito recibido:');
       console.log('  - cartItems:', JSON.stringify(cartItems, null, 2));
       console.log('  - Tipo de cartItems:', typeof cartItems);

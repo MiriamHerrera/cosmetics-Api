@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { config } from './config';
 import type { 
   Product, 
   User, 
@@ -10,7 +11,7 @@ import type {
 } from '@/types';
 
 // Configuración base de la API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = config.apiUrl;
 
 // Crear instancia de axios
 const api: AxiosInstance = axios.create({

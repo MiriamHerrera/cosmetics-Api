@@ -10,7 +10,7 @@ export const config = {
   websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://tusitio.com',
   
   // URL de la API
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
   
   // Configuración de mensajes
   messages: {
