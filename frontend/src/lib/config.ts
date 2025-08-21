@@ -1,13 +1,16 @@
 // Configuración de la aplicación
 export const config = {
   // Número de WhatsApp (formato internacional sin +)
-  whatsappNumber: '8124307494', // Cambia esto por tu número real
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8124307494',
   
   // Nombre de tu negocio
-  businessName: 'Cosméticos Store',
+  businessName: process.env.NEXT_PUBLIC_BUSINESS_NAME || 'Cosméticos Store',
   
   // URL de tu sitio web
-  websiteUrl: 'https://tusitio.com',
+  websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://tusitio.com',
+  
+  // URL de la API
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   
   // Configuración de mensajes
   messages: {

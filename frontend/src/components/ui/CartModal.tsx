@@ -7,6 +7,8 @@ import { LoginButton } from './index';
 import Image from 'next/image';
 import { useState } from 'react';
 import CheckoutModal from './CheckoutModal';
+import GuestCheckoutModal from './GuestCheckoutModal';
+import { useGuestSession } from '@/hooks/useGuestSession';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -16,7 +18,9 @@ interface CartModalProps {
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { cart, removeFromCart, cartItemCount, cartTotal, clearCart } = useCart();
   const { isGuestMode } = useGuestMode();
+  const { sessionId: guestSessionId } = useGuestSession();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showGuestCheckoutModal, setShowGuestCheckoutModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -144,7 +148,13 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             )}
             
             <button
-              onClick={() => setShowCheckoutModal(true)}
+              onClick={() => {
+                if (isGuestMode) {
+                  setShowGuestCheckoutModal(true);
+                } else {
+                  setShowCheckoutModal(true);
+                }
+              }}
               className="
                 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
                 text-white font-bold py-4 px-6 rounded-lg
@@ -161,12 +171,20 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         </div>
       </div>
       
-      {/* Modal de Checkout */}
+      {/* Modal de Checkout para usuarios registrados */}
       <CheckoutModal
         isOpen={showCheckoutModal}
         onClose={() => setShowCheckoutModal(false)}
         cart={cart}
         sessionId={null}
+      />
+
+      {/* Modal de Checkout para usuarios invitados */}
+      <GuestCheckoutModal
+        isOpen={showGuestCheckoutModal}
+        onClose={() => setShowGuestCheckoutModal(false)}
+        cart={cart}
+        sessionId={guestSessionId}
       />
     </div>
   );

@@ -1,28 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin } from 'lucide-react';
-
-interface CartItem {
-  id: string;
-  product: {
-    id: number;
-    name: string;
-    price: number;
-  };
-  quantity: number;
-}
-
-interface Cart {
-  items: CartItem[];
-  total: number;
-}
+import { Cart, CartItem } from '@/types';
+import { useCart } from '@/hooks/useCart';
+import { config, generateWhatsAppLink } from '@/lib/config';
 
 interface CustomerInfo {
   name: string;
   phone: string;
   email: string;
-  address: string;
 }
 
 interface DeliveryLocation {
@@ -49,8 +36,7 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     phone: '',
-    email: '',
-    address: ''
+    email: ''
   });
   const [deliveryLocation, setDeliveryLocation] = useState<number | null>(null);
   const [deliveryDate, setDeliveryDate] = useState<string>('');
@@ -129,7 +115,7 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
         deliveryLocationId: deliveryLocation,
         deliveryDate,
         deliveryTime,
-        deliveryAddress: customerInfo.address || null,
+        deliveryAddress: null, // Ya no se solicita dirección personalizada
         totalAmount: cart?.total || 0,
         cartItems: cart?.items || [],
         notes: notes || null
@@ -146,13 +132,23 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
         
         // Generar enlace de WhatsApp
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
-        const whatsappUrl = `https://wa.me/1234567890?text=${whatsappMessage}`;
+        const whatsappUrl = generateWhatsAppLink(result.data.whatsappMessage);
+        
+        console.log('📱 Enlace de WhatsApp generado:', whatsappUrl);
         
         // Abrir WhatsApp
         window.open(whatsappUrl, '_blank');
         
         // Mostrar confirmación
-        alert(`¡Pedido #${result.data.orderNumber} creado exitosamente! Revisa tu WhatsApp para completar la compra.`);
+        alert(`¡Pedido #${result.data.orderNumber} creado exitosamente! 
+
+Se abrirá WhatsApp automáticamente para que puedas confirmar tu pedido.
+
+📱 Número de WhatsApp: ${config.whatsappNumber}
+📋 Número de Pedido: ${result.data.orderNumber}
+💰 Total: $${cart?.total?.toFixed(2)}
+
+Si WhatsApp no se abre automáticamente, puedes contactarnos directamente al ${config.whatsappNumber}`);
         
         // Cerrar modal
         onClose();
@@ -213,13 +209,13 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-semibold mb-3 text-gray-800">Resumen del Pedido:</h3>
               {cart?.items.map(item => (
-                <div key={item.id} className="flex justify-between py-1 text-sm">
+                <div key={item.productId} className="flex justify-between py-1 text-sm">
                   <span className="text-gray-700">{item.product.name} x{item.quantity}</span>
-                  <span className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-medium text-gray-700">${(item.product.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               <div className="border-t pt-2 mt-2 font-bold text-lg">
-                <span>Total: ${cart?.total?.toFixed(2)}</span>
+                <span className='text-gray-900'>Total: ${cart?.total?.toFixed(2)}</span>
               </div>
             </div>
 
@@ -252,13 +248,6 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
                 value={customerInfo.email}
                 onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-
-              <textarea
-                placeholder="Dirección de envío (opcional)"
-                value={customerInfo.address}
-                onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-20"
               />
 
               {/* Opciones de entrega */}
