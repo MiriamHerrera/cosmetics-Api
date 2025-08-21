@@ -58,16 +58,13 @@ export default function WhatsAppOrderModal({
       // Abrir WhatsApp
       window.open(whatsappUrl, '_blank');
       
-      // Notificar que el pedido fue enviado
+      // Mostrar confirmación
+      alert(`¡Pedido #${newOrder.id} enviado por WhatsApp! Revisa tu WhatsApp para completar la compra.`);
+      
+      // Notificar que el pedido fue enviado (esto vaciará el carrito y cerrará el modal)
       if (onOrderSent) {
         onOrderSent();
       }
-      
-      // Cerrar modal
-      onClose();
-      
-      // Mostrar confirmación
-      alert(`¡Pedido #${newOrder.id} enviado por WhatsApp! Revisa tu WhatsApp para completar la compra.`);
       
     } catch (error) {
       console.error('Error enviando pedido:', error);

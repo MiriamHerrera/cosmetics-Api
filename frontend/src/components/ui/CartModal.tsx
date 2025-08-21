@@ -14,7 +14,7 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { cart, removeFromCart, cartItemCount, cartTotal } = useCart();
+  const { cart, removeFromCart, cartItemCount, cartTotal, clearCart } = useCart();
   const { isGuestMode } = useGuestMode();
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
@@ -168,8 +168,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         cartItems={cart?.items || []}
         cartTotal={cartTotal}
         onOrderSent={() => {
-          // Aquí puedes agregar lógica adicional cuando se envía el pedido
-          console.log('Pedido enviado por WhatsApp');
+          // Vaciar el carrito y cerrar el modal
+          clearCart();
+          setShowWhatsAppModal(false);
+          console.log('Pedido enviado por WhatsApp - Carrito vaciado');
         }}
       />
     </div>
