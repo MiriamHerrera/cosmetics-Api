@@ -261,6 +261,176 @@ class OrderController {
     }
   };
 
+  // Crear orden para invitados (sin autenticación)
+  createGuestOrder = async (req, res) => {
+    const connection = await getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      const {
+        sessionId,
+        customerName,
+        customerPhone,
+        customerEmail,
+        deliveryLocationId,
+        deliveryDate,
+        deliveryTime,
+        deliveryAddress,
+        totalAmount,
+        cartItems,
+        notes
+      } = req.body;
+
+      // Validar datos requeridos
+      if (!sessionId || !customerName || !customerPhone || !deliveryLocationId || 
+          !deliveryDate || !deliveryTime || !totalAmount || !cartItems || cartItems.length === 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Faltan datos requeridos'
+        });
+      }
+
+      // Validar fecha de entrega para invitados (hoy hasta 3 días posteriores)
+      const today = new Date();
+      const deliveryDateObj = new Date(deliveryDate);
+      const daysDiff = Math.ceil((deliveryDateObj - today) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff < 0 || daysDiff > 3) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Los usuarios invitados solo pueden elegir fechas de hoy hasta 3 días posteriores'
+        });
+      }
+
+      // Verificar que el carrito de invitado existe y tiene items
+      const [guestCart] = await connection.execute(`
+        SELECT id FROM guest_carts WHERE session_id = ? AND status = 'active'
+      `, [sessionId]);
+
+      if (!guestCart) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Carrito de invitado no encontrado o expirado'
+        });
+      }
+
+      // Generar número de orden único
+      const [orderNumberResult] = await connection.execute('CALL GenerateOrderNumber(?)', ['']);
+      const orderNumber = orderNumberResult[0][0].orderNumber;
+
+      // Crear la orden
+      const [orderResult] = await connection.execute(`
+        INSERT INTO orders (
+          order_number,
+          customer_type,
+          user_id,
+          session_id,
+          customer_name,
+          customer_phone,
+          customer_email,
+          delivery_location_id,
+          delivery_date,
+          delivery_time,
+          delivery_address,
+          total_amount,
+          notes,
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      `, [
+        orderNumber,
+        'guest',
+        null,
+        sessionId,
+        customerName,
+        customerPhone,
+        customerEmail || null,
+        deliveryLocationId,
+        deliveryDate,
+        deliveryTime,
+        deliveryAddress || null,
+        totalAmount,
+        notes || null
+      ]);
+
+      const orderId = orderResult.insertId;
+
+      // Crear los items de la orden
+      for (const item of cartItems) {
+        await connection.execute(`
+          INSERT INTO order_items (
+            order_id,
+            product_id,
+            product_name,
+            product_price,
+            quantity,
+            subtotal
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+          orderId,
+          item.product.id,
+          item.product.name,
+          item.product.price,
+          item.quantity,
+          item.product.price * item.quantity
+        ]);
+      }
+
+      // Generar mensaje de WhatsApp
+      const whatsappMessage = this.generateWhatsAppMessage(orderNumber, customerName, cartItems, totalAmount, deliveryDate, deliveryTime);
+
+      // Actualizar orden con mensaje de WhatsApp
+      await connection.execute(`
+        UPDATE orders 
+        SET whatsapp_message = ?, whatsapp_sent_at = NOW()
+        WHERE id = ?
+      `, [whatsappMessage, orderId]);
+
+      // Marcar carrito de invitado como procesado
+      await connection.execute(`
+        UPDATE guest_carts 
+        SET status = 'processed', updated_at = NOW()
+        WHERE session_id = ?
+      `, [sessionId]);
+
+      await connection.commit();
+
+      // Obtener la orden creada con detalles
+      const [orderDetails] = await query(`
+        SELECT 
+          o.*,
+          dl.name as delivery_location_name,
+          dl.address as delivery_location_address
+        FROM orders o
+        LEFT JOIN delivery_locations dl ON o.delivery_location_id = dl.id
+        WHERE o.id = ?
+      `, [orderId]);
+
+      res.json({
+        success: true,
+        message: 'Orden creada exitosamente',
+        data: {
+          order: orderDetails,
+          whatsappMessage,
+          orderNumber
+        }
+      });
+
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error creando orden de invitado:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    } finally {
+      connection.release();
+    }
+  };
+
   // Obtener órdenes del usuario
   getUserOrders = async (req, res) => {
     try {

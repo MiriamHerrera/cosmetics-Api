@@ -457,8 +457,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                   </div>
                   <p className="mt-1 text-sm text-gray-600">
                     {isGuest 
-                      ? 'Usuarios invitados: máximo 3 días posteriores'
-                      : 'Usuarios registrados: máximo 7 días posteriores'
+                      ? 'Usuarios invitados: reserva de máximo 3 días posteriores'
+                      : 'Usuarios registrados: reserva de hasta 7 días posteriores'
                     }
                   </p>
                 </div>

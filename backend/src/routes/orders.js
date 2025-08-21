@@ -7,6 +7,9 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 router.get('/delivery-locations', orderController.getDeliveryLocations);
 router.get('/delivery-times', orderController.getAvailableDeliveryTimes);
 
+// Ruta pública para checkout de invitados
+router.post('/guest', orderController.createGuestOrder);
+
 // Rutas protegidas para usuarios autenticados
 router.post('/', authenticateToken, orderController.createOrder);
 router.get('/user', authenticateToken, orderController.getUserOrders);
