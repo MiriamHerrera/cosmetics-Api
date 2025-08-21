@@ -5,6 +5,8 @@ import { useCart } from '@/hooks/useCart';
 import { useGuestMode } from '@/hooks/useGuestMode';
 import { LoginButton } from './index';
 import Image from 'next/image';
+import { useState } from 'react';
+import WhatsAppOrderModal from './WhatsAppOrderModal';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface CartModalProps {
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { cart, removeFromCart, cartItemCount, cartTotal } = useCart();
   const { isGuestMode } = useGuestMode();
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -141,24 +144,34 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             )}
             
             <button
-              onClick={() => {
-                // Aquí iría la lógica para enviar por WhatsApp
-              }}
+              onClick={() => setShowWhatsAppModal(true)}
               className="
-                w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
+                w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
                 text-white font-bold py-4 px-6 rounded-lg
                 transition-all duration-300
                 flex items-center justify-center gap-3
-                focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2
+                focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2
                 transform hover:scale-105 shadow-lg hover:shadow-xl
               "
             >
               <MessageCircle className="w-5 h-5" />
-              Finalizar compra
+              Finalizar compra por WhatsApp
             </button>
           </div>
         </div>
       </div>
+      
+      {/* Modal de WhatsApp */}
+      <WhatsAppOrderModal
+        isOpen={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        cartItems={cart?.items || []}
+        cartTotal={cartTotal}
+        onOrderSent={() => {
+          // Aquí puedes agregar lógica adicional cuando se envía el pedido
+          console.log('Pedido enviado por WhatsApp');
+        }}
+      />
     </div>
   );
 } 

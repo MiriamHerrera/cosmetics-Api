@@ -17,7 +17,8 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  XCircle
+  XCircle,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
@@ -25,6 +26,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
+import { WhatsAppOrdersSection } from '@/components/sections';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -230,6 +232,12 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       label: 'Pedidos',
       icon: ShoppingCart,
       description: 'Gestión de pedidos y ventas'
+    },
+    {
+      id: 'whatsapp-orders',
+      label: 'Pedidos WhatsApp',
+      icon: MessageCircle,
+      description: 'Pedidos enviados por WhatsApp'
     },
     {
       id: 'reservations',
@@ -769,6 +777,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <p className="text-gray-600">Funcionalidad de pedidos en desarrollo...</p>
             </div>
+          </div>
+        );
+
+      case 'whatsapp-orders':
+        return (
+          <div className="space-y-4 sm:space-y-6">
+            <WhatsAppOrdersSection />
           </div>
         );
 
