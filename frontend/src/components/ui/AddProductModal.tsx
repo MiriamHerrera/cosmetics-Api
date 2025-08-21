@@ -24,6 +24,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     name: '',
     description: '',
     price: '',
+    cost_price: '',
     stock_total: '',
     product_type_id: '',
     image_url: '',
@@ -72,14 +73,26 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
 
     try {
       // Validaciones básicas
-      if (!formData.name.trim() || !formData.price || !formData.product_type_id) {
-        setError('Nombre, precio y tipo de producto son requeridos');
+      if (!formData.name.trim() || !formData.price || !formData.cost_price || !formData.product_type_id) {
+        setError('Nombre, precio de venta, precio de inversión y tipo de producto son requeridos');
         setLoading(false);
         return;
       }
 
       if (parseFloat(formData.price) <= 0) {
-        setError('El precio debe ser mayor a 0');
+        setError('El precio de venta debe ser mayor a 0');
+        setLoading(false);
+        return;
+      }
+
+      if (parseFloat(formData.cost_price) <= 0) {
+        setError('El precio de inversión debe ser mayor a 0');
+        setLoading(false);
+        return;
+      }
+
+      if (parseFloat(formData.price) <= parseFloat(formData.cost_price)) {
+        setError('El precio de venta debe ser mayor al precio de inversión para obtener ganancias');
         setLoading(false);
         return;
       }
@@ -93,6 +106,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
+          cost_price: parseFloat(formData.cost_price),
           stock_total: parseInt(formData.stock_total) || 0
         })
       });
@@ -106,6 +120,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
           name: '',
           description: '',
           price: '',
+          cost_price: '',
           stock_total: '',
           product_type_id: '',
           image_url: '',
@@ -212,11 +227,11 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
               />
             </div>
 
-            {/* Precio y Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Precio, Costo y Stock */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio *
+                  Precio de Venta *
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-gray-500">$</span>
@@ -232,6 +247,45 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
                     required
                   />
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Precio de Inversión *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    name="cost_price"
+                    value={formData.cost_price}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Precio que pagaste por el producto
+                </p>
+                {/* Indicador de ganancia */}
+                {formData.price && formData.cost_price && parseFloat(formData.price) > parseFloat(formData.cost_price) && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-xs text-green-700">
+                      💰 Ganancia esperada: ${(parseFloat(formData.price) - parseFloat(formData.cost_price)).toFixed(2)} 
+                      ({((parseFloat(formData.price) - parseFloat(formData.cost_price)) / parseFloat(formData.price) * 100).toFixed(1)}%)
+                    </p>
+                  </div>
+                )}
+                {formData.price && formData.cost_price && parseFloat(formData.price) <= parseFloat(formData.cost_price) && (
+                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-xs text-red-700">
+                      ⚠️ El precio de venta debe ser mayor al de inversión
+                    </p>
+                  </div>
+                )}
               </div>
               
               <div>

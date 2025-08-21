@@ -171,9 +171,39 @@ const createProduct = async (req, res) => {
       name,
       description,
       price,
+      cost_price,
       image_url,
       stock_total
     } = req.body;
+
+    // Validaciones básicas
+    if (!name || !price || !cost_price || !product_type_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre, precio de venta, precio de inversión y tipo de producto son requeridos'
+      });
+    }
+
+    if (parseFloat(price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El precio de venta debe ser mayor a 0'
+      });
+    }
+
+    if (parseFloat(cost_price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El precio de inversión debe ser mayor a 0'
+      });
+    }
+
+    if (parseFloat(price) <= parseFloat(cost_price)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El precio de venta debe ser mayor al precio de inversión para obtener ganancias'
+      });
+    }
 
     // Verificar que el tipo de producto existe
     const productTypes = await query(
@@ -189,9 +219,9 @@ const createProduct = async (req, res) => {
     }
 
     const result = await query(`
-      INSERT INTO products (product_type_id, name, description, price, image_url, stock_total)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [product_type_id, name, description, price, image_url, stock_total || 0]);
+      INSERT INTO products (product_type_id, name, description, price, cost_price, image_url, stock_total)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [product_type_id, name, description, price, cost_price, image_url, stock_total || 0]);
 
     res.status(201).json({
       success: true,
@@ -202,6 +232,7 @@ const createProduct = async (req, res) => {
         name,
         description,
         price,
+        cost_price,
         image_url,
         stock_total: stock_total || 0
       }
@@ -236,7 +267,7 @@ const updateProduct = async (req, res) => {
     }
 
     // Construir query de actualización dinámicamente
-    const allowedFields = ['name', 'description', 'price', 'image_url', 'stock_total', 'status'];
+    const allowedFields = ['name', 'description', 'price', 'cost_price', 'image_url', 'stock_total', 'status'];
     const updateFields = [];
     const updateValues = [];
 
