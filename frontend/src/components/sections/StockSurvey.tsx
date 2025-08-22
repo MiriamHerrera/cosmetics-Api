@@ -242,7 +242,8 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
     );
   }
 
-  if (!selectedSurvey || !selectedSurvey.options || selectedSurvey.options.length === 0) {
+  // Solo mostrar "No hay encuestas activas" cuando realmente no hay encuestas activas
+  if (activeSurveys.length === 0) {
     return (
       <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -252,25 +253,68 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
             </div>
             <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">No hay encuestas activas</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-              {activeSurveys.length === 0 
-                ? 'Actualmente no hay encuestas disponibles para votar. Los administradores pueden crear nuevas encuestas desde el panel de administración.'
-                : 'La encuesta seleccionada no tiene opciones disponibles para votar.'
-              }
+              Actualmente no hay encuestas disponibles para votar. Los administradores pueden crear nuevas encuestas desde el panel de administración.
             </p>
-            {activeSurveys.length > 0 && (
-              <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-xs sm:text-sm text-gray-600">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                    <span>Encuestas: {activeSurveys.length}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                    <span>Opciones: {activeSurveys.reduce((total, survey) => total + (survey.options_count || 0), 0)}</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Si hay encuestas activas pero la seleccionada no tiene opciones, mostrar mensaje específico
+  if (!selectedSurvey || !selectedSurvey.options || selectedSurvey.options.length === 0) {
+    return (
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 max-w-lg mx-auto">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <MessageSquare className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">Encuesta sin opciones disponibles</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+              La encuesta seleccionada no tiene opciones disponibles para votar. Los administradores pueden agregar opciones desde el panel de administración.
+            </p>
+            
+            {/* Selector de encuestas para cambiar a otra encuesta activa */}
+            {activeSurveys.length > 1 && (
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3 text-center">
+                  Cambiar a otra encuesta:
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedSurvey?.id || ''}
+                    onChange={(e) => {
+                      const survey = activeSurveys.find(s => s.id === parseInt(e.target.value));
+                      setSelectedSurvey(survey || null);
+                    }}
+                    className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-400 bg-white shadow-lg appearance-none cursor-pointer text-sm"
+                  >
+                    {activeSurveys.map((survey) => (
+                      <option key={survey.id} value={survey.id}>
+                        {survey.question}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent border-l-transparent transform rotate-45"></div>
                   </div>
                 </div>
               </div>
             )}
+            
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-xs sm:text-sm text-gray-600">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                  <span>Encuestas: {activeSurveys.length}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                  <span>Opciones: {activeSurveys.reduce((total, survey) => total + (survey.options_count || 0), 0)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
