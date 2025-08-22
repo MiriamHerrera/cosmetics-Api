@@ -7,12 +7,22 @@ const register = async (req, res) => {
   try {
     const { name, phone, email, password, role = 'client' } = req.body;
     
-    console.log('🔍 DEBUG REGISTER:', { name, phone, email, role, passwordLength: password ? password.length : 0 });
+    // Limpiar el teléfono: eliminar espacios, guiones y paréntesis, mantener solo dígitos
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    
+    console.log('🔍 DEBUG REGISTER:', { 
+      name, 
+      originalPhone: phone, 
+      cleanPhone, 
+      email, 
+      role, 
+      passwordLength: password ? password.length : 0 
+    });
 
-    // Verificar si el usuario ya existe
+    // Verificar si el usuario ya existe (usando el teléfono limpio)
     const existingUser = await query(
       'SELECT id FROM users WHERE phone = ? OR (email = ? AND email IS NOT NULL)',
-      [phone, email]
+      [cleanPhone, email || null]
     );
 
     if (existingUser.length > 0) {
@@ -32,7 +42,7 @@ const register = async (req, res) => {
     // Crear usuario
     const result = await query(
       'INSERT INTO users (name, phone, email, password, role) VALUES (?, ?, ?, ?, ?)',
-      [name, phone, email, hashedPassword, role]
+      [name, cleanPhone, email || null, hashedPassword, role]
     );
 
     // Generar token
@@ -40,7 +50,7 @@ const register = async (req, res) => {
       id: result.insertId,
       name,
       phone,
-      email,
+      email: email || null,
       role
     });
 
@@ -49,23 +59,60 @@ const register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
-      data: {
-        user: {
-          id: result.insertId,
-          name,
-          phone,
-          email,
-          role
-        },
-        token
-      }
+              data: {
+          user: {
+            id: result.insertId,
+            name,
+            phone: cleanPhone,
+            email: email || null,
+            role
+          },
+          token
+        }
     });
 
   } catch (error) {
     console.error('❌ Error en registro:', error);
+    console.error('   Stack trace:', error.stack);
+    console.error('   Error code:', error.code);
+    console.error('   SQL Message:', error.sqlMessage);
+    console.error('   SQL State:', error.sqlState);
+    console.error('   Error Number:', error.errno);
+    
+    // Log adicional para debugging
+    console.error('   Request body:', req.body);
+    console.error('   Clean phone:', req.body.phone ? req.body.phone.replace(/[\s\-\(\)]/g, '') : 'undefined');
+    
+    // Manejar errores específicos de restricciones únicas
+    if (error.code === 'ER_DUP_ENTRY') {
+      if (error.sqlMessage && error.sqlMessage.includes('phone')) {
+        return res.status(400).json({
+          success: false,
+          message: 'El teléfono ya está registrado en el sistema'
+        });
+      }
+      if (error.sqlMessage && error.sqlMessage.includes('email')) {
+        return res.status(400).json({
+          success: false,
+          message: 'El email ya está registrado en el sistema'
+        });
+      }
+      if (error.sqlMessage && error.sqlMessage.includes('username')) {
+        return res.status(400).json({
+          success: false,
+          message: 'El nombre de usuario ya está en uso'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Ya existe un usuario con estos datos'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -75,12 +122,19 @@ const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
     
-    console.log('🔍 DEBUG LOGIN:', { phone, password: password ? '***' : 'undefined' });
+    // Limpiar el teléfono: eliminar espacios, guiones y paréntesis, mantener solo dígitos
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    
+    console.log('🔍 DEBUG LOGIN:', { 
+      originalPhone: phone, 
+      cleanPhone, 
+      password: password ? '***' : 'undefined' 
+    });
 
-    // Buscar usuario por teléfono
+    // Buscar usuario por teléfono (usando el teléfono limpio)
     const users = await query(
       'SELECT id, name, phone, email, password, role FROM users WHERE phone = ?',
-      [phone]
+      [cleanPhone]
     );
 
     console.log('🔍 Usuarios encontrados:', users.length);
@@ -194,11 +248,17 @@ const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, phone, email } = req.body;
 
+    // Limpiar el teléfono si se proporciona
+    let cleanPhone = phone;
+    if (phone) {
+      cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    }
+
     // Verificar si el teléfono o email ya existe en otro usuario
     if (phone || email) {
       const existingUser = await query(
         'SELECT id FROM users WHERE (phone = ? OR (email = ? AND email IS NOT NULL)) AND id != ?',
-        [phone, email, userId]
+        [cleanPhone, email || null, userId]
       );
 
       if (existingUser.length > 0) {
@@ -219,11 +279,11 @@ const updateProfile = async (req, res) => {
     }
     if (phone) {
       updateFields.push('phone = ?');
-      updateValues.push(phone);
+      updateValues.push(cleanPhone);
     }
-    if (email) {
+    if (email !== undefined) {
       updateFields.push('email = ?');
-      updateValues.push(email);
+      updateValues.push(email === '' ? null : email);
     }
 
     if (updateFields.length === 0) {

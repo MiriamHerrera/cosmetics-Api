@@ -22,7 +22,7 @@ const validate = (schema) => {
 // Validación de registro de usuario
 const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
-  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]+$/).min(10).max(20).required(),
+  phone: Joi.string().pattern(/^[\d\s\-\(\)]+$/).min(10).max(20).required(),
   email: Joi.string().email().max(120).optional(),
   password: Joi.string().min(6).max(255).required(),
   role: Joi.string().valid('client', 'admin').default('client')
@@ -86,7 +86,7 @@ const inventoryScheduleSchema = Joi.object({
 // Validación de actualización de perfil
 const profileUpdateSchema = Joi.object({
   name: Joi.string().min(2).max(100).optional(),
-  phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]+$/).min(10).max(20).optional(),
+  phone: Joi.string().pattern(/^[\d\s\-\(\)]+$/).min(10).max(20).optional(),
   email: Joi.string().email().max(120).optional()
 });
 
