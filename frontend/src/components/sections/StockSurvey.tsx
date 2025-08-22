@@ -37,6 +37,8 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
   const [newOptionDescription, setNewOptionDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [votingOptions, setVotingOptions] = useState<Set<number>>(new Set()); // Para tracking de votos en progreso
+  const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [suggestionMessage, setSuggestionMessage] = useState('');
 
   // Cargar encuestas activas al montar el componente
   useEffect(() => {
@@ -140,19 +142,46 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
     }
   };
 
-  // Función para agregar nueva opción
+  // Función para agregar nueva opción con mejor feedback
   const handleAddOption = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!user || !selectedSurvey || !newOptionText.trim()) return;
     
     try {
       setSubmitting(true);
-      await addSurveyOption(selectedSurvey.id, newOptionText.trim(), newOptionDescription.trim());
-      setNewOptionText('');
-      setNewOptionDescription('');
-      setShowAddOption(false);
+      setSuggestionStatus('submitting');
+      setSuggestionMessage('Enviando tu sugerencia...');
+      
+      const success = await addSurveyOption(selectedSurvey.id, newOptionText.trim(), newOptionDescription.trim());
+      
+      if (success) {
+        setSuggestionStatus('success');
+        setSuggestionMessage('¡Sugerencia enviada exitosamente! Está pendiente de aprobación.');
+        
+        // Limpiar formulario
+        setNewOptionText('');
+        setNewOptionDescription('');
+        
+        // Recargar encuestas para mostrar la nueva opción pendiente
+        await loadActiveSurveys();
+        
+        // Ocultar formulario después de 3 segundos
+        setTimeout(() => {
+          setShowAddOption(false);
+          setSuggestionStatus('idle');
+          setSuggestionMessage('');
+        }, 3000);
+        
+      } else {
+        setSuggestionStatus('error');
+        setSuggestionMessage('Error al enviar la sugerencia. Inténtalo de nuevo.');
+      }
+      
     } catch (error) {
       console.error('Error al agregar opción:', error);
+      setSuggestionStatus('error');
+      setSuggestionMessage('Error al enviar la sugerencia. Inténtalo de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -291,11 +320,11 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
               
               return (
                 <div key={option.id} className={`
-                  bg-gray-50 rounded-xl p-4 sm:p-6
+                  rounded-xl p-4 sm:p-6
                   transition-all duration-200
-                  ${!isPending && user ? 'hover:bg-gray-100 cursor-pointer' : 'cursor-default'}
+                  ${!isPending ? 'cursor-pointer' : 'cursor-default'}
                   ${isUserVote ? 'ring-2 ring-rose-400 bg-rose-50' : ''}
-                  ${isPending ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}
+                  ${isPending ? 'bg-yellow-50 border-l-4 border-yellow-400 shadow-md' : 'bg-gray-50 hover:bg-gray-100'}
                   ${isVoting ? 'ring-2 ring-blue-400 bg-blue-50' : ''}
                   ${!user ? 'opacity-75' : ''}
                 `}
@@ -327,7 +356,7 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                         {isPending && (
                           <div className="flex items-center gap-2 mt-2">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              Pendiente de aprobación
+                              ⏳ Pendiente de aprobación
                             </span>
                             {user && (
                               <span className="text-xs text-gray-500">
@@ -371,7 +400,10 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                           <div className="text-sm text-gray-500">{percentage}%</div>
                         </>
                       ) : (
-                        <div className="text-sm text-yellow-600 font-medium">Pendiente</div>
+                        <div className="text-center">
+                          <div className="text-sm text-yellow-600 font-medium">Pendiente</div>
+                          <div className="text-xs text-yellow-500">No votable</div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -445,47 +477,93 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                   Sugerir Nueva Opción
                 </button>
               ) : (
-                <form onSubmit={handleAddOption} className="max-w-md mx-auto space-y-4">
-                  <div>
-                    <input
-                      type="text"
-                      value={newOptionText}
-                      onChange={(e) => setNewOptionText(e.target.value)}
-                      placeholder="Tu sugerencia..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <textarea
-                      value={newOptionDescription}
-                      onChange={(e) => setNewOptionDescription(e.target.value)}
-                      placeholder="Descripción (opcional)"
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={submitting || !newOptionText.trim()}
-                      className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Enviar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddOption(false);
-                        setNewOptionText('');
-                        setNewOptionDescription('');
-                      }}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
+                <div className="max-w-md mx-auto space-y-4">
+                  {/* Mensaje de estado */}
+                  {suggestionStatus !== 'idle' && (
+                    <div className={`p-3 rounded-lg border ${
+                      suggestionStatus === 'submitting' 
+                        ? 'bg-blue-50 border-blue-200 text-blue-800'
+                        : suggestionStatus === 'success'
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : 'bg-red-50 border-red-200 text-red-800'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        {suggestionStatus === 'submitting' && (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                        {suggestionStatus === 'success' && (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        {suggestionStatus === 'error' && (
+                          <AlertCircle className="w-4 h-4" />
+                        )}
+                        <span className="text-sm font-medium">{suggestionMessage}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <form onSubmit={handleAddOption} className="space-y-4">
+                    <div>
+                      <label htmlFor="optionText" className="block text-sm font-medium text-gray-700 mb-2">
+                        Tu sugerencia *
+                      </label>
+                      <input
+                        id="optionText"
+                        type="text"
+                        value={newOptionText}
+                        onChange={(e) => setNewOptionText(e.target.value)}
+                        placeholder="¿Qué opción te gustaría agregar?"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        required
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="optionDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción (opcional)
+                      </label>
+                      <textarea
+                        id="optionDescription"
+                        value={newOptionDescription}
+                        onChange={(e) => setNewOptionDescription(e.target.value)}
+                        placeholder="Describe tu sugerencia o da ejemplos..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={submitting || !newOptionText.trim()}
+                        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {submitting ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Enviando...
+                          </div>
+                        ) : (
+                          'Enviar Sugerencia'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddOption(false);
+                          setNewOptionText('');
+                          setNewOptionDescription('');
+                          setSuggestionStatus('idle');
+                          setSuggestionMessage('');
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                        disabled={submitting}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
               )}
             </div>
           ) : (
