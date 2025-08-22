@@ -216,7 +216,7 @@ const getActiveSurveys = async (req, res) => {
 
         console.log(`✅ Opciones aprobadas para encuesta ${survey.id}:`, approvedOptions.length);
 
-        // Opciones pendientes (solo para usuarios logueados)
+        // Opciones pendientes (solo las del usuario actual)
         let pendingOptions = [];
         pendingOptions = await query(`
           SELECT 
@@ -228,9 +228,9 @@ const getActiveSurveys = async (req, res) => {
             'pending' as status,
             0 as votes
           FROM survey_options so
-          WHERE so.survey_id = ? AND so.is_approved = 0
+          WHERE so.survey_id = ? AND so.is_approved = 0 AND so.created_by = ?
           ORDER BY so.created_at ASC
-        `, [survey.id]);
+        `, [survey.id, userId]);
         
         console.log(`⏳ Opciones pendientes para encuesta ${survey.id}:`, pendingOptions.length);
 
