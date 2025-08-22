@@ -87,9 +87,11 @@ const getAllSurveys = async (req, res) => {
   }
 };
 
-// Obtener encuestas activas (públicas)
-const getActiveSurveys = async (req, res) => {
+// Obtener encuestas activas (públicas) - SIN user_votes
+const getActiveSurveysPublic = async (req, res) => {
   try {
+    console.log('🔍 getActiveSurveysPublic - Usuario NO logueado');
+    
     // Primero obtener las encuestas activas
     const surveys = await query(`
       SELECT 
@@ -107,9 +109,94 @@ const getActiveSurveys = async (req, res) => {
       ORDER BY s.created_at DESC
     `);
 
+    console.log('📊 Encuestas activas encontradas (públicas):', surveys.length);
+
+    // Para cada encuesta, obtener sus opciones (solo aprobadas)
+    const surveysWithOptions = await Promise.all(
+      surveys.map(async (survey) => {
+        console.log(`🔄 Procesando encuesta ID: ${survey.id} (pública)`);
+        
+        // Solo opciones aprobadas para usuarios no logueados
+        const approvedOptions = await query(`
+          SELECT 
+            so.id,
+            so.option_text,
+            so.description,
+            so.created_by,
+            so.created_at,
+            'approved' as status,
+            COUNT(sv.id) as votes
+          FROM survey_options so
+          LEFT JOIN survey_votes sv ON so.id = sv.option_id
+          WHERE so.survey_id = ? AND so.is_approved = 1
+          GROUP BY so.id, so.option_text, so.description, so.created_by, so.created_at
+          ORDER BY votes DESC, so.created_at ASC
+        `, [survey.id]);
+
+        console.log(`✅ Opciones aprobadas para encuesta ${survey.id}:`, approvedOptions.length);
+
+        return {
+          ...survey,
+          options: approvedOptions,
+          user_votes: [] // Usuarios no logueados no tienen votos
+        };
+      })
+    );
+
+    console.log('🎯 Total de encuestas procesadas (públicas):', surveysWithOptions.length);
+
+    res.json({
+      success: true,
+      data: surveysWithOptions
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo encuestas activas públicas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Obtener encuestas activas (con user_votes) - PARA usuarios logueados
+const getActiveSurveys = async (req, res) => {
+  try {
+    const userId = req.user ? req.user.id : null;
+    
+    console.log('🔍 getActiveSurveys - Usuario ID:', userId);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+    
+    // Primero obtener las encuestas activas
+    const surveys = await query(`
+      SELECT 
+        s.id,
+        s.question,
+        s.description,
+        s.created_at,
+        COUNT(DISTINCT so.id) as options_count,
+        COUNT(DISTINCT sv.id) as total_votes
+      FROM surveys s
+      LEFT JOIN survey_options so ON s.id = so.survey_id AND so.is_approved = 1
+      LEFT JOIN survey_votes sv ON s.id = sv.survey_id
+      WHERE s.status = 'active'
+      GROUP BY s.id, s.question, s.description, s.created_at
+      ORDER BY s.created_at DESC
+    `);
+
+    console.log('📊 Encuestas activas encontradas:', surveys.length);
+
     // Para cada encuesta, obtener sus opciones (aprobadas y pendientes)
     const surveysWithOptions = await Promise.all(
       surveys.map(async (survey) => {
+        console.log(`🔄 Procesando encuesta ID: ${survey.id}`);
+        
         // Opciones aprobadas
         const approvedOptions = await query(`
           SELECT 
@@ -127,33 +214,62 @@ const getActiveSurveys = async (req, res) => {
           ORDER BY votes DESC, so.created_at ASC
         `, [survey.id]);
 
+        console.log(`✅ Opciones aprobadas para encuesta ${survey.id}:`, approvedOptions.length);
+
         // Opciones pendientes (solo para usuarios logueados)
         let pendingOptions = [];
-        if (req.user) {
-          pendingOptions = await query(`
-            SELECT 
-              so.id,
-              so.option_text,
-              so.description,
-              so.created_by,
-              so.created_at,
-              'pending' as status,
-              0 as votes
-            FROM survey_options so
-            WHERE so.survey_id = ? AND so.is_approved = 0
-            ORDER BY so.created_at ASC
-          `, [survey.id]);
-        }
+        pendingOptions = await query(`
+          SELECT 
+            so.id,
+            so.option_text,
+            so.description,
+            so.created_by,
+            so.created_at,
+            'pending' as status,
+            0 as votes
+          FROM survey_options so
+          WHERE so.survey_id = ? AND so.is_approved = 0
+          ORDER BY so.created_at ASC
+        `, [survey.id]);
+        
+        console.log(`⏳ Opciones pendientes para encuesta ${survey.id}:`, pendingOptions.length);
+
+        // Obtener votos del usuario actual para esta encuesta
+        console.log(`🗳️ Buscando votos del usuario ${userId} para encuesta ${survey.id}`);
+        
+        const userVotesResult = await query(`
+          SELECT sv.option_id
+          FROM survey_votes sv
+          WHERE sv.survey_id = ? AND sv.user_id = ?
+        `, [survey.id, userId]);
+        
+        const userVotes = userVotesResult.map(vote => vote.option_id);
+        console.log(`✅ Votos del usuario ${userId} para encuesta ${survey.id}:`, userVotes);
 
         // Combinar opciones aprobadas y pendientes
         const allOptions = [...approvedOptions, ...pendingOptions];
 
-        return {
+        const surveyWithData = {
           ...survey,
-          options: allOptions
+          options: allOptions,
+          user_votes: userVotes
         };
+
+        console.log(`📋 Encuesta ${survey.id} procesada:`, {
+          options_count: allOptions.length,
+          user_votes_count: userVotes.length,
+          user_votes: userVotes
+        });
+
+        return surveyWithData;
       })
     );
+
+    console.log('🎯 Total de encuestas procesadas:', surveysWithOptions.length);
+    console.log('📊 Resumen de user_votes por encuesta:');
+    surveysWithOptions.forEach(survey => {
+      console.log(`  - Encuesta ${survey.id}: ${survey.user_votes?.length || 0} votos del usuario`);
+    });
 
     res.json({
       success: true,
@@ -161,7 +277,7 @@ const getActiveSurveys = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error obteniendo encuestas activas:', error);
+    console.error('❌ Error obteniendo encuestas activas:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
@@ -676,6 +792,7 @@ const getSurveyStats = async (req, res) => {
 module.exports = {
   createSurvey,
   getAllSurveys,
+  getActiveSurveysPublic,
   getActiveSurveys,
   getSurveyById,
   addSurveyOption,

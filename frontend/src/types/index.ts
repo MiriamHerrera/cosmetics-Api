@@ -100,15 +100,13 @@ export interface Survey {
   question: string;
   description?: string;
   status: 'draft' | 'active' | 'closed';
-  created_by: number;
   created_at: string;
   updated_at: string;
-  closed_by?: number;
-  closed_at?: string;
-  options_count?: number;
-  total_votes?: number;
   options?: SurveyOption[];
-  user_vote?: number;
+  total_votes?: number;
+  user_vote?: number; // Para compatibilidad con versiones anteriores
+  user_votes?: number[]; // Array de IDs de opciones votadas por el usuario
+  options_count?: number;
 }
 
 export interface SurveyOption {

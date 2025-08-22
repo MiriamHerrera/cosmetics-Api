@@ -64,49 +64,41 @@ export const useSurveys = (): UseSurveysReturn => {
     }
   }, []);
 
-  // Cargar encuestas activas (públicas)
+  // Cargar encuestas activas (con user_votes para usuarios logueados)
   const loadActiveSurveys = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE}/active`);
-      if (!response.ok) {
-        throw new Error('Error cargando encuestas activas');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        setActiveSurveys(data.data);
+      // Usar la ruta autenticada que incluye user_votes
+      const response = await apiCall('/active');
+      if (response.success) {
+        console.log('📊 Encuestas cargadas con user_votes:', response.data);
+        setActiveSurveys(response.data);
       } else {
-        throw new Error(data.message || 'Error desconocido');
+        throw new Error(response.message || 'Error desconocido');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiCall]);
 
-  // Cargar encuesta específica
+  // Cargar encuesta específica (con user_votes para usuarios logueados)
   const loadSurveyById = useCallback(async (id: number): Promise<Survey | null> => {
     try {
-      const response = await fetch(`${API_BASE}/active/${id}`);
-      if (!response.ok) {
-        throw new Error('Error cargando encuesta');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        return data.data;
+      const response = await apiCall(`/active/${id}`);
+      if (response.success) {
+        return response.data;
       } else {
-        throw new Error(data.message || 'Error desconocido');
+        throw new Error(response.message || 'Error desconocido');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       return null;
     }
-  }, []);
+  }, [apiCall]);
 
   // Agregar opción a encuesta (usuarios)
   const addSurveyOption = useCallback(async (
@@ -144,6 +136,8 @@ export const useSurveys = (): UseSurveysReturn => {
     try {
       setError(null);
       
+      console.log('🗳️ Iniciando voto:', { surveyId, optionId });
+      
       const response = await apiCall('/vote', {
         method: 'POST',
         body: JSON.stringify({
@@ -152,20 +146,85 @@ export const useSurveys = (): UseSurveysReturn => {
         })
       });
 
+      console.log('📡 Respuesta de la API:', response);
+
       if (response.success) {
-        // Recargar la encuesta para mostrar el nuevo estado
-        await loadSurveyById(surveyId);
-        // También recargar encuestas activas para actualizar conteos
-        await loadActiveSurveys();
+        console.log('✅ Voto exitoso, acción:', response.data.action);
+        
+        // Actualizar estado localmente sin recargar toda la encuesta
+        setActiveSurveys(prevSurveys => 
+          prevSurveys.map(survey => {
+            if (survey.id === surveyId) {
+              console.log('🔄 Actualizando encuesta:', survey.id);
+              console.log('📊 Estado actual de votos:', survey.user_votes);
+              
+              // Encontrar la opción votada
+              const updatedOptions = survey.options?.map(option => {
+                if (option.id === optionId) {
+                  // Verificar si el usuario ya votó por esta opción específica
+                  const hasVotedForThisOption = survey.user_votes?.includes(optionId) || false;
+                  
+                  console.log('🎯 Opción:', option.option_text, 'Votada:', hasVotedForThisOption);
+                  
+                  if (hasVotedForThisOption) {
+                    // Si ya votó por esta opción, desvotar (decrementar votos)
+                    console.log('➖ Desvotando opción:', option.option_text);
+                    return { ...option, votes: Math.max(0, (option.votes || 0) - 1) };
+                  } else {
+                    // Si no votó por esta opción, votar (incrementar votos)
+                    console.log('➕ Votando opción:', option.option_text);
+                    return { ...option, votes: (option.votes || 0) + 1 };
+                  }
+                }
+                return option;
+              });
+
+              // Actualizar los votos del usuario
+              let newUserVotes = survey.user_votes || [];
+              if (response.data.action === 'voted') {
+                // Agregar voto
+                if (!newUserVotes.includes(optionId)) {
+                  newUserVotes = [...newUserVotes, optionId];
+                  console.log('➕ Agregando voto a user_votes:', newUserVotes);
+                }
+              } else {
+                // Remover voto
+                newUserVotes = newUserVotes.filter((id: number) => id !== optionId);
+                console.log('➖ Removiendo voto de user_votes:', newUserVotes);
+              }
+              
+              const updatedSurvey = {
+                ...survey,
+                options: updatedOptions,
+                user_votes: newUserVotes,
+                total_votes: response.data.action === 'voted' 
+                  ? (survey.total_votes || 0) + 1 
+                  : Math.max(0, (survey.total_votes || 0) - 1)
+              };
+              
+              console.log('🔄 Encuesta actualizada:', {
+                id: updatedSurvey.id,
+                user_votes: updatedSurvey.user_votes,
+                total_votes: updatedSurvey.total_votes
+              });
+              
+              return updatedSurvey;
+            }
+            return survey;
+          })
+        );
+
         return true;
       } else {
+        console.error('❌ Error en la respuesta de la API:', response);
         throw new Error(response.message || 'Error registrando voto');
       }
     } catch (err) {
+      console.error('💥 Error en voteInSurvey:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       return false;
     }
-  }, [apiCall, loadSurveyById, loadActiveSurveys]);
+  }, [apiCall]);
 
   // Cambiar voto
   const changeVote = useCallback(async (surveyId: number, newOptionId: number): Promise<boolean> => {

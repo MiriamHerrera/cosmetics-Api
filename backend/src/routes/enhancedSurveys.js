@@ -3,9 +3,12 @@ const router = express.Router();
 const enhancedSurveyController = require('../controllers/enhancedSurveyController');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 
-// Rutas públicas (sin autenticación)
-router.get('/active', enhancedSurveyController.getActiveSurveys);
-router.get('/active/:id', enhancedSurveyController.getSurveyById);
+// Rutas públicas (sin autenticación) - solo para usuarios no logueados
+router.get('/public/active', enhancedSurveyController.getActiveSurveysPublic);
+
+// Rutas que requieren autenticación para obtener user_votes
+router.get('/active', authenticateToken, enhancedSurveyController.getActiveSurveys);
+router.get('/active/:id', authenticateToken, enhancedSurveyController.getSurveyById);
 
 // Rutas que requieren autenticación
 router.post('/options', authenticateToken, enhancedSurveyController.addSurveyOption);
