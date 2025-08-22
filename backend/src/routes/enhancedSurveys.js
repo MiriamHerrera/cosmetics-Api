@@ -5,6 +5,7 @@ const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware
 
 // Rutas públicas (sin autenticación) - solo para usuarios no logueados
 router.get('/public/active', enhancedSurveyController.getActiveSurveysPublic);
+router.get('/public/active/:id', enhancedSurveyController.getSurveyByIdPublic);
 
 // Rutas que requieren autenticación para obtener user_votes
 router.get('/active', authenticateToken, enhancedSurveyController.getActiveSurveys);

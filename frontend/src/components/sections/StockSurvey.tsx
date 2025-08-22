@@ -274,9 +274,7 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
         )}
 
         {/* Encuesta principal */}
-        <div className={`bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100 transition-all duration-300 ${
-          !user ? 'opacity-60' : ''
-        }`} style={{
+        <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100 transition-all duration-300" style={{
           backgroundColor: '#aa94f7'
         }}>
           
@@ -297,14 +295,6 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
                   <span className="font-medium">
                     Solo usuarios logueados pueden votar y sugerir opciones
                   </span>
-                </div>
-                <div className="text-center mt-2">
-                  <a 
-                    href="/login" 
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                  >
-                    Iniciar Sesión
-                  </a>
                 </div>
               </div>
             )}
@@ -571,11 +561,14 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
               <p className="text-gray-600 mb-2">
                 ¿Tienes una sugerencia?
               </p>
+              <p className="text-gray-700 mb-3">
+                Inicia sesión para votar por tus opciones favoritas y sugerir nuevas ideas
+              </p>
               <a 
                 href="/login" 
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
-                Inicia sesión para sugerir
+                Iniciar Sesión
               </a>
             </div>
           )}
@@ -583,24 +576,8 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
           {/* Total de votos */}
           <div className="text-center mt-6 pt-6 border-t border-gray-200">
             <p className="text-gray-600">
-              Total de votos: <span className="font-semibold text-purple-600">{currentTotalVotes}</span>
+              Total de votos: <span className="text-purple-600 font-semibold">{currentTotalVotes}</span>
             </p>
-            {!user && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800 mb-2">
-                  💡 <strong>¿Quieres participar?</strong>
-                </p>
-                <p className="text-sm text-blue-700 mb-3">
-                  Inicia sesión para votar por tus opciones favoritas y sugerir nuevas ideas
-                </p>
-                <a 
-                  href="/login" 
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Iniciar Sesión
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </div>

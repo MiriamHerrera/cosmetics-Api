@@ -64,41 +64,101 @@ export const useSurveys = (): UseSurveysReturn => {
     }
   }, []);
 
+  // Función helper para hacer llamadas API públicas (sin autenticación)
+  const publicApiCall = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Public API call error:', err);
+      throw err;
+    }
+  }, []);
+
   // Cargar encuestas activas (con user_votes para usuarios logueados)
   const loadActiveSurveys = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Usar la ruta autenticada que incluye user_votes
-      const response = await apiCall('/active');
-      if (response.success) {
-        console.log('📊 Encuestas cargadas con user_votes:', response.data);
-        setActiveSurveys(response.data);
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        // Usuario autenticado: usar ruta que incluye user_votes
+        const response = await apiCall('/active');
+        if (response.success) {
+          console.log('📊 Encuestas cargadas con user_votes:', response.data);
+          setActiveSurveys(response.data);
+        } else {
+          throw new Error(response.message || 'Error desconocido');
+        }
       } else {
-        throw new Error(response.message || 'Error desconocido');
+        // Usuario no autenticado: usar ruta pública
+        const response = await publicApiCall('/public/active');
+        if (response.success) {
+          console.log('📊 Encuestas cargadas (modo público):', response.data);
+          // Agregar user_votes vacío para opciones no autenticadas
+          const surveysWithEmptyVotes = response.data.map((survey: Survey) => ({
+            ...survey,
+            user_votes: []
+          }));
+          setActiveSurveys(surveysWithEmptyVotes);
+        } else {
+          throw new Error(response.message || 'Error desconocido');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
-  }, [apiCall]);
+  }, [apiCall, publicApiCall]);
 
   // Cargar encuesta específica (con user_votes para usuarios logueados)
   const loadSurveyById = useCallback(async (id: number): Promise<Survey | null> => {
     try {
-      const response = await apiCall(`/active/${id}`);
-      if (response.success) {
-        return response.data;
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        // Usuario autenticado: usar ruta que incluye user_votes
+        const response = await apiCall(`/active/${id}`);
+        if (response.success) {
+          return response.data;
+        } else {
+          throw new Error(response.message || 'Error desconocido');
+        }
       } else {
-        throw new Error(response.message || 'Error desconocido');
+        // Usuario no autenticado: usar ruta pública
+        const response = await publicApiCall(`/public/active/${id}`);
+        if (response.success) {
+          // Agregar user_votes vacío para opciones no autenticadas
+          return {
+            ...response.data,
+            user_votes: []
+          };
+        } else {
+          throw new Error(response.message || 'Error desconocido');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       return null;
     }
-  }, [apiCall]);
+  }, [apiCall, publicApiCall]);
 
   // Agregar opción a encuesta (usuarios)
   const addSurveyOption = useCallback(async (

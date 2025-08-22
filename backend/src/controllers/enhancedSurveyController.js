@@ -789,10 +789,82 @@ const getSurveyStats = async (req, res) => {
   }
 };
 
+// Obtener encuesta específica (pública) - SIN user_votes
+const getSurveyByIdPublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🔍 getSurveyByIdPublic - Encuesta ID:', id, '- Usuario NO logueado');
+    
+    // Obtener la encuesta
+    const surveys = await query(`
+      SELECT 
+        s.id,
+        s.question,
+        s.description,
+        s.created_at,
+        COUNT(DISTINCT so.id) as options_count,
+        COUNT(DISTINCT sv.id) as total_votes
+      FROM surveys s
+      LEFT JOIN survey_options so ON s.id = so.survey_id AND so.is_approved = 1
+      LEFT JOIN survey_votes sv ON s.id = sv.survey_id
+      WHERE s.id = ? AND s.status = 'active'
+      GROUP BY s.id, s.question, s.description, s.created_at
+    `, [id]);
+
+    if (surveys.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Encuesta no encontrada o no está activa'
+      });
+    }
+
+    const survey = surveys[0];
+    console.log(`📊 Encuesta encontrada (pública):`, survey.id);
+
+    // Obtener opciones aprobadas
+    const approvedOptions = await query(`
+      SELECT 
+        so.id,
+        so.option_text,
+        so.description,
+        so.created_by,
+        so.created_at,
+        'approved' as status,
+        COUNT(sv.id) as votes
+      FROM survey_options so
+      LEFT JOIN survey_votes sv ON so.id = sv.option_id
+      WHERE so.survey_id = ? AND so.is_approved = 1
+      GROUP BY so.id, so.option_text, so.description, so.created_by, so.created_at
+      ORDER BY votes DESC, so.created_at ASC
+    `, [id]);
+
+    console.log(`✅ Opciones aprobadas para encuesta ${id}:`, approvedOptions.length);
+
+    const surveyWithOptions = {
+      ...survey,
+      options: approvedOptions,
+      user_votes: [] // Usuarios no logueados no tienen votos
+    };
+
+    res.json({
+      success: true,
+      data: surveyWithOptions
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo encuesta pública:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   createSurvey,
   getAllSurveys,
   getActiveSurveysPublic,
+  getSurveyByIdPublic,
   getActiveSurveys,
   getSurveyById,
   addSurveyOption,
