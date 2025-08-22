@@ -21,6 +21,7 @@ interface UseSurveysReturn {
   loadPendingOptions: () => Promise<void>;
   createSurvey: (question: string, description?: string) => Promise<boolean>;
   approveSurveyOption: (optionId: number, isApproved: boolean, adminNotes?: string) => Promise<boolean>;
+  approveSurvey: (surveyId: number, adminNotes?: string) => Promise<boolean>;
   closeSurvey: (surveyId: number) => Promise<boolean>;
   
   // Utilidades
@@ -152,8 +153,10 @@ export const useSurveys = (): UseSurveysReturn => {
       });
 
       if (response.success) {
-        // Recargar la encuesta para mostrar el nuevo voto
+        // Recargar la encuesta para mostrar el nuevo estado
         await loadSurveyById(surveyId);
+        // También recargar encuestas activas para actualizar conteos
+        await loadActiveSurveys();
         return true;
       } else {
         throw new Error(response.message || 'Error registrando voto');
@@ -162,7 +165,7 @@ export const useSurveys = (): UseSurveysReturn => {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       return false;
     }
-  }, [apiCall, loadSurveyById]);
+  }, [apiCall, loadSurveyById, loadActiveSurveys]);
 
   // Cambiar voto
   const changeVote = useCallback(async (surveyId: number, newOptionId: number): Promise<boolean> => {
@@ -281,6 +284,34 @@ export const useSurveys = (): UseSurveysReturn => {
     }
   }, [apiCall, loadPendingOptions]);
 
+  // Aprobar encuesta (admin)
+  const approveSurvey = useCallback(async (
+    surveyId: number, 
+    adminNotes?: string
+  ): Promise<boolean> => {
+    try {
+      setError(null);
+      
+      const response = await apiCall(`/${surveyId}/approve`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          admin_notes: adminNotes || ''
+        })
+      });
+
+      if (response.success) {
+        // Recargar la lista de encuestas
+        await loadAllSurveys();
+        return true;
+      } else {
+        throw new Error(response.message || 'Error aprobando encuesta');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      return false;
+    }
+  }, [apiCall, loadAllSurveys]);
+
   // Cerrar encuesta (admin)
   const closeSurvey = useCallback(async (surveyId: number): Promise<boolean> => {
     try {
@@ -333,6 +364,7 @@ export const useSurveys = (): UseSurveysReturn => {
     loadPendingOptions,
     createSurvey,
     approveSurveyOption,
+    approveSurvey,
     closeSurvey,
     
     // Utilidades

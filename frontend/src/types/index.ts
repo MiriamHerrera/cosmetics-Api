@@ -125,6 +125,10 @@ export interface SurveyOption {
   updated_at: string;
   votes?: number;
   suggested_by?: string;
+  // Campos adicionales para opciones pendientes de aprobación
+  survey_question?: string;
+  // Campo para estado de la opción (approved/pending)
+  status?: 'approved' | 'pending';
 }
 
 export interface SurveyVote {

@@ -18,6 +18,7 @@ router.get('/', authenticateToken, requireAdmin, enhancedSurveyController.getAll
 router.get('/pending-options', authenticateToken, requireAdmin, enhancedSurveyController.getPendingOptions);
 router.put('/options/:option_id/approve', authenticateToken, requireAdmin, enhancedSurveyController.approveSurveyOption);
 router.put('/:id/close', authenticateToken, requireAdmin, enhancedSurveyController.closeSurvey);
+router.put('/:id/approve', authenticateToken, requireAdmin, enhancedSurveyController.approveSurvey);
 router.get('/stats', authenticateToken, requireAdmin, enhancedSurveyController.getSurveyStats);
 
 module.exports = router; 

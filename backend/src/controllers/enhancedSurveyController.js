@@ -90,6 +90,7 @@ const getAllSurveys = async (req, res) => {
 // Obtener encuestas activas (públicas)
 const getActiveSurveys = async (req, res) => {
   try {
+    // Primero obtener las encuestas activas
     const surveys = await query(`
       SELECT 
         s.id,
@@ -106,9 +107,57 @@ const getActiveSurveys = async (req, res) => {
       ORDER BY s.created_at DESC
     `);
 
+    // Para cada encuesta, obtener sus opciones (aprobadas y pendientes)
+    const surveysWithOptions = await Promise.all(
+      surveys.map(async (survey) => {
+        // Opciones aprobadas
+        const approvedOptions = await query(`
+          SELECT 
+            so.id,
+            so.option_text,
+            so.description,
+            so.created_by,
+            so.created_at,
+            'approved' as status,
+            COUNT(sv.id) as votes
+          FROM survey_options so
+          LEFT JOIN survey_votes sv ON so.id = sv.option_id
+          WHERE so.survey_id = ? AND so.is_approved = 1
+          GROUP BY so.id, so.option_text, so.description, so.created_by, so.created_at
+          ORDER BY votes DESC, so.created_at ASC
+        `, [survey.id]);
+
+        // Opciones pendientes (solo para usuarios logueados)
+        let pendingOptions = [];
+        if (req.user) {
+          pendingOptions = await query(`
+            SELECT 
+              so.id,
+              so.option_text,
+              so.description,
+              so.created_by,
+              so.created_at,
+              'pending' as status,
+              0 as votes
+            FROM survey_options so
+            WHERE so.survey_id = ? AND so.is_approved = 0
+            ORDER BY so.created_at ASC
+          `, [survey.id]);
+        }
+
+        // Combinar opciones aprobadas y pendientes
+        const allOptions = [...approvedOptions, ...pendingOptions];
+
+        return {
+          ...survey,
+          options: allOptions
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: surveys
+      data: surveysWithOptions
     });
 
   } catch (error) {
@@ -308,6 +357,57 @@ const approveSurveyOption = async (req, res) => {
   }
 };
 
+// Aprobar encuesta (cambiar de draft a active)
+const approveSurvey = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { admin_notes } = req.body;
+
+    // Verificar que la encuesta existe y está en estado draft
+    const surveys = await query(`
+      SELECT id, question, status FROM surveys WHERE id = ?
+    `, [id]);
+
+    if (surveys.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Encuesta no encontrada'
+      });
+    }
+
+    if (surveys[0].status !== 'draft') {
+      return res.status(400).json({
+        success: false,
+        message: 'Solo se pueden aprobar encuestas en estado borrador'
+      });
+    }
+
+    // Cambiar estado a active
+    await query(`
+      UPDATE surveys 
+      SET status = 'active', updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `, [id]);
+
+    res.json({
+      success: true,
+      message: 'Encuesta aprobada y activada exitosamente',
+      data: {
+        survey_id: id,
+        status: 'active',
+        admin_notes
+      }
+    });
+
+  } catch (error) {
+    console.error('Error aprobando encuesta:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 // Obtener opciones pendientes de aprobación (admin)
 const getPendingOptions = async (req, res) => {
   try {
@@ -365,34 +465,56 @@ const voteInSurvey = async (req, res) => {
       SELECT id, is_approved FROM survey_options WHERE id = ? AND survey_id = ?
     `, [option_id, survey_id]);
 
-    if (options.length === 0 || options[0].is_approved !== 1) {
+    if (options.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Opción no válida'
+        message: 'Opción no encontrada'
       });
     }
 
-    // Verificar que el usuario no haya votado ya
-    const existingVotes = await query(`
-      SELECT id FROM survey_votes WHERE survey_id = ? AND user_id = ?
-    `, [survey_id, userId]);
-
-    if (existingVotes.length > 0) {
+    if (options[0].is_approved !== 1) {
       return res.status(400).json({
         success: false,
-        message: 'Ya has votado en esta encuesta'
+        message: 'Solo se puede votar por opciones aprobadas'
       });
     }
 
-    // Registrar voto
-    await query(`
-      INSERT INTO survey_votes (survey_id, option_id, user_id) VALUES (?, ?, ?)
-    `, [survey_id, option_id, userId]);
+    // Verificar si el usuario ya votó por esta opción
+    const existingVote = await query(`
+      SELECT id FROM survey_votes WHERE user_id = ? AND option_id = ?
+    `, [userId, option_id]);
 
-    res.json({
-      success: true,
-      message: 'Voto registrado exitosamente'
-    });
+    if (existingVote.length > 0) {
+      // Si ya votó, eliminar el voto (desvotar)
+      await query(`
+        DELETE FROM survey_votes WHERE user_id = ? AND option_id = ?
+      `, [userId, option_id]);
+
+      res.json({
+        success: true,
+        message: 'Voto eliminado exitosamente',
+        data: {
+          action: 'unvoted',
+          option_id,
+          survey_id
+        }
+      });
+    } else {
+      // Si no ha votado, agregar el voto
+      await query(`
+        INSERT INTO survey_votes (survey_id, option_id, user_id) VALUES (?, ?, ?)
+      `, [survey_id, option_id, userId]);
+
+      res.json({
+        success: true,
+        message: 'Voto registrado exitosamente',
+        data: {
+          action: 'voted',
+          option_id,
+          survey_id
+        }
+      });
+    }
 
   } catch (error) {
     console.error('Error registrando voto:', error);
@@ -558,6 +680,7 @@ module.exports = {
   getSurveyById,
   addSurveyOption,
   approveSurveyOption,
+  approveSurvey,
   getPendingOptions,
   voteInSurvey,
   changeVote,

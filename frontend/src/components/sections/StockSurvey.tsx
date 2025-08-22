@@ -131,7 +131,19 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
       <section className="py-16" style={{ backgroundColor: 'rgb(244 245 255)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No hay encuestas activas disponibles</p>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay encuestas activas</h3>
+          <p className="text-gray-600 mb-4">
+            {activeSurveys.length === 0 
+              ? 'Actualmente no hay encuestas disponibles para votar. Los administradores pueden crear nuevas encuestas desde el panel de administración.'
+              : 'La encuesta seleccionada no tiene opciones disponibles para votar.'
+            }
+          </p>
+          {activeSurveys.length > 0 && (
+            <div className="text-sm text-gray-500">
+              <p>Encuestas disponibles: {activeSurveys.length}</p>
+              <p>Opciones totales: {activeSurveys.reduce((total, survey) => total + (survey.options_count || 0), 0)}</p>
+            </div>
+          )}
         </div>
       </section>
     );
@@ -195,62 +207,97 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
             {selectedSurvey.options.map((option) => {
               const percentage = calculatePercentage(option.votes || 0, currentTotalVotes);
               const isUserVote = selectedSurvey.user_vote === option.id;
+              const isPending = option.status === 'pending';
               
               return (
                 <div key={option.id} className={`
                   bg-gray-50 rounded-xl p-4 sm:p-6
                   hover:bg-gray-100 transition-colors duration-200
-                  cursor-pointer
+                  ${!isPending ? 'cursor-pointer' : 'cursor-default'}
                   ${isUserVote ? 'ring-2 ring-rose-400 bg-rose-50' : ''}
+                  ${isPending ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}
                 `}
                 onClick={() => {
+                  if (isPending) return; // No permitir votar opciones pendientes
+                  
                   if (isUserVote) {
-                    // Si ya votó por esta opción, permitir cambiar voto
-                    if (selectedSurvey.options && selectedSurvey.options.length > 1) {
-                      const otherOption = selectedSurvey.options.find(o => o.id !== option.id);
-                      if (otherOption) {
-                        handleChangeVote(otherOption.id);
-                      }
-                    }
+                    // Si ya votó por esta opción, desvotar
+                    handleVote(option.id);
                   } else {
-                    // Si no ha votado o votó por otra opción
+                    // Si no ha votado, votar
                     handleVote(option.id);
                   }
                 }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-purple-600" />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isPending ? 'bg-yellow-100' : 'bg-purple-100'
+                      }`}>
+                        {isPending ? (
+                          <AlertCircle className="w-4 h-4 text-yellow-600" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 text-purple-600" />
+                        )}
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-900">{option.option_text}</h4>
                         {option.description && (
                           <p className="text-sm text-gray-600">{option.description}</p>
                         )}
+                        {isPending && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Pendiente de aprobación
+                            </span>
+                            {user && (
+                              <span className="text-xs text-gray-500">
+                                Sugerida por: {option.suggested_by || 'Usuario'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-purple-600">{option.votes || 0}</div>
-                      <div className="text-sm text-gray-500">{percentage}%</div>
+                      {!isPending ? (
+                        <>
+                          <div className="text-2xl font-bold text-purple-600">{option.votes || 0}</div>
+                          <div className="text-sm text-gray-500">{percentage}%</div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-yellow-600 font-medium">Pendiente</div>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Barra de progreso */}
-                  <div className="mt-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      ></div>
+                  {/* Barra de progreso solo para opciones aprobadas */}
+                  {!isPending && (
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Indicador de voto */}
-                  {isUserVote && (
+                  {isUserVote && !isPending && (
                     <div className="mt-3 flex items-center gap-2 text-rose-600">
                       <CheckCircle className="w-4 h-4" />
                       <span className="text-sm font-medium">Tu voto</span>
+                    </div>
+                  )}
+
+                  {/* Mensaje para opciones pendientes */}
+                  {isPending && (
+                    <div className="mt-3 flex items-center gap-2 text-yellow-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Esta opción está pendiente de aprobación por los administradores
+                      </span>
                     </div>
                   )}
                 </div>

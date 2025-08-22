@@ -211,6 +211,86 @@ function ApproveOptionModal({ isOpen, onClose, option, onApprove, loading }: App
   );
 }
 
+interface ApproveSurveyModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  survey: Survey | null;
+  onApprove: (surveyId: number, notes: string) => Promise<void>;
+  loading: boolean;
+}
+
+function ApproveSurveyModal({ isOpen, onClose, survey, onApprove, loading }: ApproveSurveyModalProps) {
+  const [notes, setNotes] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!survey) return;
+    
+    await onApprove(survey.id, notes);
+    setNotes('');
+    onClose();
+  };
+
+  if (!isOpen || !survey) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+      
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Aprobar Encuesta</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Encuesta a aprobar:</p>
+              <p className="font-medium text-gray-900">{survey.question}</p>
+              {survey.description && (
+                <p className="text-sm text-gray-500 mt-1">{survey.description}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notas (opcional)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Notas sobre la aprobación..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aprobar Encuesta'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SurveysManagementSection() {
   const { user, isAdmin } = useAuth();
   const {
@@ -222,13 +302,16 @@ export default function SurveysManagementSection() {
     loadPendingOptions,
     createSurvey,
     approveSurveyOption,
+    approveSurvey,
     closeSurvey,
     clearError
   } = useSurveys();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showApproveSurveyModal, setShowApproveSurveyModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState<SurveyOption | null>(null);
+  const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [activeTab, setActiveTab] = useState<'surveys' | 'pending'>('surveys');
 
   useEffect(() => {
@@ -244,6 +327,10 @@ export default function SurveysManagementSection() {
 
   const handleApproveOption = async (optionId: number, isApproved: boolean, notes: string) => {
     await approveSurveyOption(optionId, isApproved, notes);
+  };
+
+  const handleApproveSurvey = async (surveyId: number, notes: string) => {
+    await approveSurvey(surveyId, notes);
   };
 
   const handleCloseSurvey = async (surveyId: number) => {
@@ -395,6 +482,18 @@ export default function SurveysManagementSection() {
                           <XCircle className="w-4 h-4" />
                         </button>
                       )}
+                      {survey.status === 'draft' && (
+                        <button
+                          onClick={() => {
+                            setSelectedSurvey(survey);
+                            setShowApproveSurveyModal(true);
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                          title="Aprobar encuesta"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -480,6 +579,14 @@ export default function SurveysManagementSection() {
         onClose={() => setShowApproveModal(false)}
         option={selectedOption}
         onApprove={handleApproveOption}
+        loading={loading}
+      />
+
+      <ApproveSurveyModal
+        isOpen={showApproveSurveyModal}
+        onClose={() => setShowApproveSurveyModal(false)}
+        survey={selectedSurvey}
+        onApprove={handleApproveSurvey}
         loading={loading}
       />
     </div>
