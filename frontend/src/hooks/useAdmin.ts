@@ -262,7 +262,24 @@ export const useAdmin = () => {
         ...(status && { status }),
       });
       
-      const data = await apiCall(`surveys?${params}`);
+      // Usar la ruta correcta para encuestas
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:8000/api/enhanced-surveys?${params}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       setSurveys(data.data);
       return data;
     } catch (err) {

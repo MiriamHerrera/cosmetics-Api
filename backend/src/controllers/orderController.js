@@ -312,7 +312,7 @@ class OrderController {
       } = req.body;
 
       console.log('🔍 Validando datos requeridos...');
-      
+
       // Validar datos requeridos
       if (!sessionId || !customerName || !customerPhone || !deliveryLocationId || 
           !deliveryDate || !deliveryTime || !totalAmount || !cartItems || cartItems.length === 0) {
@@ -498,7 +498,7 @@ class OrderController {
 
         // Extraer el producto del resultado (connection.execute devuelve [rows, fields])
         const product = productResult[0][0];
-        
+
         if (!product) {
           console.log('❌ Producto no encontrado para ID:', productId);
           await connection.rollback();

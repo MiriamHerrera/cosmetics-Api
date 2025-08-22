@@ -93,3 +93,45 @@ export interface PaginationParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
+
+// Tipos para encuestas
+export interface Survey {
+  id: number;
+  question: string;
+  description?: string;
+  status: 'draft' | 'active' | 'closed';
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  closed_by?: number;
+  closed_at?: string;
+  options_count?: number;
+  total_votes?: number;
+  options?: SurveyOption[];
+  user_vote?: number;
+}
+
+export interface SurveyOption {
+  id: number;
+  survey_id: number;
+  option_text: string;
+  description?: string;
+  created_by: number;
+  is_approved: boolean;
+  admin_notes?: string;
+  approved_by?: number;
+  approved_at?: string;
+  created_at: string;
+  updated_at: string;
+  votes?: number;
+  suggested_by?: string;
+}
+
+export interface SurveyVote {
+  id: number;
+  survey_id: number;
+  option_id: number;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+}

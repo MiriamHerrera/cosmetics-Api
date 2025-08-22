@@ -11,4 +11,5 @@ export { useGuestSession } from './useGuestSession';
 export { useCartMigration } from './useCartMigration';
 export { useAdmin } from './useAdmin';
 export { useReservations } from './useReservations';
+export { useSurveys } from './useSurveys';
 export { default as useReports } from './useReports'; 
