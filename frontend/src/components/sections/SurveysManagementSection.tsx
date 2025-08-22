@@ -294,6 +294,99 @@ function ApproveSurveyModal({ isOpen, onClose, survey, onApprove, loading }: App
   );
 }
 
+interface CreateOptionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  survey: Survey | null;
+  onSubmit: (surveyId: number, optionText: string, description: string) => Promise<void>;
+  loading: boolean;
+}
+
+function CreateOptionModal({ isOpen, onClose, survey, onSubmit, loading }: CreateOptionModalProps) {
+  const [optionText, setOptionText] = useState('');
+  const [description, setDescription] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!survey || !optionText.trim()) return;
+    
+    await onSubmit(survey.id, optionText.trim(), description.trim());
+    setOptionText('');
+    setDescription('');
+    onClose();
+  };
+
+  if (!isOpen || !survey) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+      
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Crear Nueva Opción</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Encuesta:</p>
+              <p className="font-medium text-gray-900">{survey.question.substring(0, 60)}...</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Texto de la Opción *
+              </label>
+              <input
+                type="text"
+                value={optionText}
+                onChange={(e) => setOptionText(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: Productos de cuidado facial..."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descripción (opcional)
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Descripción adicional de la opción..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !optionText.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear Opción'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SurveysManagementSection() {
   const { user, isAdmin } = useAuth();
   const {
@@ -313,6 +406,7 @@ export default function SurveysManagementSection() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showApproveSurveyModal, setShowApproveSurveyModal] = useState(false);
+  const [showCreateOptionModal, setShowCreateOptionModal] = useState(false);
   const [selectedOption, setSelectedOption] = useState<SurveyOption | null>(null);
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [activeTab, setActiveTab] = useState<'surveys' | 'pending'>('surveys');
@@ -320,6 +414,9 @@ export default function SurveysManagementSection() {
   // Estados para el filtro de opciones pendientes
   const [pendingFilter, setPendingFilter] = useState<string>('all'); // 'all' o survey_id
   const [searchTerm, setSearchTerm] = useState<string>('');
+  
+  // Estados para crear opciones
+  const [createOptionLoading, setCreateOptionLoading] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
@@ -383,6 +480,42 @@ export default function SurveysManagementSection() {
   const handleCloseSurvey = async (surveyId: number) => {
     if (confirm('¿Estás seguro de que quieres cerrar esta encuesta?')) {
       await closeSurvey(surveyId);
+    }
+  };
+
+  const handleCreateOption = async (surveyId: number, optionText: string, description: string) => {
+    setCreateOptionLoading(true);
+    try {
+      // Usar la API para crear la opción
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/enhanced-surveys/options`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          survey_id: surveyId,
+          option_text: optionText,
+          description: description
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear la opción');
+      }
+
+      // Recargar las opciones pendientes para mostrar la nueva opción
+      await loadPendingOptions();
+      
+      // Mostrar mensaje de éxito
+      alert('Opción creada exitosamente y pendiente de aprobación');
+      
+    } catch (error) {
+      console.error('Error creando opción:', error);
+      alert('Error al crear la opción: ' + (error as Error).message);
+    } finally {
+      setCreateOptionLoading(false);
     }
   };
 
@@ -670,6 +803,19 @@ export default function SurveysManagementSection() {
                             >
                               <CheckCircle className="w-4 h-4" />
                               Aprobar
+                            </button>
+                          )}
+                          {survey.status === 'active' && (
+                            <button
+                              onClick={() => {
+                                setSelectedSurvey(survey);
+                                setShowCreateOptionModal(true);
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white text-sm font-medium rounded-lg hover:from-purple-600 hover:to-violet-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+                              title="Crear opción para esta encuesta"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Crear Opción
                             </button>
                           )}
                         </div>
@@ -1039,6 +1185,14 @@ export default function SurveysManagementSection() {
         survey={selectedSurvey}
         onApprove={handleApproveSurvey}
         loading={loading}
+      />
+
+      <CreateOptionModal
+        isOpen={showCreateOptionModal}
+        onClose={() => setShowCreateOptionModal(false)}
+        survey={selectedSurvey}
+        onSubmit={handleCreateOption}
+        loading={createOptionLoading}
       />
     </div>
   );
