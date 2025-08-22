@@ -10,7 +10,9 @@ import {
   Eye, 
   MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Users,
+  Calendar
 } from 'lucide-react';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useAuth } from '@/hooks/useAuth';
@@ -351,39 +353,69 @@ export default function SurveysManagementSection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Encuestas</h2>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Encuesta
-        </button>
+      <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <MessageSquare className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Gestión de Encuestas
+              </h2>
+              <p className="text-gray-600 mt-1">
+                Administra encuestas y revisa sugerencias de usuarios
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold"
+          >
+            <Plus className="w-5 h-5" />
+            Nueva Encuesta
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <nav className="flex">
           <button
             onClick={() => setActiveTab('surveys')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 ${
               activeTab === 'surveys'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-800'
             }`}
           >
-            Encuestas ({surveys.length})
+            <MessageSquare className={`w-5 h-5 ${activeTab === 'surveys' ? 'text-white' : 'text-gray-400'}`} />
+            <span>Encuestas</span>
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              activeTab === 'surveys' 
+                ? 'bg-white/20 text-white' 
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {surveys.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 ${
               activeTab === 'pending'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-800'
             }`}
           >
-            Opciones Pendientes ({pendingOptions.length})
+            <AlertCircle className={`w-5 h-5 ${activeTab === 'pending' ? 'text-white' : 'text-gray-400'}`} />
+            <span>Opciones Pendientes</span>
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              activeTab === 'pending' 
+                ? 'bg-white/20 text-white' 
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              {pendingOptions.length}
+            </span>
           </button>
         </nav>
       </div>
@@ -410,6 +442,23 @@ export default function SurveysManagementSection() {
       {/* Tab Content */}
       {activeTab === 'surveys' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
+          {/* Header informativo */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800">
+                  Gestión de Encuestas
+                </h3>
+                <p className="text-sm text-blue-700">
+                  {surveys.length} encuesta{surveys.length !== 1 ? 's' : ''} en el sistema
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -435,76 +484,202 @@ export default function SurveysManagementSection() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {surveys.map((survey) => (
-                  <tr key={survey.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{survey.question}</div>
-                        {survey.description && (
-                          <div className="text-sm text-gray-500">{survey.description}</div>
-                        )}
+                {surveys.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                          <MessageSquare className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900">No hay encuestas</h4>
+                          <p className="text-gray-500">Crea tu primera encuesta para comenzar</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        survey.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : survey.status === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {survey.status === 'active' ? 'Activa' : survey.status === 'draft' ? 'Borrador' : 'Cerrada'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {survey.options_count || 0}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {survey.total_votes || 0}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(survey.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => window.open(`/survey/${survey.id}`, '_blank')}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Ver encuesta"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {survey.status === 'active' && (
-                        <button
-                          onClick={() => handleCloseSurvey(survey.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Cerrar encuesta"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                      {survey.status === 'draft' && (
-                        <button
-                          onClick={() => {
-                            setSelectedSurvey(survey);
-                            setShowApproveSurveyModal(true);
-                          }}
-                          className="text-green-600 hover:text-green-900"
-                          title="Aprobar encuesta"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
                   </tr>
-                ))}
+                ) : (
+                  surveys.map((survey) => (
+                    <tr key={survey.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-colors duration-200">
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <MessageSquare className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-gray-900 leading-tight">
+                              {survey.question}
+                            </div>
+                            {survey.description && (
+                              <div className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                {survey.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            survey.status === 'active' 
+                              ? 'bg-gradient-to-r from-green-400 to-emerald-400' 
+                              : survey.status === 'draft'
+                              ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                              : 'bg-gradient-to-r from-red-400 to-rose-400'
+                          }`}>
+                            {survey.status === 'active' ? (
+                              <CheckCircle className="w-4 h-4 text-white" />
+                            ) : survey.status === 'draft' ? (
+                              <Edit className="w-4 h-4 text-white" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                            survey.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : survey.status === 'draft'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {survey.status === 'active' ? 'Activa' : survey.status === 'draft' ? 'Borrador' : 'Cerrada'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold text-white">
+                              {survey.options_count || 0}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-900 font-medium">
+                            {survey.options_count || 0} opción{(survey.options_count || 0) !== 1 ? 'es' : ''}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold text-white">
+                              {survey.total_votes || 0}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-900 font-medium">
+                            {survey.total_votes || 0} voto{(survey.total_votes || 0) !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-slate-400 rounded-full flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {new Date(survey.created_at).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(survey.created_at).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => window.open(`/survey/${survey.id}`, '_blank')}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+                            title="Ver encuesta"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Ver
+                          </button>
+                          {survey.status === 'active' && (
+                            <button
+                              onClick={() => handleCloseSurvey(survey.id)}
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-red-500 to-rose-500 text-white text-sm font-medium rounded-lg hover:from-red-600 hover:to-rose-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+                              title="Cerrar encuesta"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Cerrar
+                            </button>
+                          )}
+                          {survey.status === 'draft' && (
+                            <button
+                              onClick={() => {
+                                setSelectedSurvey(survey);
+                                setShowApproveSurveyModal(true);
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+                              title="Aprobar encuesta"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Aprobar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Footer con estadísticas */}
+          {surveys.length > 0 && (
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span>Total: {surveys.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <span>Activas: {surveys.filter(s => s.status === 'active').length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <span>Borradores: {surveys.filter(s => s.status === 'draft').length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                    <span>Cerradas: {surveys.filter(s => s.status === 'closed').length}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Última actualización: {new Date().toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'pending' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
+          {/* Header informativo */}
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-800">
+                  Opciones Pendientes de Aprobación
+                </h3>
+                <p className="text-sm text-yellow-700">
+                  {pendingOptions.length} sugerencia{pendingOptions.length !== 1 ? 's' : ''} esperando tu revisión
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -527,42 +702,138 @@ export default function SurveysManagementSection() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pendingOptions.map((option) => (
-                  <tr key={option.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{option.option_text}</div>
-                        {option.description && (
-                          <div className="text-sm text-gray-500">{option.description}</div>
-                        )}
+                {pendingOptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-8 h-8 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900">¡Excelente trabajo!</h4>
+                          <p className="text-gray-500">No hay opciones pendientes de aprobación</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {option.survey_question}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {option.suggested_by}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(option.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedOption(option);
-                          setShowApproveModal(true);
-                        }}
-                        className="text-green-600 hover:text-green-900"
-                        title="Revisar opción"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </button>
-                    </td>
                   </tr>
-                ))}
+                ) : (
+                  pendingOptions.map((option) => (
+                    <tr key={option.id} className="hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 transition-colors duration-200">
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <MessageSquare className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-gray-900 leading-tight">
+                                {option.option_text}
+                              </div>
+                              {option.description && (
+                                <div className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                  {option.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Eye className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 leading-tight">
+                                {option.survey_question}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                ID: {option.survey_id}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center">
+                            <Users className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {option.suggested_by}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Usuario
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-slate-400 rounded-full flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {new Date(option.created_at).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(option.created_at).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedOption(option);
+                              setShowApproveModal(true);
+                            }}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+                            title="Revisar y aprobar/rechazar opción"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Revisar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Footer con estadísticas */}
+          {pendingOptions.length > 0 && (
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <span>Pendientes: {pendingOptions.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span>Encuestas: {new Set(pendingOptions.map(opt => opt.survey_id)).size}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <span>Usuarios: {new Set(pendingOptions.map(opt => opt.suggested_by)).size}</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Última actualización: {new Date().toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
