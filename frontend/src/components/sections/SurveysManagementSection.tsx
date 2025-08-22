@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Edit, 
@@ -12,7 +12,8 @@ import {
   Loader2,
   AlertCircle,
   Users,
-  Calendar
+  Calendar,
+  Search
 } from 'lucide-react';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useAuth } from '@/hooks/useAuth';
@@ -315,6 +316,10 @@ export default function SurveysManagementSection() {
   const [selectedOption, setSelectedOption] = useState<SurveyOption | null>(null);
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [activeTab, setActiveTab] = useState<'surveys' | 'pending'>('surveys');
+  
+  // Estados para el filtro de opciones pendientes
+  const [pendingFilter, setPendingFilter] = useState<string>('all'); // 'all' o survey_id
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     if (isAdmin) {
@@ -322,6 +327,46 @@ export default function SurveysManagementSection() {
       loadPendingOptions();
     }
   }, [isAdmin, loadAllSurveys, loadPendingOptions]);
+
+  // Obtener encuestas únicas de las opciones pendientes
+  const uniqueSurveysFromPending = useMemo(() => {
+    const surveyMap = new Map();
+    pendingOptions.forEach(option => {
+      if (!surveyMap.has(option.survey_id)) {
+        surveyMap.set(option.survey_id, {
+          id: option.survey_id,
+          question: option.survey_question || 'Encuesta sin título',
+          count: 1
+        });
+      } else {
+        surveyMap.get(option.survey_id).count++;
+      }
+    });
+    return Array.from(surveyMap.values()).sort((a, b) => b.count - a.count);
+  }, [pendingOptions]);
+
+  // Filtrar opciones pendientes
+  const filteredPendingOptions = useMemo(() => {
+    let filtered = pendingOptions;
+
+    // Filtro por encuesta
+    if (pendingFilter !== 'all') {
+      filtered = filtered.filter(option => option.survey_id.toString() === pendingFilter);
+    }
+
+    // Filtro por búsqueda
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(option => 
+        option.option_text.toLowerCase().includes(term) ||
+        option.description?.toLowerCase().includes(term) ||
+        (option.survey_question || '').toLowerCase().includes(term) ||
+        (option.suggested_by || '').toLowerCase().includes(term)
+      );
+    }
+
+    return filtered;
+  }, [pendingOptions, pendingFilter, searchTerm]);
 
   const handleCreateSurvey = async (question: string, description: string) => {
     await createSurvey(question, description);
@@ -339,6 +384,12 @@ export default function SurveysManagementSection() {
     if (confirm('¿Estás seguro de que quieres cerrar esta encuesta?')) {
       await closeSurvey(surveyId);
     }
+  };
+
+  // Limpiar filtros
+  const clearFilters = () => {
+    setPendingFilter('all');
+    setSearchTerm('');
   };
 
   if (!user || !isAdmin) {
@@ -665,19 +716,120 @@ export default function SurveysManagementSection() {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {/* Header informativo */}
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-white" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-800">
+                    Opciones Pendientes de Aprobación
+                  </h3>
+                  <p className="text-sm text-yellow-700">
+                    {filteredPendingOptions.length} de {pendingOptions.length} sugerencia{pendingOptions.length !== 1 ? 's' : ''} esperando tu revisión
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-yellow-800">
-                  Opciones Pendientes de Aprobación
-                </h3>
-                <p className="text-sm text-yellow-700">
-                  {pendingOptions.length} sugerencia{pendingOptions.length !== 1 ? 's' : ''} esperando tu revisión
-                </p>
+              
+              {/* Indicador de filtros activos */}
+              {(pendingFilter !== 'all' || searchTerm.trim()) && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-white/60 rounded-lg border border-yellow-200">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium text-yellow-800">
+                    Filtros aplicados
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtros */}
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Filtro por encuesta */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filtrar por Encuesta
+                </label>
+                <select
+                  value={pendingFilter}
+                  onChange={(e) => setPendingFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-400 text-sm"
+                >
+                  <option value="all">
+                    Todas las encuestas ({pendingOptions.length})
+                  </option>
+                  {uniqueSurveysFromPending.map((survey) => (
+                    <option key={survey.id} value={survey.id.toString()}>
+                      {survey.question} ({survey.count} pendiente{survey.count !== 1 ? 's' : ''})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Búsqueda */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar en opciones
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar por texto, descripción, encuesta o usuario..."
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-400 text-sm"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón limpiar filtros */}
+              <div className="flex items-end">
+                <button
+                  onClick={clearFilters}
+                  disabled={pendingFilter === 'all' && !searchTerm.trim()}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                >
+                  Limpiar Filtros
+                </button>
               </div>
             </div>
+
+            {/* Resumen de filtros activos */}
+            {(pendingFilter !== 'all' || searchTerm.trim()) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-gray-600">Filtros activos:</span>
+                
+                {pendingFilter !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                    <MessageSquare className="w-3 h-3" />
+                    Encuesta: {uniqueSurveysFromPending.find(s => s.id.toString() === pendingFilter)?.question || 'N/A'}
+                    <button
+                      onClick={() => setPendingFilter('all')}
+                      className="ml-1 hover:text-blue-600"
+                    >
+                      <XCircle className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                
+                {searchTerm.trim() && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                    <Search className="w-3 h-3" />
+                    Búsqueda: "{searchTerm}"
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="ml-1 hover:text-green-600"
+                    >
+                      <XCircle className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -716,8 +868,30 @@ export default function SurveysManagementSection() {
                       </div>
                     </td>
                   </tr>
+                ) : filteredPendingOptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                          <Search className="w-8 h-8 text-yellow-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-900">No se encontraron resultados</h4>
+                          <p className="text-gray-500">
+                            No hay opciones pendientes que coincidan con los filtros aplicados
+                          </p>
+                          <button
+                            onClick={clearFilters}
+                            className="mt-3 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium"
+                          >
+                            Limpiar Filtros
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
-                  pendingOptions.map((option) => (
+                  filteredPendingOptions.map((option) => (
                     <tr key={option.id} className="hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 transition-colors duration-200">
                       <td className="px-6 py-4">
                         <div className="space-y-2">
@@ -817,16 +991,22 @@ export default function SurveysManagementSection() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <span>Pendientes: {pendingOptions.length}</span>
+                    <span>Pendientes: {filteredPendingOptions.length} de {pendingOptions.length}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                    <span>Encuestas: {new Set(pendingOptions.map(opt => opt.survey_id)).size}</span>
+                    <span>Encuestas: {new Set(filteredPendingOptions.map(opt => opt.survey_id)).size} de {uniqueSurveysFromPending.length}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    <span>Usuarios: {new Set(pendingOptions.map(opt => opt.suggested_by)).size}</span>
+                    <span>Usuarios: {new Set(filteredPendingOptions.map(opt => opt.suggested_by)).size}</span>
                   </div>
+                  {(pendingFilter !== 'all' || searchTerm.trim()) && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-400 rounded-full"></div>
+                      <span className="text-purple-600 font-medium">Filtros activos</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-gray-500">
                   Última actualización: {new Date().toLocaleTimeString()}
