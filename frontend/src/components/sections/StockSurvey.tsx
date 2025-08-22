@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useAuth } from '@/hooks/useAuth';
+import { LoginModal } from '@/components/ui';
 import type { Survey, SurveyOption } from '@/types';
 
 interface StockSurveyProps {
@@ -39,6 +40,7 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
   const [votingOptions, setVotingOptions] = useState<Set<number>>(new Set()); // Para tracking de votos en progreso
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [suggestionMessage, setSuggestionMessage] = useState('');
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Cargar encuestas activas al montar el componente
   useEffect(() => {
@@ -56,6 +58,12 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
   const calculatePercentage = (votes: number, totalVotes: number) => {
     if (totalVotes === 0) return 0;
     return Math.round((votes / totalVotes) * 100);
+  };
+
+  // Función para manejar el éxito del login
+  const handleLoginSuccess = () => {
+    // Recargar encuestas para obtener user_votes
+    loadActiveSurveys();
   };
 
   // Función para votar con feedback instantáneo
@@ -564,12 +572,12 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
               <p className="text-gray-700 mb-3">
                 Inicia sesión para votar por tus opciones favoritas y sugerir nuevas ideas
               </p>
-              <a 
-                href="/login" 
+              <button 
+                onClick={() => setIsLoginModalOpen(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Iniciar Sesión
-              </a>
+              </button>
             </div>
           )}
 
@@ -581,6 +589,13 @@ export default function StockSurvey({ totalVotes = 156 }: StockSurveyProps) {
           </div>
         </div>
       </div>
+
+      {/* Modal de Login */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </section>
   );
 } 
