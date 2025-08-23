@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Clock, MapPin, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGuestSession } from '@/hooks/useGuestSession';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { useCart } from '@/hooks/useCart';
 
 interface CartItem {
   productId: number;
@@ -44,6 +46,12 @@ interface CheckoutModalProps {
 export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: CheckoutModalProps) {
   const { user } = useAuth();
   const { sessionId: guestSessionId } = useGuestSession();
+  
+  // Hook para prevenir salida accidental durante el proceso de orden
+  const { setOrderProcessing } = useBeforeUnload();
+  
+  // Hook para limpiar el carrito
+  const { clearCart } = useCart();
   
   // Estados del formulario
   const [customerInfo, setCustomerInfo] = useState({
@@ -197,11 +205,26 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
         const whatsappUrl = `https://wa.me/1234567890?text=${whatsappMessage}`;
         
+        // Marcar que se está procesando una orden para evitar el modal de confirmación
+        setOrderProcessing(true);
+        
         // Abrir WhatsApp
         window.open(whatsappUrl, '_blank');
         
+        // Limpiar el carrito después de enviar el pedido
+        try {
+          await clearCart();
+          console.log('✅ Carrito limpiado exitosamente');
+        } catch (error) {
+          console.error('❌ Error al limpiar carrito:', error);
+          // No bloquear el flujo si falla la limpieza
+        }
+        
         // Mostrar confirmación
-        alert(`¡Pedido #${result.data.order.order_number} creado exitosamente! Revisa tu WhatsApp para completar la compra.`);
+        alert(`¡Pedido #${result.data.order.order_number} creado exitosamente! 
+
+✅ Tu carrito ha sido limpiado automáticamente.
+📱 Revisa tu WhatsApp para completar la compra.`);
         
         // Cerrar modal
         onClose();

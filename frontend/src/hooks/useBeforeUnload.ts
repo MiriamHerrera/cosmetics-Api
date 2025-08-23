@@ -7,24 +7,32 @@ export const useBeforeUnload = () => {
   const { isGuestMode } = useGuestMode();
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+
+  // Función para marcar que se está procesando una orden
+  const setOrderProcessing = useCallback((processing: boolean) => {
+    setIsProcessingOrder(processing);
+  }, []);
 
   const handleBeforeUnload = useCallback((event: BeforeUnloadEvent) => {
     // Solo mostrar advertencia si hay artículos en el carrito Y estamos en modo invitado
-    if (isGuestMode && cartItemCount > 0) {
+    // Y NO estamos procesando una orden
+    if (isGuestMode && cartItemCount > 0 && !isProcessingOrder) {
       const message = 'Tienes artículos en tu carrito. Si sales de la página, perderás tu carrito y se restaurará el stock. ¿Estás seguro de que quieres salir?';
       event.preventDefault();
       event.returnValue = message;
       return message;
     }
-  }, [cartItemCount, isGuestMode]);
+  }, [cartItemCount, isGuestMode, isProcessingOrder]);
 
   const handleVisibilityChange = useCallback(() => {
     // Detectar cuando la página se oculta (usuario cambia de pestaña o minimiza)
-    if (document.hidden && isGuestMode && cartItemCount > 0) {
+    // Solo mostrar modal si NO estamos procesando una orden
+    if (document.hidden && isGuestMode && cartItemCount > 0 && !isProcessingOrder) {
       // Usuario cambió de pestaña con artículos en carrito
       setShowExitModal(true);
     }
-  }, [cartItemCount, isGuestMode]);
+  }, [cartItemCount, isGuestMode, isProcessingOrder]);
 
   useEffect(() => {
     // Solo agregar event listeners si estamos en modo invitado
@@ -95,6 +103,7 @@ export const useBeforeUnload = () => {
     confirmAndClearCart,
     handleConfirmExit,
     handleCancelExit,
-    hasItemsInCart: isGuestMode && cartItemCount > 0
+    hasItemsInCart: isGuestMode && cartItemCount > 0,
+    setOrderProcessing
   };
 }; 

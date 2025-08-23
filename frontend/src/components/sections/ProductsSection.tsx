@@ -120,17 +120,6 @@ export default function ProductsSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Descubre nuestra amplia selección de cosméticos y productos de belleza de alta calidad
           </p>
-          
-          {/* Botón de prueba para el modal */}
-          <button
-            onClick={() => {
-              console.log('🧪 Botón de prueba clickeado');
-              setIsCartModalOpen(true);
-            }}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            🧪 Probar Modal del Carrito
-          </button>
         </div>
 
         {/* Filtros y búsqueda */}

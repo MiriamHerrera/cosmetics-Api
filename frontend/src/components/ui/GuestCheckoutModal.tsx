@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, MapPin } from 'lucide-react';
 import { Cart, CartItem } from '@/types';
 import { useCart } from '@/hooks/useCart';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { config, generateWhatsAppLink } from '@/lib/config';
 
 interface CustomerInfo {
@@ -49,6 +50,12 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
   const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocation[]>([]);
   const [availableTimes, setAvailableTimes] = useState<DeliveryTime[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Hook para prevenir salida accidental durante el proceso de orden
+  const { setOrderProcessing } = useBeforeUnload();
+  
+  // Hook para limpiar el carrito
+  const { clearCart } = useCart();
 
   // Cargar lugares de entrega disponibles
   useEffect(() => {
@@ -136,8 +143,20 @@ export default function GuestCheckoutModal({ isOpen, onClose, cart, sessionId }:
         
         console.log('📱 Enlace de WhatsApp generado:', whatsappUrl);
         
+        // Marcar que se está procesando una orden para evitar el modal de confirmación
+        setOrderProcessing(true);
+        
         // Abrir WhatsApp
         window.open(whatsappUrl, '_blank');
+        
+        // Limpiar el carrito después de enviar el pedido
+        try {
+          await clearCart();
+          console.log('✅ Carrito limpiado exitosamente');
+        } catch (error) {
+          console.error('❌ Error al limpiar carrito:', error);
+          // No bloquear el flujo si falla la limpieza
+        }
         
         // Mostrar confirmación
         alert(`¡Pedido #${result.data.orderNumber} creado exitosamente! 
@@ -147,6 +166,8 @@ Se abrirá WhatsApp automáticamente para que puedas confirmar tu pedido.
 📱 Número de WhatsApp: ${config.whatsappNumber}
 📋 Número de Pedido: ${result.data.orderNumber}
 💰 Total: $${cart?.total?.toFixed(2)}
+
+✅ Tu carrito ha sido limpiado automáticamente.
 
 Si WhatsApp no se abre automáticamente, puedes contactarnos directamente al ${config.whatsappNumber}`);
         
