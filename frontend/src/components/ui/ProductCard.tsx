@@ -15,15 +15,12 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
   const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
 
-
-
   const handleQuickBuy = () => {
     if (onQuickBuy) {
       onQuickBuy(product);
     } else {
       // Lógica por defecto: agregar al carrito y abrir modal de checkout
       addToCart(product, 1);
-      // Aquí podrías abrir un modal de checkout rápido
     }
   };
 
@@ -36,15 +33,17 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
 
   return (
     <div className="
-      bg-white rounded-xl shadow-md hover:shadow-lg
-      transition-all duration-300 ease-in-out
-      transform hover:-translate-y-1
+      bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl
+      transition-all duration-500 ease-out
+      transform hover:-translate-y-2 hover:scale-[1.02]
       overflow-hidden
       group
       font-sans
+      border border-purple-100 hover:border-purple-200
+      sm:rounded-2xl rounded-xl
     ">
       {/* Imagen del producto */}
-      <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
         <Image
           src={product.image_url || '/NoImage.jpg'}
           alt={product.name}
@@ -52,8 +51,8 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           sizes="(max-width: 640px) 100vw, 50vw"
           className="
             object-cover
-            transition-transform duration-300
-            group-hover:scale-105
+            transition-transform duration-500
+            group-hover:scale-110
           "
         />
         
@@ -63,14 +62,16 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           className="
             absolute top-2 right-2 sm:top-3 sm:right-3
             p-1.5 sm:p-2 rounded-full
-            bg-white/80 backdrop-blur-sm
-            hover:bg-white transition-colors
-            focus:outline-none focus:ring-2 focus:ring-pink-500
+            bg-white/90 backdrop-blur-sm
+            hover:bg-white transition-all duration-300
+            focus:outline-none focus:ring-4 focus:ring-pink-200
+            shadow-lg hover:shadow-xl
+            transform hover:scale-110
           "
         >
           <Heart 
             className={`w-3 h-3 sm:w-4 sm:h-4 ${
-              isFavorite ? 'fill-pink-500 text-pink-500' : 'text-gray-600'
+              isFavorite ? 'fill-pink-500 text-pink-500' : 'text-purple-600'
             }`} 
           />
         </button>
@@ -79,12 +80,13 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
         {product.stock_total <= 5 && product.stock_total > 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
-              px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium
-              bg-orange-500 text-white
-              rounded-full
+              px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
+              bg-gradient-to-r from-orange-400 to-red-500 text-white
+              rounded-full shadow-lg
+              border border-orange-300
             ">
               <span className="hidden sm:inline">Solo {product.stock_total} disponibles</span>
-              <span className="sm:hidden">{product.stock_total} disp</span>
+              <span className="sm:hidden">{product.stock_total}</span>
             </span>
           </div>
         )}
@@ -93,48 +95,55 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
         {product.stock_total === 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
-              px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs font-medium
-              bg-red-500 text-white
-              rounded-full
+              px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
+              bg-gradient-to-r from-red-400 to-red-600 text-white
+              rounded-full shadow-lg
+              border border-red-300
             ">
               Agotado
             </span>
           </div>
         )}
+
+        {/* Overlay de gradiente sutil */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       </div>
 
       {/* Información del producto */}
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-5">
         {/* Nombre del producto */}
         <h3 className="
-          font-sans text-gray-900 mb-2
-          line-clamp-2 text-sm sm:text-base
-          leading-tight
+          font-semibold text-gray-900 mb-2
+          text-sm sm:text-base
+          leading-tight group-hover:text-purple-800
+          transition-colors duration-300
+          h-10 sm:h-12 flex items-start
         ">
           {product.name}
         </h3>
 
         {/* Tipo/Variante del producto */}
         <p className="
-          text-xs text-gray-500 mb-2
-          font-medium
+          text-xs text-purple-600 mb-2 sm:mb-3
+          font-medium bg-purple-50 px-2 py-1 rounded-lg
+          inline-block
         ">
           {product.category_name}
         </p>
 
         {/* Precio y Stock en la misma línea */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <span className="text-base sm:text-lg " style={{ color: 'red' }}>
+          <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             ${product.price.toFixed(2)}
           </span>
-          <span className="text-xs text-gray-500 font-medium">
-            {product.stock_total}
+          <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-1 rounded-lg">
+            <span className="hidden sm:inline">Stock: </span>{product.stock_total}
           </span>
         </div>
 
         {/* Mensaje de error */}
         {error && (
-          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-xs text-red-600">{error}</p>
           </div>
         )}
@@ -146,14 +155,14 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
             onClick={handleQuickBuy}
             disabled={product.stock_total === 0}
             className="
-              flex-1 bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600
+              flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
               disabled:bg-gray-300 disabled:cursor-not-allowed
-              text-white text-xs sm:text-sm font-medium
-              py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg
+              text-white text-xs sm:text-sm font-semibold
+              py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl
               transition-all duration-300
               flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-2 focus:ring-rose-400
-              shadow-sm hover:shadow-md
+              focus:outline-none focus:ring-4 focus:ring-purple-200
+              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
             "
           >
             <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -166,27 +175,27 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
             onClick={handleAddToCart}
             disabled={product.stock_total === 0 || isUpdatingStock}
             className="
-              flex-1 border-2 border-rose-400 hover:bg-gradient-to-r hover:from-rose-400 hover:to-pink-500 hover:text-white
+              flex-1 border-2 border-purple-400 hover:bg-gradient-to-r hover:from-purple-400 hover:to-pink-500 hover:text-white hover:border-transparent
               disabled:bg-gray-300 disabled:cursor-not-allowed
-              text-rose-400 text-xs sm:text-sm font-medium
-              py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg
+              text-purple-600 text-xs sm:text-sm font-semibold
+              py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl
               transition-all duration-300
               flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-2 focus:ring-rose-400
-              shadow-sm hover:shadow-md
+              focus:outline-none focus:ring-4 focus:ring-purple-200
+              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
             "
           >
             {isUpdatingStock ? (
               <>
-                <div className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 inline animate-spin rounded-full border-2 border-rose-400 border-t-transparent" />
-                <span className="hidden sm:inline text-rose-400">Actualizando...</span>
-                <span className="sm:hidden text-rose-400">...</span>
+                <div className="w-3 h-3 sm:w-4 h-4 mr-1 sm:mr-2 inline animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+                <span className="hidden sm:inline text-purple-600">Actualizando...</span>
+                <span className="sm:hidden text-purple-600">...</span>
               </>
             ) : (
               <>
-                <ShoppingCart className="w-4 h-4 sm:w-4 sm:h-4 text-rose-400 group-hover:text-white" />
-                <span className="hidden sm:inline text-rose-400 group-hover:text-white">Carrito</span>
-                <span className="sm:hidden text-rose-400 group-hover:text-white">+</span>
+                <ShoppingCart className="w-3 h-3 sm:w-4 h-4 text-purple-600" />
+                <span className="hidden sm:inline text-purple-600">Carrito</span>
+                <span className="sm:hidden text-purple-600">+</span>
               </>
             )}
           </button>
