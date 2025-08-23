@@ -89,6 +89,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       if (onLoginSuccess) {
         onLoginSuccess();
       }
+    } else {
+      // Si el login/registro falló, mostrar el error en el modal
+      // NO redirigir, solo mostrar el mensaje de error
+      console.log('❌ Error en autenticación:', error);
     }
   };
 
@@ -147,9 +151,15 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           {/* Contenido */}
           <div className="p-4 sm:p-6">
 
+            {/* Mostrar error general de autenticación */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2 text-red-700">
+                  <div className="w-4 h-4 bg-red-200 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-xs font-bold">!</span>
+                  </div>
+                  <p className="text-sm font-medium">{error}</p>
+                </div>
               </div>
             )}
 

@@ -41,10 +41,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expirado o inválido
+    // Solo redirigir a /login si es un token expirado (401) Y ya hay un usuario logueado
+    // Esto evita redirecciones no deseadas en login/registro con credenciales incorrectas
+    if (error.response?.status === 401 && localStorage.getItem('auth_token')) {
+      // Token expirado o inválido - solo limpiar token, no redirigir
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      console.log('🔑 Token expirado, limpiando localStorage');
+      
+      // Solo redirigir si estamos en una página que requiere autenticación
+      // y no en el proceso de login/registro
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath === '/login' || currentPath === '/register';
+      
+      if (!isAuthPage) {
+        console.log('🔄 Redirigiendo a login por token expirado');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

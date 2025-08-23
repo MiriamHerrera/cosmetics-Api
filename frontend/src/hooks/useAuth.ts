@@ -76,12 +76,28 @@ export const useAuth = () => {
         return true;
       } else {
 
-        setError(response.error || 'Error en el login');
+        setError(response.message || response.error || 'Error en el login');
         return false;
       }
-    } catch (err) {
-
-      setError('Error de conexión en el login');
+    } catch (err: any) {
+      // Manejar errores de la API que incluyen respuestas con códigos de error HTTP
+      if (err.response && err.response.data) {
+        // La API respondió con un error HTTP pero con datos
+        const apiError = err.response.data;
+        console.log('🔍 Error de API capturado:', apiError);
+        
+        if (apiError.message) {
+          setError(apiError.message);
+        } else if (apiError.error) {
+          setError(apiError.error);
+        } else {
+          setError('Error en el login');
+        }
+      } else {
+        // Error de conexión real
+        console.error('❌ Error de conexión:', err);
+        setError('Error de conexión en el login');
+      }
       return false;
     } finally {
       setLoading(false);
@@ -100,12 +116,28 @@ export const useAuth = () => {
         setError(null);
         return true;
       } else {
-        setError(response.error || 'Error en el registro');
+        setError(response.message || response.error || 'Error en el registro');
         return false;
       }
-    } catch (err) {
-      setError('Error de conexión en el registro');
-      console.error('Error during registration:', err);
+    } catch (err: any) {
+      // Manejar errores de la API que incluyen respuestas con códigos de error HTTP
+      if (err.response && err.response.data) {
+        // La API respondió con un error HTTP pero con datos
+        const apiError = err.response.data;
+        console.log('🔍 Error de API capturado en registro:', apiError);
+        
+        if (apiError.message) {
+          setError(apiError.message);
+        } else if (apiError.error) {
+          setError(apiError.error);
+        } else {
+          setError('Error en el registro');
+        }
+      } else {
+        // Error de conexión real
+        console.error('❌ Error de conexión en registro:', err);
+        setError('Error de conexión en el registro');
+      }
       return false;
     } finally {
       setLoading(false);
@@ -150,12 +182,28 @@ export const useAuth = () => {
         setUser(response.data);
         return true;
       } else {
-        setError(response.error || 'Error al obtener perfil');
+        setError(response.message || response.error || 'Error al obtener perfil');
         return false;
       }
-    } catch (err) {
-      setError('Error de conexión al obtener perfil');
-      console.error('Error getting profile:', err);
+    } catch (err: any) {
+      // Manejar errores de la API que incluyen respuestas con códigos de error HTTP
+      if (err.response && err.response.data) {
+        // La API respondió con un error HTTP pero con datos
+        const apiError = err.response.data;
+        console.log('🔍 Error de API capturado en getProfile:', apiError);
+        
+        if (apiError.message) {
+          setError(apiError.message);
+        } else if (apiError.error) {
+          setError(apiError.error);
+        } else {
+          setError('Error al obtener perfil');
+        }
+      } else {
+        // Error de conexión real
+        console.error('❌ Error de conexión en getProfile:', err);
+        setError('Error de conexión al obtener perfil');
+      }
       return false;
     } finally {
       setLoading(false);
