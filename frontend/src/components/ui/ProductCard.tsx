@@ -9,18 +9,44 @@ import Image from 'next/image';
 interface ProductCardProps {
   product: Product;
   onQuickBuy?: (product: Product) => void;
+  onOpenCart?: () => void; // Nueva prop para abrir el carrito
 }
 
-export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
+export default function ProductCard({ product, onQuickBuy, onOpenCart }: ProductCardProps) {
   const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleQuickBuy = () => {
-    if (onQuickBuy) {
-      onQuickBuy(product);
+  const handleQuickBuy = async () => {
+    console.log('🚀 handleQuickBuy iniciado para:', product.name);
+    console.log('📦 Producto:', product);
+    console.log('🔑 onQuickBuy existe:', !!onQuickBuy);
+    console.log('🔑 onOpenCart existe:', !!onOpenCart);
+    
+    // Siempre agregar al carrito primero
+    console.log('➕ Intentando agregar al carrito...');
+    const success = await addToCart(product, 1);
+    console.log('✅ Resultado de addToCart:', success);
+    
+    if (success) {
+      console.log('🎉 Producto agregado exitosamente');
+      // Mostrar indicador de éxito
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      
+      if (onQuickBuy) {
+        console.log('📞 Ejecutando onQuickBuy...');
+        // Si se pasa onQuickBuy, ejecutar esa función
+        onQuickBuy(product);
+      } else if (onOpenCart) {
+        console.log('📞 Ejecutando onOpenCart...');
+        // Lógica por defecto: abrir modal del carrito
+        onOpenCart();
+      } else {
+        console.log('⚠️ No hay onQuickBuy ni onOpenCart definidos');
+      }
     } else {
-      // Lógica por defecto: agregar al carrito y abrir modal de checkout
-      addToCart(product, 1);
+      console.log('❌ Error al agregar al carrito');
     }
   };
 
@@ -154,8 +180,12 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
           <button
             onClick={handleQuickBuy}
             disabled={product.stock_total === 0}
-            className="
-              flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
+            className={`
+              flex-1 relative overflow-hidden
+              ${showSuccess 
+                ? 'bg-gradient-to-r from-green-500 to-green-600' 
+                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+              }
               disabled:bg-gray-300 disabled:cursor-not-allowed
               text-white text-xs sm:text-sm font-semibold
               py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl
@@ -163,11 +193,20 @@ export default function ProductCard({ product, onQuickBuy }: ProductCardProps) {
               flex items-center justify-center gap-1 sm:gap-2
               focus:outline-none focus:ring-4 focus:ring-purple-200
               shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
-            "
+            `}
           >
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Comprar</span>
-            <span className="sm:hidden">Ya</span>
+            {showSuccess ? (
+              <>
+                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                <span className="relative z-10">✓ Agregado</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Comprar</span>
+                <span className="sm:hidden">Ya</span>
+              </>
+            )}
           </button>
 
           {/* Botón de agregar al carrito */}

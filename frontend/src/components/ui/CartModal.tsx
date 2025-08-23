@@ -22,6 +22,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showGuestCheckoutModal, setShowGuestCheckoutModal] = useState(false);
 
+  // Log para debug
+  console.log('🎭 CartModal renderizado - isOpen:', isOpen);
+
   if (!isOpen) return null;
 
   return (

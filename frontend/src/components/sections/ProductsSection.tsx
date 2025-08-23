@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useProducts, useCategories } from '@/hooks';
 import ProductCard from '@/components/ui/ProductCard';
+import CartModal from '@/components/ui/CartModal';
 import { Search, Filter, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '@/types';
 
@@ -12,6 +13,7 @@ export default function ProductsSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const productsPerPage = 12;
 
 
@@ -33,7 +35,23 @@ export default function ProductsSection() {
   };
 
   const handleQuickBuy = (product: Product) => {
-    // Aquí podrías implementar la lógica de compra rápida
+    // Lógica de compra rápida: solo abrir el modal del carrito
+    // El ProductCard se encargará de agregar el producto
+    console.log('🛒 handleQuickBuy en ProductsSection para:', product.name);
+    console.log('🔑 Estado actual isCartModalOpen:', isCartModalOpen);
+    
+    // Abrir el modal del carrito inmediatamente
+    // El ProductCard agregará el producto y luego llamará a onOpenCart
+    console.log('🚪 Abriendo modal del carrito...');
+    setIsCartModalOpen(true);
+    console.log('🔑 Nuevo estado isCartModalOpen:', true);
+  };
+
+  const handleOpenCart = () => {
+    console.log('🔑 handleOpenCart llamado');
+    console.log('🔑 Estado actual isCartModalOpen:', isCartModalOpen);
+    setIsCartModalOpen(true);
+    console.log('🔑 Nuevo estado isCartModalOpen:', true);
   };
 
   const goToPage = (page: number) => {
@@ -103,7 +121,16 @@ export default function ProductsSection() {
             Descubre nuestra amplia selección de cosméticos y productos de belleza de alta calidad
           </p>
           
-
+          {/* Botón de prueba para el modal */}
+          <button
+            onClick={() => {
+              console.log('🧪 Botón de prueba clickeado');
+              setIsCartModalOpen(true);
+            }}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            🧪 Probar Modal del Carrito
+          </button>
         </div>
 
         {/* Filtros y búsqueda */}
@@ -159,6 +186,7 @@ export default function ProductsSection() {
                   key={product.id}
                   product={product}
                   onQuickBuy={handleQuickBuy}
+                  onOpenCart={handleOpenCart}
                 />
               ))}
             </div>
@@ -246,6 +274,10 @@ export default function ProductsSection() {
           </div>
         ) : null}
       </div>
+      <CartModal 
+        isOpen={isCartModalOpen} 
+        onClose={() => setIsCartModalOpen(false)} 
+      />
     </section>
   );
 } 
