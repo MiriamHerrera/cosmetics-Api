@@ -7,10 +7,10 @@ const { authenticateToken } = require('../middleware/auth');
 router.post('/get', unifiedCartController.getCart);
 router.post('/add-item', unifiedCartController.addItem);
 
-// Rutas protegidas (requieren autenticación)
-router.put('/update-quantity', authenticateToken, unifiedCartController.updateQuantity);
-router.delete('/remove-item', authenticateToken, unifiedCartController.removeItem);
-router.delete('/clear', authenticateToken, unifiedCartController.clearCart);
+// Rutas para ambos tipos de usuario (autenticados e invitados)
+router.put('/update-quantity', unifiedCartController.updateQuantity);
+router.delete('/remove-item', unifiedCartController.removeItem);
+router.delete('/clear', unifiedCartController.clearCart);
 
 // Rutas especiales
 router.post('/migrate-guest-to-user', authenticateToken, unifiedCartController.migrateGuestToUser);
