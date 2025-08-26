@@ -25,6 +25,9 @@ interface AppState {
   // Actualizar stock de un producto específico
   updateProductStock: (productId: number, newStock: number) => void;
   
+  // Sincronizar todo el stock desde el servidor
+  syncAllStock: (serverProducts: Product[]) => void;
+  
   // Computed values
   cartItemCount: number;
   cartTotal: number;
@@ -43,7 +46,12 @@ export const useStore = create<AppState>()(
       // Acciones
       setUser: (user) => set({ user }),
       
-      setProducts: (products) => set({ products }),
+      setProducts: (products) => {
+        console.log(`🔄 [Store] setProducts llamado con ${products.length} productos`);
+        console.log(`📊 [Store] Primer producto:`, products[0]);
+        set({ products });
+        console.log(`✅ [Store] Productos guardados en store: ${products.length} productos`);
+      },
       
       setCart: (cart) => set({ cart }),
       
@@ -180,10 +188,71 @@ export const useStore = create<AppState>()(
       
       // Actualizar stock de un producto específico
       updateProductStock: (productId, newStock) => {
-        const updatedProducts = get().products.map(product =>
-          product.id === productId ? { ...product, stock_total: newStock } : product
-        );
-        set({ products: updatedProducts });
+        const currentProducts = get().products;
+        const currentProduct = currentProducts.find(p => p.id === productId);
+        
+        console.log(`🔄 [Store] Actualizando stock del producto ${productId}: ${currentProduct?.stock_total} → ${newStock}`);
+        
+        // Solo actualizar si el stock realmente cambió y es válido
+        if (currentProduct && currentProduct.stock_total !== newStock && newStock >= 0) {
+          const updatedProducts = currentProducts.map(product =>
+            product.id === productId ? { ...product, stock_total: newStock } : product
+          );
+          set({ products: updatedProducts });
+          console.log(`✅ [Store] Stock del producto ${productId} actualizado a ${newStock}`);
+          
+          // También actualizar el stock en el carrito si existe
+          const currentCart = get().cart;
+          if (currentCart) {
+            const cartItem = currentCart.items.find(item => item.productId === productId);
+            if (cartItem && cartItem.product.stock_total !== newStock) {
+              const updatedCartItems = currentCart.items.map(item =>
+                item.productId === productId 
+                  ? { ...item, product: { ...item.product, stock_total: newStock } }
+                  : item
+              );
+              
+              const updatedCart = {
+                ...currentCart,
+                items: updatedCartItems,
+                updatedAt: new Date()
+              };
+              
+              set({ cart: updatedCart });
+              console.log(`✅ [Store] Stock del producto ${productId} actualizado en el carrito`);
+            }
+          }
+        } else {
+          if (newStock < 0) {
+            console.warn(`⚠️ [Store] Stock negativo no permitido para producto ${productId}: ${newStock}`);
+          } else {
+            console.log(`ℹ️ [Store] Stock del producto ${productId} no cambió (${currentProduct?.stock_total})`);
+          }
+        }
+      },
+      
+      // Sincronizar todo el stock desde el servidor
+      syncAllStock: (serverProducts: Product[]) => {
+        if (!serverProducts || !Array.isArray(serverProducts)) {
+          console.warn('⚠️ [Store] syncAllStock: productos del servidor inválidos');
+          return;
+        }
+        
+        console.log(`🔄 [Store] Sincronizando stock de ${serverProducts.length} productos desde servidor...`);
+        
+        const currentProducts = get().products;
+        let updatedCount = 0;
+        
+        serverProducts.forEach(serverProduct => {
+          const localProduct = currentProducts.find(p => p.id === serverProduct.id);
+          if (localProduct && localProduct.stock_total !== serverProduct.stock_total) {
+            // Usar updateProductStock para mantener consistencia
+            get().updateProductStock(serverProduct.id, serverProduct.stock_total);
+            updatedCount++;
+          }
+        });
+        
+        console.log(`✅ [Store] Stock sincronizado: ${updatedCount} productos actualizados`);
       },
       
       // Computed values

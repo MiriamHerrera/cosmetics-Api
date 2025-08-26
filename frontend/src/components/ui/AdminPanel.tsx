@@ -104,10 +104,16 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
   };
 
-  // Debug: Log cuando cambia el estado del modal - solo en desarrollo
-  if (process.env.NODE_ENV === 'development') {
-    console.log('AdminPanel render - showAddUserModal:', showAddUserModal, 'activeTab:', activeTab);
-  }
+  // Debug: Log cuando cambia el estado del modal - solo en desarrollo y con throttling
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const timeoutId = setTimeout(() => {
+        console.log('AdminPanel render - showAddUserModal:', showAddUserModal, 'activeTab:', activeTab);
+      }, 100); // Throttle logs para evitar spam
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showAddUserModal, activeTab]);
 
   // Cargar datos cuando cambie la pestaña - optimizado para evitar re-renders
   useEffect(() => {

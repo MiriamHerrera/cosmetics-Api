@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { LogIn } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGuestMode } from '@/hooks/useGuestMode';
-import { LoginModal } from './index';
+import LoginModal from './LoginModal';
 
 interface LoginButtonProps {
   variant?: 'default' | 'outline' | 'ghost';

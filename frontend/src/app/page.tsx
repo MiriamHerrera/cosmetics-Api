@@ -1,8 +1,6 @@
 'use client';
 
-
-import CartButton from '@/components/ui/CartButton';
-import { AuthButton } from '@/components/ui';
+import { CartButton, AuthButton } from '@/components/ui';
 import { UpcomingInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
 export default function Home() {

@@ -3,9 +3,9 @@
 import { ShoppingCart, X, MessageCircle, Trash2 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useGuestMode } from '@/hooks/useGuestMode';
-import { LoginButton } from './index';
+import LoginButton from './LoginButton';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import CheckoutModal from './CheckoutModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
 
@@ -14,15 +14,35 @@ interface CartModalProps {
   onClose: () => void;
 }
 
-export default function CartModal({ isOpen, onClose }: CartModalProps) {
+const CartModal = memo(({ isOpen, onClose }: CartModalProps) => {
   const { cart, removeFromCart, cartItemCount, cartTotal, clearCart } = useCart();
   const { isGuestMode } = useGuestMode();
   const { sessionId: guestSessionId } = useGuestSession();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
-  // Log para debug
-  console.log('🎭 CartModal renderizado - isOpen:', isOpen);
+  // Memoizar el handler de cierre para evitar re-renders
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
+  // Memoizar el handler de checkout para evitar re-renders
+  const handleCheckout = useCallback(() => {
+    setShowCheckoutModal(true);
+  }, []);
+
+  const handleCloseCheckout = useCallback(() => {
+    setShowCheckoutModal(false);
+  }, []);
+
+  // Memoizar el handler de remover item para evitar re-renders innecesarios
+  const handleRemoveItem = useCallback((productId: number) => {
+    removeFromCart(productId);
+  }, [removeFromCart]);
+
+  // Memoizar los items del carrito para evitar re-renders innecesarios
+  const cartItems = useMemo(() => cart?.items || [], [cart?.items]);
+
+  // Solo renderizar si está abierto
   if (!isOpen) return null;
 
   return (
@@ -30,7 +50,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
       {/* Overlay de fondo oscuro */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
+        onClick={handleClose}
       />
       
       {/* Modal centrado */}
@@ -48,7 +68,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">Tu Carrito</h2>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="
                 p-2 text-gray-400 hover:text-gray-600
                 transition-colors duration-200
@@ -70,58 +90,36 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             ) : (
               <div className="space-y-4">
                 {/* Lista de productos */}
-                {cart?.items.map((item, index) => {
-                  console.log('🔍 [CartModal] Item renderizando:', item);
-                  console.log('💰 [CartModal] Precio del producto:', item.product.price);
-                  console.log('🔢 [CartModal] Cantidad:', item.quantity);
-                  return (
-                    <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="relative w-12 h-12">
-                          <Image 
-                            src={item.product.image_url || '/NoImage.jpg'} 
-                            alt={item.product.name || 'Producto'}
-                            fill
-                            sizes="48px"
-                            className="object-cover rounded-lg"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                        <p className="text-sm text-gray-500">{item.product.category_name}</p>
-                        {/* <div className="flex items-center gap-2 mt-2">
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-sm font-medium min-w-[20px] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div> */}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          ${((item.product.price || 0) * item.quantity).toFixed(2)}
-                        </p>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="text-red-500 hover:text-red-700 p-1 mt-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                {cartItems.map((item, index) => (
+                  <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <div className="relative w-12 h-12">
+                        <Image 
+                          src={item.product.image_url || '/NoImage.jpg'} 
+                          alt={item.product.name || 'Producto'}
+                          fill
+                          sizes="48px"
+                          className="object-cover rounded-lg"
+                        />
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{item.product.name}</h3>
+                      <p className="text-sm text-gray-500">{item.product.category_name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">
+                        ${((item.product.price || 0) * item.quantity).toFixed(2)}
+                      </p>
+                      <button
+                        onClick={() => handleRemoveItem(item.product.id)}
+                        className="text-red-500 hover:text-red-700 p-1 mt-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -154,7 +152,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             )}
             
             <button
-              onClick={() => setShowCheckoutModal(true)}
+              onClick={handleCheckout}
               className="
                 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
                 text-white font-bold py-4 px-6 rounded-lg
@@ -174,10 +172,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
       {/* Modal de Checkout unificado */}
       <CheckoutModal
         isOpen={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
+        onClose={handleCloseCheckout}
         cart={cart}
         sessionId={isGuestMode ? guestSessionId : null}
       />
     </div>
   );
-} 
+});
+
+CartModal.displayName = 'CartModal';
+
+export default CartModal; 

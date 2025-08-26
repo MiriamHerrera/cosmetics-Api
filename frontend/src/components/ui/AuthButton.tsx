@@ -1,6 +1,7 @@
 'use client';
 
-import { LoginButton, LogoutButton } from './index';
+import LoginButton from './LoginButton';
+import LogoutButton from './LogoutButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import AdminPanel from './AdminPanel';

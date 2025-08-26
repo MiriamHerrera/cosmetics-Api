@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { usersApi, unifiedCartApi } from '@/lib/api';
 import { useStore } from '@/store/useStore';
 import { useCartMigration } from './useCartMigration';
@@ -10,11 +10,18 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const { migrateGuestCart } = useCartMigration();
+  
+  // Usar useRef para evitar dependencias circulares
+  const isInitializing = useRef(false);
 
   // Verificar y restaurar el estado de autenticación al inicializar
   useEffect(() => {
     const initializeAuth = async () => {
+      // Evitar múltiples inicializaciones simultáneas
+      if (isInitializing.current || user) return;
+      
       try {
+        isInitializing.current = true;
         const token = localStorage.getItem('auth_token');
         
         if (token && !user) {
@@ -47,11 +54,12 @@ export const useAuth = () => {
         localStorage.removeItem('auth_token');
       } finally {
         setIsInitialized(true);
+        isInitializing.current = false;
       }
     };
 
     initializeAuth();
-  }, [user, setUser, syncServerCart]);
+  }, []); // Solo se ejecuta una vez al montar el componente
 
   // Login
   const login = useCallback(async (phone: string, password: string) => {

@@ -733,6 +733,13 @@ class UnifiedCartController {
           [quantity, productId]
         );
         console.log(`🔄 [UnifiedCart] Stock restaurado: +${quantity} para producto ${productId}`);
+        
+        // Verificar stock actualizado
+        const [stockResult] = await query(
+          'SELECT stock_total FROM products WHERE id = ?',
+          [productId]
+        );
+        console.log(`📊 [UnifiedCart] Stock actualizado del producto ${productId}: ${stockResult.stock_total}`);
       }
 
       // Remover item
@@ -756,9 +763,9 @@ class UnifiedCartController {
 
       const updatedCart = updatedCarts[0];
 
-      // Obtener items actualizados
+      // Obtener items actualizados con stock real
       const items = await query(
-        'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
+        'SELECT ci.*, p.name as product_name, p.price, p.image_url, p.stock_total FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
         [cart.id]
       );
 
@@ -850,6 +857,13 @@ class UnifiedCartController {
           [item.quantity, item.product_id]
         );
         console.log(`🔄 [UnifiedCart] Stock restaurado: +${item.quantity} para producto ${item.product_id}`);
+        
+        // Verificar stock actualizado
+        const [stockResult] = await query(
+          'SELECT stock_total FROM products WHERE id = ?',
+          [item.product_id]
+        );
+        console.log(`📊 [UnifiedCart] Stock actualizado del producto ${item.product_id}: ${stockResult.stock_total}`);
       }
 
       // Remover todos los items

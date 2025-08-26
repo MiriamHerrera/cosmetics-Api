@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useProducts, useCategories } from '@/hooks';
-import ProductCard from '@/components/ui/ProductCard';
-import CartModal from '@/components/ui/CartModal';
+import { ProductCard, CartModal } from '@/components/ui';
 import { Search, Filter, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '@/types';
 

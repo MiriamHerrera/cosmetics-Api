@@ -20,9 +20,12 @@ export const useProducts = () => {
       setLoading(true);
       setError(null);
       
+      console.log('🔄 [useProducts] Cargando productos desde el servidor...');
       const response: ApiResponse<Product[]> = await publicProductsApi.getAll(params);
       
       if (response.success && response.data) {
+        console.log(`✅ [useProducts] ${response.data.length} productos cargados del servidor`);
+        
         // Mapear los productos para que coincidan con la estructura esperada
         const mappedProducts = response.data.map((product: Product) => ({
           ...product,
@@ -32,9 +35,14 @@ export const useProducts = () => {
           stock_total: parseInt(product.stock_total.toString()) || 0
         }));
         
+        console.log(`📊 [useProducts] Productos mapeados y guardando en store...`);
+        
         // Guardar todos los productos para paginación local
         setAllProducts(mappedProducts);
         setProducts(mappedProducts);
+        
+        console.log(`✅ [useProducts] Productos guardados en store: ${mappedProducts.length} productos`);
+        
         setPagination(prev => ({
           ...prev,
           page: 1,
@@ -43,11 +51,12 @@ export const useProducts = () => {
           totalPages: Math.ceil(mappedProducts.length / 12)
         }));
       } else {
+        console.error('❌ [useProducts] Error en respuesta de API:', response.error);
         setError(response.error || 'Error al cargar productos');
       }
     } catch (err) {
+      console.error('❌ [useProducts] Error de conexión:', err);
       setError('Error de conexión al cargar productos');
-      console.error('Error loading products:', err);
     } finally {
       setLoading(false);
     }
