@@ -163,43 +163,134 @@ class OrderController {
         });
       }
 
-      // Generar número de orden único
-      const [orderNumberResult] = await connection.execute('CALL GenerateOrderNumber(?)', ['']);
-      const orderNumber = orderNumberResult[0][0].orderNumber;
+      // Verificar que el carrito unificado existe y tiene items
+      let cartQuery, cartParams;
+      
+      if (customerType === 'guest') {
+        cartQuery = 'SELECT id FROM carts_unified WHERE session_id = ? AND status = "active"';
+        cartParams = [sessionId];
+      } else {
+        cartQuery = 'SELECT id FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartParams = [userId];
+      }
+      
+      const [unifiedCart] = await connection.execute(cartQuery, cartParams);
 
-      // Crear la orden
-      const [orderResult] = await connection.execute(`
-        INSERT INTO orders (
-          order_number,
-          customer_type,
-          user_id,
-          session_id,
-          customer_name,
-          customer_phone,
-          customer_email,
-          delivery_location_id,
-          delivery_date,
-          delivery_time,
-          delivery_address,
-          total_amount,
-          notes,
-          status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-      `, [
-        orderNumber,
-        customerType,
-        userId || null,
-        sessionId || null,
-        customerName,
-        customerPhone,
-        customerEmail || null,
-        deliveryLocationId,
-        deliveryDate,
-        deliveryTime,
-        deliveryAddress || null,
-        totalAmount,
-        notes || null
-      ]);
+      if (!unifiedCart) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Carrito no encontrado o expirado'
+        });
+      }
+
+      // Generar número de orden único
+      await connection.execute('CALL GenerateOrderNumber(@orderNumber)');
+      const [orderNumberResult] = await connection.execute('SELECT @orderNumber as orderNumber');
+      const orderNumber = orderNumberResult[0].orderNumber;
+      
+             // Validar que se generó un número de orden
+       if (!orderNumber) {
+         await connection.rollback();
+         return res.status(500).json({
+           success: false,
+           message: 'Error generando número de orden'
+         });
+       }
+
+               // Función helper para convertir undefined a null
+        const safeParam = (value) => {
+          if (value === undefined) {
+            console.log('🔍 [DEBUG] Valor undefined convertido a null:', value);
+            return null;
+          }
+          if (value === null) {
+            console.log('🔍 [DEBUG] Valor ya es null:', value);
+            return null;
+          }
+          console.log('🔍 [DEBUG] Valor válido:', value, 'tipo:', typeof value);
+          return value;
+        };
+
+               // Debug: Log de parámetros recibidos
+        console.log('🔍 [DEBUG] Parámetros recibidos:', {
+          customerType,
+          userId,
+          sessionId,
+          customerName,
+          customerPhone,
+          customerEmail,
+          deliveryLocationId,
+          deliveryDate,
+          deliveryTime,
+          deliveryAddress,
+          totalAmount,
+          notes
+        });
+
+        // Debug: Log de parámetros que se pasarán a SQL
+        console.log('🔍 [DEBUG] Construyendo parámetros SQL...');
+        
+        const sqlParams = [
+          orderNumber,
+          safeParam(customerType),
+          safeParam(userId),
+          safeParam(sessionId),
+          safeParam(customerName),
+          safeParam(customerPhone),
+          safeParam(customerEmail),
+          safeParam(deliveryLocationId),
+          safeParam(deliveryDate),
+          safeParam(deliveryTime),
+          safeParam(deliveryAddress),
+          safeParam(totalAmount),
+          safeParam(notes),
+          'pending'
+        ];
+        
+        console.log('🔍 [DEBUG] Parámetros SQL:', sqlParams);
+        console.log('🔍 [DEBUG] Cantidad de parámetros:', sqlParams.length);
+        
+        // Verificar que no haya undefined en los parámetros
+        const hasUndefined = sqlParams.some((param, index) => {
+          if (param === undefined) {
+            console.log(`❌ [ERROR] Parámetro ${index} es undefined:`, param);
+            return true;
+          }
+          return false;
+        });
+        
+        if (hasUndefined) {
+          await connection.rollback();
+          return res.status(500).json({
+            success: false,
+            message: 'Error: Parámetros undefined detectados'
+          });
+        }
+        
+        console.log('✅ [DEBUG] Todos los parámetros son válidos');
+
+
+
+                           // Crear la orden
+        const [orderResult] = await connection.execute(`
+          INSERT INTO orders (
+            order_number,
+            customer_type,
+            user_id,
+            session_id,
+            customer_name,
+            customer_phone,
+            customer_email,
+            delivery_location_id,
+            delivery_date,
+            delivery_time,
+            delivery_address,
+            total_amount,
+            notes,
+            status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, sqlParams);
 
       const orderId = orderResult.insertId;
 
@@ -208,10 +299,12 @@ class OrderController {
       
       for (const item of cartItems) {
         // Obtener información del producto desde la base de datos
-        const [product] = await connection.execute(`
+        const [productRows] = await connection.execute(`
           SELECT id, name, price FROM products WHERE id = ?
         `, [item.productId]);
 
+        const product = productRows[0];
+        
         if (!product) {
           await connection.rollback();
           return res.status(400).json({
@@ -219,6 +312,14 @@ class OrderController {
             message: `Producto con ID ${item.productId} no encontrado`
           });
         }
+        
+        // Debug: Log del producto obtenido
+        console.log('🔍 [DEBUG] Producto obtenido:', {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: item.quantity
+        });
 
         // Guardar información para WhatsApp
         productsForWhatsApp.push({
@@ -229,6 +330,36 @@ class OrderController {
           quantity: item.quantity
         });
 
+        // Preparar parámetros para order_items con validación
+        const orderItemParams = [
+          orderId,
+          product.id,
+          product.name,
+          product.price,
+          item.quantity,
+          product.price * item.quantity
+        ];
+        
+        // Debug: Log de parámetros de order_items
+        console.log('🔍 [DEBUG] Parámetros order_items:', orderItemParams);
+        
+        // Verificar que no haya undefined en los parámetros de order_items
+        const hasUndefinedOrderItem = orderItemParams.some((param, index) => {
+          if (param === undefined) {
+            console.log(`❌ [ERROR] Parámetro order_items ${index} es undefined:`, param);
+            return true;
+          }
+          return false;
+        });
+        
+        if (hasUndefinedOrderItem) {
+          await connection.rollback();
+          return res.status(500).json({
+            success: false,
+            message: 'Error: Parámetros undefined en order_items'
+          });
+        }
+
         await connection.execute(`
           INSERT INTO order_items (
             order_id,
@@ -238,14 +369,7 @@ class OrderController {
             quantity,
             subtotal
           ) VALUES (?, ?, ?, ?, ?, ?)
-        `, [
-          orderId,
-          product.id,
-          product.name,
-          product.price,
-          item.quantity,
-          product.price * item.quantity
-        ]);
+        `, orderItemParams);
       }
 
       // Generar mensaje de WhatsApp
@@ -257,6 +381,19 @@ class OrderController {
         SET whatsapp_message = ?, whatsapp_sent_at = NOW()
         WHERE id = ?
       `, [whatsappMessage, orderId]);
+
+      // Marcar carrito unificado como procesado
+      let updateQuery, updateParams;
+      
+      if (customerType === 'guest') {
+        updateQuery = 'UPDATE carts_unified SET status = "cleaned", updated_at = NOW() WHERE session_id = ?';
+        updateParams = [sessionId];
+      } else {
+        updateQuery = 'UPDATE carts_unified SET status = "cleaned", updated_at = NOW() WHERE user_id = ?';
+        updateParams = [userId];
+      }
+      
+      await connection.execute(updateQuery, updateParams);
 
       await connection.commit();
 
@@ -292,9 +429,6 @@ class OrderController {
     let orderNumber; // Declarar la variable aquí para que esté disponible en todo el método
     
     try {
-      console.log('🚀 Iniciando creación de orden para invitado');
-      console.log('📋 Datos recibidos:', JSON.stringify(req.body, null, 2));
-      
       await connection.beginTransaction();
       
       const {
@@ -311,22 +445,9 @@ class OrderController {
         notes
       } = req.body;
 
-      console.log('🔍 Validando datos requeridos...');
-
       // Validar datos requeridos
       if (!sessionId || !customerName || !customerPhone || !deliveryLocationId || 
           !deliveryDate || !deliveryTime || !totalAmount || !cartItems || cartItems.length === 0) {
-        console.log('❌ Datos requeridos faltantes:', {
-          sessionId: !!sessionId,
-          customerName: !!customerName,
-          customerPhone: !!customerPhone,
-          deliveryLocationId: !!deliveryLocationId,
-          deliveryDate: !!deliveryDate,
-          deliveryTime: !!deliveryTime,
-          totalAmount: !!totalAmount,
-          cartItems: !!cartItems,
-          cartItemsLength: cartItems?.length
-        });
         await connection.rollback();
         return res.status(400).json({
           success: false,
@@ -334,48 +455,23 @@ class OrderController {
         });
       }
 
-      console.log('✅ Datos requeridos validados correctamente');
-      
-      // Validar número de WhatsApp
-      if (!whatsappConfig.validateNumber(whatsappConfig.number)) {
-        console.log('❌ Número de WhatsApp inválido:', whatsappConfig.number);
+              // Validar número de WhatsApp
+        if (!whatsappConfig.validateNumber(whatsappConfig.number)) {
         await connection.rollback();
         return res.status(500).json({
           success: false,
           message: 'Error de configuración: Número de WhatsApp inválido'
         });
       }
-      
-      console.log('✅ Número de WhatsApp válido:', whatsappConfig.number);
 
-      console.log('🛒 Estructura del carrito recibido:');
-      console.log('  - cartItems:', JSON.stringify(cartItems, null, 2));
-      console.log('  - Tipo de cartItems:', typeof cartItems);
-      console.log('  - Es array:', Array.isArray(cartItems));
-      if (Array.isArray(cartItems)) {
-        console.log('  - Longitud del array:', cartItems.length);
-        cartItems.forEach((item, index) => {
-          console.log(`    Item ${index}:`, {
-            productId: item.productId,
-            quantity: item.quantity,
-            hasProduct: !!item.product,
-            productKeys: item.product ? Object.keys(item.product) : 'No product'
-          });
-        });
-      }
+
 
       // Validar fecha de entrega para invitados (hoy hasta 3 días posteriores)
       const today = new Date();
       const deliveryDateObj = new Date(deliveryDate);
       const daysDiff = Math.ceil((deliveryDateObj - today) / (1000 * 60 * 60 * 24));
       
-      console.log('📅 Validando fecha de entrega:', {
-        today: today.toISOString(),
-        deliveryDate: deliveryDate,
-        daysDiff: daysDiff
-      });
-      
-      if (daysDiff < 0 || daysDiff > 3) {
+            if (daysDiff < 0 || daysDiff > 3) {
         await connection.rollback();
         return res.status(400).json({
           success: false,
@@ -383,46 +479,34 @@ class OrderController {
         });
       }
 
-      console.log('✅ Fecha de entrega válida');
-
-      // Verificar que el carrito de invitado existe y tiene items
-      console.log('🔍 Verificando carrito de invitado para sessionId:', sessionId);
-      const [guestCart] = await connection.execute(`
-        SELECT id FROM guest_carts WHERE session_id = ? AND status = 'active'
+            // Verificar que el carrito unificado existe y tiene items
+      const [unifiedCart] = await connection.execute(`
+        SELECT id FROM carts_unified WHERE session_id = ? AND status = 'active'
       `, [sessionId]);
 
-      console.log('📦 Resultado de verificación de carrito:', guestCart);
-
-      if (!guestCart) {
+      if (!unifiedCart) {
         await connection.rollback();
         return res.status(400).json({
           success: false,
-          message: 'Carrito de invitado no encontrado o expirado'
+          message: 'Carrito no encontrado o expirado'
         });
       }
 
-      console.log('✅ Carrito de invitado verificado');
-
       // Generar número de orden único
-      console.log('🔢 Generando número de orden...');
       try {
         // Llamar al procedimiento almacenado
         await connection.execute('CALL GenerateOrderNumber(@orderNumber)');
         
         // Obtener el resultado de la variable de salida usando query
         const orderNumberResult = await connection.query('SELECT @orderNumber as orderNumber');
-        console.log('🔍 Resultado del procedimiento:', orderNumberResult);
         
         // Extraer el número de orden del resultado
         orderNumber = orderNumberResult[0][0].orderNumber;
-        
-        console.log('✅ Número de orden generado:', orderNumber);
         
         if (!orderNumber) {
           throw new Error('No se pudo generar el número de orden');
         }
       } catch (error) {
-        console.error('❌ Error generando número de orden:', error);
         await connection.rollback();
         return res.status(500).json({
           success: false,
@@ -431,7 +515,6 @@ class OrderController {
       }
 
       // Crear la orden
-      console.log('📝 Creando orden en base de datos...');
       const [orderResult] = await connection.execute(`
         INSERT INTO orders (
           order_number,
@@ -465,23 +548,17 @@ class OrderController {
         notes || null
       ]);
 
-      const orderId = orderResult.insertId;
-      console.log('✅ Orden creada con ID:', orderId);
-
+            const orderId = orderResult.insertId;
+      
       // Crear los items de la orden y recolectar información para WhatsApp
       const productsForWhatsApp = [];
       
-      console.log('🛒 Procesando items del carrito:', cartItems);
-      
       for (const item of cartItems) {
-        console.log('📦 Procesando item:', item);
-        
         // El frontend envía { productId, quantity, product } pero solo necesitamos productId y quantity
         const productId = item.productId;
         const quantity = item.quantity;
         
         if (!productId || !quantity) {
-          console.log('❌ Item inválido:', item);
           await connection.rollback();
           return res.status(400).json({
             success: false,
@@ -494,22 +571,17 @@ class OrderController {
           SELECT id, name, price FROM products WHERE id = ?
         `, [productId]);
 
-        console.log('🔍 Producto encontrado:', productResult);
-
         // Extraer el producto del resultado (connection.execute devuelve [rows, fields])
         const product = productResult[0][0];
 
         if (!product) {
-          console.log('❌ Producto no encontrado para ID:', productId);
           await connection.rollback();
           return res.status(400).json({
             success: false,
             message: `Producto con ID ${productId} no encontrado`
           });
         }
-
-        console.log('✅ Producto extraído correctamente:', product);
-
+        
         // Guardar información para WhatsApp
         productsForWhatsApp.push({
           product: {
@@ -519,7 +591,6 @@ class OrderController {
           quantity: quantity
         });
 
-        console.log('💾 Guardando item de orden...');
         await connection.execute(`
           INSERT INTO order_items (
             order_id,
@@ -537,15 +608,10 @@ class OrderController {
           quantity,
           product.price * quantity
         ]);
-        
-        console.log('✅ Item de orden guardado');
       }
 
-      console.log('📱 Generando mensaje de WhatsApp...');
       // Generar mensaje de WhatsApp
       const whatsappMessage = this.generateWhatsAppMessage(orderNumber, customerName, productsForWhatsApp, totalAmount, deliveryDate, deliveryTime);
-
-      console.log('💬 Mensaje de WhatsApp generado:', whatsappMessage);
 
       // Actualizar orden con mensaje de WhatsApp
       await connection.execute(`
@@ -554,19 +620,14 @@ class OrderController {
         WHERE id = ?
       `, [whatsappMessage, orderId]);
 
-      console.log('✅ Mensaje de WhatsApp guardado en la orden');
-
-      // Marcar carrito de invitado como procesado
+      // Marcar carrito unificado como procesado
       await connection.execute(`
-        UPDATE guest_carts 
-        SET status = 'processed', updated_at = NOW()
+        UPDATE carts_unified 
+        SET status = 'cleaned', updated_at = NOW()
         WHERE session_id = ?
       `, [sessionId]);
 
-      console.log('✅ Carrito de invitado marcado como procesado');
-
       await connection.commit();
-      console.log('✅ Transacción confirmada');
 
       // Obtener la orden creada con detalles
       const [orderDetails] = await query(`
@@ -579,8 +640,6 @@ class OrderController {
         WHERE o.id = ?
       `, [orderId]);
 
-      console.log('🎉 Orden completada exitosamente');
-
       res.json({
         success: true,
         message: 'Orden creada exitosamente',
@@ -592,8 +651,6 @@ class OrderController {
       });
 
     } catch (error) {
-      console.error('💥 Error creando orden de invitado:', error);
-      console.error('📋 Stack trace:', error.stack);
       await connection.rollback();
       res.status(500).json({
         success: false,

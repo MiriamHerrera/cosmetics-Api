@@ -1,5 +1,5 @@
--- Script para arreglar el sistema de órdenes (Versión simple para MariaDB)
--- Ejecutar este script en tu base de datos MariaDB
+-- Script para arreglar el sistema de órdenes
+-- Versión simple compatible con MariaDB
 
 USE cosmetics_db;
 
@@ -8,89 +8,84 @@ DROP VIEW IF EXISTS orders_with_details;
 
 CREATE VIEW orders_with_details AS
 SELECT 
-  o.id,
-  o.order_number,
-  o.customer_type,
-  o.user_id,
-  o.session_id,
-  o.customer_name,
-  o.customer_phone,
-  o.customer_email,
-  o.delivery_location_id,
-  dl.name as delivery_location_name,
-  o.delivery_date,
-  o.delivery_time,
-  o.delivery_address,
-  o.total_amount,
-  o.status,
-  o.notes,
-  o.admin_notes,
-  o.whatsapp_message,
-  o.whatsapp_sent_at,
-  o.created_at,
-  o.updated_at,
-  COUNT(oi.id) as item_count,
-  SUM(oi.quantity) as total_quantity
+    o.id,
+    o.order_number,
+    o.customer_type,
+    o.user_id,
+    o.session_id,
+    o.customer_name,
+    o.customer_phone,
+    o.customer_email,
+    o.delivery_location_id,
+    o.delivery_date,
+    o.delivery_time,
+    o.delivery_address,
+    o.total_amount,
+    o.notes,
+    o.status,
+    o.whatsapp_message,
+    o.whatsapp_sent_at,
+    o.admin_notes,
+    o.created_at,
+    o.updated_at,
+    dl.name as delivery_location_name,
+    dl.address as delivery_location_address,
+    dl.description as delivery_location_description,
+    u.name as user_name,
+    u.email as user_email
 FROM orders o
-INNER JOIN delivery_locations dl ON o.delivery_location_id = dl.id
-LEFT JOIN order_items oi ON o.id = oi.order_id
-GROUP BY o.id, o.order_number, o.customer_type, o.user_id, o.session_id, 
-         o.customer_name, o.customer_phone, o.customer_email, o.delivery_location_id,
-         dl.name, o.delivery_date, o.delivery_time, o.delivery_address, o.total_amount,
-         o.status, o.notes, o.admin_notes, o.whatsapp_message, o.whatsapp_sent_at,
-         o.created_at, o.updated_at;
+LEFT JOIN delivery_locations dl ON o.delivery_location_id = dl.id
+LEFT JOIN users u ON o.user_id = u.id;
 
--- 2. Crear el procedimiento GenerateOrderNumber si no existe (versión simple)
+-- 2. Crear el procedimiento GenerateOrderNumber si no existe
 DROP PROCEDURE IF EXISTS GenerateOrderNumber;
 
 DELIMITER //
 
-CREATE PROCEDURE GenerateOrderNumber(OUT orderNumber VARCHAR(50))
+CREATE PROCEDURE GenerateOrderNumber(OUT orderNumber VARCHAR(20))
 BEGIN
-  DECLARE currentDate VARCHAR(8);
-  DECLARE nextSequence INT DEFAULT 1;
-  
-  -- Obtener fecha actual en formato YYYYMMDD
-  SET currentDate = DATE_FORMAT(NOW(), '%Y%m%d');
-  
-  -- Obtener el siguiente número de secuencia para hoy
-  SELECT COALESCE(MAX(CAST(SUBSTRING(order_number, 12) AS UNSIGNED)), 0) + 1
-  INTO nextSequence
-  FROM orders 
-  WHERE order_number LIKE CONCAT('ORD', currentDate, '%');
-  
-  -- Generar el número de orden
-  SET orderNumber = CONCAT('ORD', currentDate, LPAD(nextSequence, 4, '0'));
+    DECLARE orderCount INT DEFAULT 0;
+    DECLARE datePrefix VARCHAR(8);
+    
+    -- Obtener fecha actual en formato YYYYMMDD
+    SET datePrefix = DATE_FORMAT(NOW(), '%Y%m%d');
+    
+    -- Contar órdenes del día actual
+    SELECT COUNT(*) INTO orderCount 
+    FROM orders 
+    WHERE DATE(created_at) = CURDATE();
+    
+    -- Incrementar contador
+    SET orderCount = orderCount + 1;
+    
+    -- Generar número de orden: ORD + YYYYMMDD + número secuencial de 4 dígitos
+    SET orderNumber = CONCAT('ORD', datePrefix, LPAD(orderCount, 4, '0'));
 END //
 
 DELIMITER ;
 
--- 3. Verificar que se crearon correctamente
-SELECT 'Vista orders_with_details creada:' as info;
-SHOW CREATE VIEW orders_with_details;
+-- 3. Verificar que las tablas necesarias existen
+SHOW TABLES LIKE 'orders';
+SHOW TABLES LIKE 'order_items';
+SHOW TABLES LIKE 'delivery_locations';
+SHOW TABLES LIKE 'users';
 
-SELECT 'Procedimiento GenerateOrderNumber creado:' as info;
-SHOW CREATE PROCEDURE GenerateOrderNumber;
+-- 4. Verificar que la vista se creó correctamente
+SELECT 'Vista orders_with_details creada correctamente' as status;
+DESCRIBE orders_with_details;
 
--- 4. Probar el procedimiento
-SELECT 'Probando procedimiento...' as info;
+-- 5. Probar el procedimiento GenerateOrderNumber
 SET @testOrderNumber = '';
 CALL GenerateOrderNumber(@testOrderNumber);
-SELECT @testOrderNumber as test_result;
+SELECT @testOrderNumber as test_order_number;
 
--- 5. Probar múltiples veces para verificar que genera números únicos
-SELECT 'Probando generación de múltiples números...' as info;
-SET @order1 = '';
-SET @order2 = '';
-SET @order3 = '';
+-- 6. Verificar datos de prueba en delivery_locations
+SELECT COUNT(*) as delivery_locations_count FROM delivery_locations WHERE is_active = TRUE;
 
-CALL GenerateOrderNumber(@order1);
-CALL GenerateOrderNumber(@order2);
-CALL GenerateOrderNumber(@order3);
+-- Si no hay lugares de entrega, crear algunos de prueba
+INSERT IGNORE INTO delivery_locations (id, name, address, description, is_active) VALUES
+(1, 'Centro de la Ciudad', 'Centro, Ciudad', 'Entrega en el centro de la ciudad', TRUE),
+(2, 'Zona Norte', 'Zona Norte, Ciudad', 'Entrega en la zona norte', TRUE),
+(3, 'Zona Sur', 'Zona Sur, Ciudad', 'Entrega en la zona sur', TRUE);
 
-SELECT 
-  @order1 as order_1,
-  @order2 as order_2,
-  @order3 as order_3;
-
-SELECT 'Sistema de órdenes arreglado correctamente!' as final_status; 
+SELECT 'Script ejecutado correctamente' as final_status;

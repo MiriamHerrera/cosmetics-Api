@@ -189,7 +189,10 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         notes: notes || null
       };
 
-      const response = await fetch('http://localhost:8000/api/orders', {
+      // Determinar la URL correcta según el tipo de usuario
+      const orderUrl = user ? 'http://localhost:8000/api/orders' : 'http://localhost:8000/api/orders/guest';
+      
+      const response = await fetch(orderUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -211,19 +214,13 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         // Abrir WhatsApp
         window.open(whatsappUrl, '_blank');
         
-        // Limpiar el carrito después de enviar el pedido
-        try {
-          await clearCart();
-          console.log('✅ Carrito limpiado exitosamente');
-        } catch (error) {
-          console.error('❌ Error al limpiar carrito:', error);
-          // No bloquear el flujo si falla la limpieza
-        }
+        // El carrito se limpia automáticamente en el backend al crear la orden
+        // No es necesario limpiarlo manualmente aquí
         
         // Mostrar confirmación
         alert(`¡Pedido #${result.data.order.order_number} creado exitosamente! 
 
-✅ Tu carrito ha sido limpiado automáticamente.
+✅ Tu carrito se ha limpiado automáticamente.
 📱 Revisa tu WhatsApp para completar la compra.`);
         
         // Cerrar modal
@@ -233,7 +230,6 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         setError(errorData.message || 'Error al crear el pedido');
       }
     } catch (error) {
-      console.error('Error:', error);
       setError('Error de conexión. Intenta nuevamente.');
     } finally {
       setIsSubmitting(false);
@@ -581,8 +577,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                   <div className="border-t border-gray-200 pt-4">
                     <h5 className="font-medium text-gray-900 mb-2">Productos</h5>
                     <div className="space-y-2">
-                      {cart.items.map((item) => (
-                        <div key={item.productId} className="flex justify-between items-center">
+                      {cart.items.map((item, index) => (
+                        <div key={`${item.productId}-${index}`} className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             {item.product.image_url ? (
                               <img 

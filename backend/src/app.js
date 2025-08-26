@@ -8,15 +8,10 @@ require('dotenv').config();
 // Importar configuración de BD
 const { testConnection } = require('./config/database');
 
-// Importar controlador de carrito invitado para limpieza automática
-const guestCartController = require('./controllers/guestCartController');
-
 // Importar rutas
 const authRoutes = require('./routes/auth');
 const publicProductRoutes = require('./routes/publicProducts');
 const productRoutes = require('./routes/products');
-const cartRoutes = require('./routes/cart');
-const guestCartRoutes = require('./routes/guest-cart');
 const reservationRoutes = require('./routes/reservations');
 const surveyRoutes = require('./routes/surveys');
 const enhancedSurveyRoutes = require('./routes/enhancedSurveys');
@@ -24,6 +19,7 @@ const statsRoutes = require('./routes/stats');
 const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
 const reportRoutes = require('./routes/reports');
+const unifiedCartRoutes = require('./routes/unifiedCart');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -106,8 +102,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/public/products', publicProductRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/guest-cart', guestCartRoutes);
+app.use('/api/unified-cart', unifiedCartRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/enhanced-surveys', enhancedSurveyRoutes);
@@ -135,7 +130,7 @@ app.get('/', (req, res) => {
           endpoints: {
         auth: '/api/auth',
         products: '/api/products',
-        cart: '/api/cart',
+        cart: '/api/unified-cart',
         reservations: '/api/reservations',
         surveys: '/api/surveys',
         stats: '/api/stats',
@@ -182,7 +177,7 @@ const startServer = async () => {
       console.log(`📱 API disponible en: http://localhost:${PORT}`);
       console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🛒 Endpoint: /api/cart`);
+      console.log(`🛒 Endpoint: /api/unified-cart`);
       console.log(`📅 Endpoint: /api/reservations`);
       console.log(`📊 Endpoint: /api/surveys`);
       console.log(`📈 Endpoint: /api/stats`);
@@ -198,7 +193,9 @@ const startServer = async () => {
     console.log('⏰ Configurando limpieza automática de carritos expirados...');
     setInterval(async () => {
       try {
-        await guestCartController.cleanupExpiredCarts();
+        // Usar el servicio de limpieza unificado
+        const CartCleanupService = require('./services/cartCleanupService');
+        await CartCleanupService.executeCleanup();
       } catch (error) {
         console.error('❌ Error en limpieza automática programada:', error);
       }
@@ -206,7 +203,12 @@ const startServer = async () => {
 
     // Ejecutar limpieza inicial al iniciar el servidor
     console.log('🧹 Ejecutando limpieza inicial de carritos expirados...');
-    await guestCartController.cleanupExpiredCarts();
+    try {
+      const CartCleanupService = require('./services/cartCleanupService');
+      await CartCleanupService.executeCleanup();
+    } catch (error) {
+      console.error('❌ Error en limpieza inicial:', error);
+    }
 
     // Configurar limpieza automática de reservas expiradas cada 15 minutos
     console.log('⏰ Configurando limpieza automática de reservas expiradas...');

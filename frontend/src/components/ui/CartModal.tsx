@@ -7,7 +7,6 @@ import { LoginButton } from './index';
 import Image from 'next/image';
 import { useState } from 'react';
 import CheckoutModal from './CheckoutModal';
-import GuestCheckoutModal from './GuestCheckoutModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
 
 interface CartModalProps {
@@ -20,7 +19,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { isGuestMode } = useGuestMode();
   const { sessionId: guestSessionId } = useGuestSession();
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [showGuestCheckoutModal, setShowGuestCheckoutModal] = useState(false);
 
   // Log para debug
   console.log('🎭 CartModal renderizado - isOpen:', isOpen);
@@ -72,23 +70,27 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             ) : (
               <div className="space-y-4">
                 {/* Lista de productos */}
-                {cart?.items.map((item) => (
-                  <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <div className="relative w-12 h-12">
-                        <Image 
-                          src={item.product.image_url || '/NoImage.jpg'} 
-                          alt={item.product.name}
-                          fill
-                          sizes="48px"
-                          className="object-cover rounded-lg"
-                        />
+                {cart?.items.map((item, index) => {
+                  console.log('🔍 [CartModal] Item renderizando:', item);
+                  console.log('💰 [CartModal] Precio del producto:', item.product.price);
+                  console.log('🔢 [CartModal] Cantidad:', item.quantity);
+                  return (
+                    <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <div className="relative w-12 h-12">
+                          <Image 
+                            src={item.product.image_url || '/NoImage.jpg'} 
+                            alt={item.product.name || 'Producto'}
+                            fill
+                            sizes="48px"
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                      <p className="text-sm text-gray-500">{item.product.category_name}</p>
-                      {/* <div className="flex items-center gap-2 mt-2">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{item.product.name}</h3>
+                        <p className="text-sm text-gray-500">{item.product.category_name}</p>
+                        {/* <div className="flex items-center gap-2 mt-2">
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                           className="p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
@@ -105,20 +107,21 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <Plus className="w-3 h-3" />
                         </button>
                       </div> */}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          ${((item.product.price || 0) * item.quantity).toFixed(2)}
+                        </p>
+                        <button
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="text-red-500 hover:text-red-700 p-1 mt-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        ${(item.product.price * item.quantity).toFixed(2)}
-                      </p>
-                      <button
-                        onClick={() => removeFromCart(item.product.id)}
-                        className="text-red-500 hover:text-red-700 p-1 mt-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -151,13 +154,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             )}
             
             <button
-              onClick={() => {
-                if (isGuestMode) {
-                  setShowGuestCheckoutModal(true);
-                } else {
-                  setShowCheckoutModal(true);
-                }
-              }}
+              onClick={() => setShowCheckoutModal(true)}
               className="
                 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700
                 text-white font-bold py-4 px-6 rounded-lg
@@ -174,20 +171,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         </div>
       </div>
       
-      {/* Modal de Checkout para usuarios registrados */}
+      {/* Modal de Checkout unificado */}
       <CheckoutModal
         isOpen={showCheckoutModal}
         onClose={() => setShowCheckoutModal(false)}
         cart={cart}
-        sessionId={null}
-      />
-
-      {/* Modal de Checkout para usuarios invitados */}
-      <GuestCheckoutModal
-        isOpen={showGuestCheckoutModal}
-        onClose={() => setShowGuestCheckoutModal(false)}
-        cart={cart}
-        sessionId={guestSessionId}
+        sessionId={isGuestMode ? guestSessionId : null}
       />
     </div>
   );

@@ -1,13 +1,15 @@
+import { useMemo } from 'react';
 import { useStore } from '@/store/useStore';
 
 export const useGuestMode = () => {
-  const { user } = useStore();
+  const user = useStore((state) => state.user);
   
-  // El usuario está en modo invitado si no hay usuario autenticado
-  const isGuestMode = !user;
-  
+  const isGuestMode = useMemo(() => {
+    return !user || !user.id;
+  }, [user]);
+
   return {
     isGuestMode,
     user
   };
-}; 
+};

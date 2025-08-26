@@ -1,15 +1,15 @@
 export { useAuth } from './useAuth';
 export { useCart } from './useCart';
 export { useCategories } from './useCategories';
-export { useLocalCart } from './useLocalCart';
 export { useProducts } from './useProducts';
 export { useBeforeUnload } from './useBeforeUnload';
 export { useNavigationGuard } from './useNavigationGuard';
 export { useGuestMode } from './useGuestMode';
 export { usePageReloadGuard } from './usePageReloadGuard';
 export { useGuestSession } from './useGuestSession';
-export { useCartMigration } from './useCartMigration';
+export { useUnifiedCart } from './useUnifiedCart';
 export { useAdmin } from './useAdmin';
 export { useReservations } from './useReservations';
 export { useSurveys } from './useSurveys';
+export { useWhatsAppOrders } from './useWhatsAppOrders';
 export { default as useReports } from './useReports'; 

@@ -1,51 +1,48 @@
 import { useCallback } from 'react';
-import { useLocalCart } from './useLocalCart';
-import { useCart } from './useCart';
-import { useGuestMode } from './useGuestMode';
+import { unifiedCartApi } from '@/lib/api';
+import { useStore } from '@/store/useStore';
+import { useGuestSession } from './useGuestSession';
 
 export const useCartMigration = () => {
-  const { cart: localCart, clearCart: clearLocalCart } = useLocalCart();
-  const { addToCart: addToServerCart, cart: serverCart } = useCart();
-  const { isGuestMode } = useGuestMode();
+  const { user, syncServerCart } = useStore();
+  const { sessionId, clearGuestSession } = useGuestSession();
 
-  // Migrar carrito de invitado al servidor cuando el usuario se autentica
-  const migrateGuestCart = useCallback(async () => {
-    if (isGuestMode || !localCart.items.length) {
-      return false;
-    }
-
+  const migrateGuestCart = useCallback(async (): Promise<boolean> => {
     try {
-      // Migrar cada item del carrito local al carrito del servidor
-      for (const item of localCart.items) {
-        await addToServerCart(item.product, item.quantity);
+      // Solo migrar si hay un usuario autenticado y una sesión de invitado
+      if (!user?.id || !sessionId) {
+        console.log('ℹ️ No hay usuario autenticado o sesión de invitado para migrar');
+        return false;
       }
-      
-      // Limpiar carrito local después de migrar exitosamente
-      clearLocalCart();
-      
-      return true;
+
+      console.log('🔄 Migrando carrito de invitado a usuario autenticado...');
+      console.log('👤 Usuario ID:', user.id);
+      console.log('🎭 Session ID:', sessionId);
+
+      // Llamar a la API de migración
+      const response = await unifiedCartApi.migrateGuestToUser(sessionId, user.id);
+
+      if (response.success && response.data) {
+        console.log('✅ Carrito migrado exitosamente:', response.data);
+        
+        // Sincronizar el carrito migrado con el store
+        syncServerCart(response.data);
+        
+        // Limpiar la sesión de invitado ya que se migró
+        clearGuestSession();
+        
+        return true;
+      } else {
+        console.log('⚠️ No se pudo migrar el carrito:', response.message);
+        return false;
+      }
     } catch (error) {
-      console.error('Error migrando carrito:', error);
+      console.error('❌ Error migrando carrito:', error);
       return false;
     }
-  }, [isGuestMode, localCart.items, addToServerCart, clearLocalCart]);
-
-  // Verificar si hay items en el carrito de invitado que necesiten migración
-  const hasGuestCartItems = localCart.items.length > 0;
-
-  // Obtener el carrito activo (local o del servidor)
-  const getActiveCart = useCallback(() => {
-    if (isGuestMode) {
-      return localCart;
-    }
-    return serverCart;
-  }, [isGuestMode, localCart, serverCart]);
+  }, [user?.id, sessionId, syncServerCart, clearGuestSession]);
 
   return {
-    migrateGuestCart,
-    hasGuestCartItems,
-    getActiveCart,
-    localCart,
-    serverCart
+    migrateGuestCart
   };
-}; 
+};

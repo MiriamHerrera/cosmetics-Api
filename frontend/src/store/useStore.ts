@@ -18,6 +18,7 @@ interface AppState {
   removeFromCart: (productId: number) => void;
   updateCartItemQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
+  syncServerCart: (serverCart: any) => void;
   setCategories: (categories: string[]) => void;
   setLoading: (loading: boolean) => void;
   
@@ -135,6 +136,43 @@ export const useStore = create<AppState>()(
       },
       
       clearCart: () => set({ cart: null }),
+      
+      // Función para sincronizar carrito del servidor con el store local
+      syncServerCart: (serverCart: any) => {
+        if (!serverCart) return;
+        
+        console.log('🔄 [Store] Recibiendo carrito del servidor:', serverCart);
+        
+        // Mapear la respuesta del servidor al formato del store
+        const mappedCart = {
+          id: serverCart.id?.toString() || `cart_${Date.now()}`,
+          userId: serverCart.userId?.toString() || serverCart.user_id?.toString() || 'anonymous',
+          items: serverCart.items?.map((item: any) => {
+            console.log('🔄 [Store] Mapeando item:', item);
+            return {
+              productId: item.productId || item.product_id,
+              quantity: item.quantity,
+              product: {
+                id: item.productId || item.product_id,
+                name: item.product?.name || item.product_name || item.name || 'Producto sin nombre',
+                price: item.product?.price || item.price || 0,
+                image_url: item.product?.image_url || item.image_url || '/NoImage.jpg',
+                stock_total: item.product?.stock_total || item.stock_total || 0,
+                description: item.product?.description || item.description || '',
+                product_type_id: item.product?.product_type_id || item.product_type_id || 0,
+                category_name: item.product?.category_name || item.category_name || 'Sin categoría'
+              }
+            };
+          }) || [],
+          total: serverCart.total || 0,
+          status: serverCart.status || 'active',
+          createdAt: serverCart.createdAt ? new Date(serverCart.createdAt) : serverCart.created_at ? new Date(serverCart.created_at) : new Date(),
+          updatedAt: serverCart.updatedAt ? new Date(serverCart.updatedAt) : serverCart.updated_at ? new Date(serverCart.updated_at) : new Date()
+        };
+        
+        console.log('🔄 [Store] Carrito mapeado:', mappedCart);
+        set({ cart: mappedCart });
+      },
       
       setCategories: (categories) => set({ categories }),
       

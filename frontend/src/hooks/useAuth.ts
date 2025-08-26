@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { usersApi } from '@/lib/api';
+import { usersApi, unifiedCartApi } from '@/lib/api';
 import { useStore } from '@/store/useStore';
 import { useCartMigration } from './useCartMigration';
-import type { User, ApiResponse } from '@/types';
+import type { User, ApiResponse, Cart } from '@/types';
 
 export const useAuth = () => {
-  const { user, setUser } = useStore();
+  const { user, setUser, syncServerCart } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -18,21 +18,32 @@ export const useAuth = () => {
         const token = localStorage.getItem('auth_token');
         
         if (token && !user) {
-  
+          console.log('🔄 Restaurando sesión de usuario...');
           
           // Verificar el perfil del usuario con el token
           const response: ApiResponse<User> = await usersApi.getProfile();
           
           if (response.success && response.data) {
-
+            console.log('✅ Usuario autenticado restaurado:', response.data.name);
             setUser(response.data);
+            
+            // Cargar carrito del servidor para usuario autenticado
+            try {
+              const cartResponse: ApiResponse<Cart> = await unifiedCartApi.getCart({ userId: response.data.id });
+              if (cartResponse.success && cartResponse.data) {
+                console.log('🛒 Carrito del servidor cargado:', cartResponse.data);
+                syncServerCart(cartResponse.data);
+              }
+            } catch (cartError) {
+              console.warn('⚠️ No se pudo cargar carrito del servidor:', cartError);
+            }
           } else {
-
+            console.log('❌ Token inválido, removiendo...');
             localStorage.removeItem('auth_token');
           }
         }
       } catch (error) {
-
+        console.error('❌ Error restaurando sesión:', error);
         localStorage.removeItem('auth_token');
       } finally {
         setIsInitialized(true);
@@ -40,7 +51,7 @@ export const useAuth = () => {
     };
 
     initializeAuth();
-  }, [user, setUser]);
+  }, [user, setUser, syncServerCart]);
 
   // Login
   const login = useCallback(async (phone: string, password: string) => {
@@ -48,16 +59,14 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       
-
+      console.log('🔐 Iniciando login para:', phone);
       
       const response: ApiResponse<{ user: User; token: string }> = await usersApi.login(phone, password);
-      
-
       
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         
-
+        console.log('✅ Login exitoso para:', userData.name);
         
         // Guardar token en localStorage
         localStorage.setItem('auth_token', token);
@@ -67,15 +76,49 @@ export const useAuth = () => {
         
         // Migrar carrito de invitado si existe
         try {
-          await migrateGuestCart();
+          console.log('🔄 Iniciando migración del carrito...');
+          const migrationSuccess = await migrateGuestCart();
+          
+          if (migrationSuccess) {
+            console.log('✅ Carrito migrado exitosamente');
+          } else {
+            console.log('ℹ️ No hay carrito para migrar o ya se migró');
+          }
         } catch (error) {
-          console.error('Error migrando carrito:', error);
+          console.error('❌ Error migrando carrito:', error);
           // No fallar el login si la migración falla
+        }
+        
+        // Cargar carrito del servidor (con items migrados si los hay)
+        try {
+          console.log('🛒 Cargando carrito del servidor...');
+          
+          // Obtener sessionId del localStorage o estado local para migración
+          const guestSessionId = localStorage.getItem('guest_session_id') || sessionStorage.getItem('guest_session_id');
+          
+          const cartResponse: ApiResponse<Cart> = await unifiedCartApi.getCart({ 
+            userId: userData.id,
+            sessionId: guestSessionId || undefined
+          });
+          
+          if (cartResponse.success && cartResponse.data) {
+            console.log('✅ Carrito del servidor cargado:', cartResponse.data);
+            syncServerCart(cartResponse.data);
+            
+            // Limpiar sessionId de invitado después de migración exitosa
+            if (guestSessionId) {
+              localStorage.removeItem('guest_session_id');
+              sessionStorage.removeItem('guest_session_id');
+              console.log('🧹 SessionId de invitado limpiado después de migración');
+            }
+          }
+        } catch (cartError) {
+          console.warn('⚠️ No se pudo cargar carrito del servidor:', cartError);
         }
         
         return true;
       } else {
-
+        console.log('❌ Login fallido:', response.message || response.error);
         setError(response.message || response.error || 'Error en el login');
         return false;
       }
@@ -102,7 +145,7 @@ export const useAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, [setUser, migrateGuestCart]);
+  }, [setUser, syncServerCart, migrateGuestCart]);
 
   // Registro
   const register = useCallback(async (userData: { name: string; password: string; phone: string }) => {
@@ -154,6 +197,7 @@ export const useAuth = () => {
       
       // Limpiar estado local
       setUser(null);
+      syncServerCart(null); // Limpiar carrito al cerrar sesión
       
       // El token ya se elimina en la API
       
@@ -162,11 +206,12 @@ export const useAuth = () => {
       console.error('Error during logout:', err);
       // Aún así, limpiar el estado local
       setUser(null);
+      syncServerCart(null); // Limpiar carrito al cerrar sesión
       return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setUser, syncServerCart]);
 
   // Obtener perfil del usuario
   const getProfile = useCallback(async () => {
