@@ -202,13 +202,42 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
       });
 
       if (response.ok) {
-        const result = await response.json();
+        console.log('✅ [DEBUG] Respuesta exitosa del servidor');
+        
+        let result;
+        try {
+          result = await response.json();
+          console.log('✅ [DEBUG] JSON parseado exitosamente:', result);
+        } catch (parseError) {
+          console.error('❌ [ERROR] Error al parsear JSON:', parseError);
+          setError('Error al procesar la respuesta del servidor');
+          return;
+        }
+        
+        // Verificar que result.data existe
+        if (!result || !result.data) {
+          console.error('❌ [ERROR] Respuesta del servidor inválida:', result);
+          setError('Respuesta del servidor inválida');
+          return;
+        }
         
         // Generar enlace de WhatsApp
+        console.log('📝 [DEBUG] Verificando campos de WhatsApp...');
+        console.log('📝 [DEBUG] result.data:', result.data);
+        
+        if (!result.data.whatsappMessage) {
+          console.error('❌ [ERROR] whatsappMessage no está presente en la respuesta');
+          setError('Mensaje de WhatsApp no disponible');
+          return;
+        }
+        
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
+        console.log('📝 [DEBUG] whatsappMessage codificado:', whatsappMessage);
         
         // Usar el número de WhatsApp del negocio desde las variables de entorno
         const businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+        console.log('📱 [DEBUG] businessWhatsAppNumber desde .env:', businessWhatsAppNumber);
+        console.log('📱 [DEBUG] process.env:', process.env);
         
         if (!businessWhatsAppNumber) {
           console.error('❌ [ERROR] NEXT_PUBLIC_WHATSAPP_NUMBER no está definido en .env');
@@ -235,26 +264,62 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         // Marcar que se está procesando una orden para evitar el modal de confirmación
         setOrderProcessing(true);
         
-        // Abrir WhatsApp
-        window.open(whatsappUrl, '_blank');
+        console.log('🚀 [DEBUG] Abriendo WhatsApp con URL:', whatsappUrl);
+        
+        try {
+          // Abrir WhatsApp
+          window.open(whatsappUrl, '_blank');
+          console.log('✅ [DEBUG] WhatsApp abierto exitosamente');
+        } catch (windowError) {
+          console.error('❌ [ERROR] Error al abrir WhatsApp:', windowError);
+          setError('Error al abrir WhatsApp');
+          return;
+        }
         
         // El carrito se limpia automáticamente en el backend al crear la orden
         // No es necesario limpiarlo manualmente aquí
         
         // Mostrar confirmación
-        alert(`¡Pedido #${result.data.order.order_number} creado exitosamente! 
+        console.log('🎉 [DEBUG] Mostrando alert de confirmación');
+        console.log('🎉 [DEBUG] Número de orden:', result.data.order?.order_number);
+        
+        try {
+          alert(`¡Pedido #${result.data.order?.order_number || 'N/A'} creado exitosamente! 
 
 ✅ Tu carrito se ha limpiado automáticamente.
 📱 Revisa tu WhatsApp para completar la compra.`);
+          console.log('✅ [DEBUG] Alert mostrado exitosamente');
+        } catch (alertError) {
+          console.error('❌ [ERROR] Error al mostrar alert:', alertError);
+        }
         
         // Cerrar modal
+        console.log('🚪 [DEBUG] Cerrando modal');
         onClose();
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Error al crear el pedido');
       }
     } catch (error) {
-      setError('Error de conexión. Intenta nuevamente.');
+      console.error('❌ [ERROR] Error en handleSubmit:', error);
+      console.error('❌ [ERROR] Tipo de error:', typeof error);
+      
+      // Mostrar error más específico
+      if (error instanceof Error) {
+        console.error('❌ [ERROR] Mensaje de error:', error.message);
+        console.error('❌ [ERROR] Stack trace:', error.stack);
+        
+        if (error.name === 'TypeError' && error.message.includes('JSON')) {
+          setError('Error al procesar la respuesta del servidor');
+        } else if (error.name === 'NetworkError') {
+          setError('Error de conexión. Verifica tu internet e intenta nuevamente.');
+        } else {
+          setError(`Error inesperado: ${error.message}`);
+        }
+      } else {
+        console.error('❌ [ERROR] Error desconocido:', error);
+        setError('Error de conexión. Intenta nuevamente.');
+      }
     } finally {
       setIsSubmitting(false);
     }
