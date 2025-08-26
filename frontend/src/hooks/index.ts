@@ -9,7 +9,7 @@ export { useGuestSession } from './useGuestSession';
 export { useNavigationGuard } from './useNavigationGuard';
 export { usePageReloadGuard } from './usePageReloadGuard';
 export { useProducts } from './useProducts';
-export { useReports } from './useReports';
+export { default as useReports } from './useReports';
 export { useReservations } from './useReservations';
 export { useSurveys } from './useSurveys';
 export { useUnifiedCart } from './useUnifiedCart';

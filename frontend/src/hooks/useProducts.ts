@@ -14,17 +14,27 @@ export const useProducts = () => {
     totalPages: 0
   });
 
+  // Configuración de logging (solo en desarrollo)
+  const DEBUG_MODE = process.env.NODE_ENV === 'development';
+  
+  const log = (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+    if (DEBUG_MODE) {
+      const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '🔄';
+      console.log(`${prefix} [useProducts] ${message}`);
+    }
+  };
+
   // Cargar productos con paginación
   const loadProducts = useCallback(async (params: PaginationParams = { page: 1, limit: 50 }) => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('🔄 [useProducts] Cargando productos desde el servidor...');
+      log('Cargando productos desde el servidor...');
       const response: ApiResponse<Product[]> = await publicProductsApi.getAll(params);
       
       if (response.success && response.data) {
-        console.log(`✅ [useProducts] ${response.data.length} productos cargados del servidor`);
+        log(`${response.data.length} productos cargados del servidor`);
         
         // Mapear los productos para que coincidan con la estructura esperada
         const mappedProducts = response.data.map((product: Product) => ({
@@ -35,13 +45,13 @@ export const useProducts = () => {
           stock_total: parseInt(product.stock_total.toString()) || 0
         }));
         
-        console.log(`📊 [useProducts] Productos mapeados y guardando en store...`);
+        log('Productos mapeados y guardando en store...');
         
         // Guardar todos los productos para paginación local
         setAllProducts(mappedProducts);
         setProducts(mappedProducts);
         
-        console.log(`✅ [useProducts] Productos guardados en store: ${mappedProducts.length} productos`);
+        log(`Productos guardados en store: ${mappedProducts.length} productos`);
         
         setPagination(prev => ({
           ...prev,
@@ -51,11 +61,11 @@ export const useProducts = () => {
           totalPages: Math.ceil(mappedProducts.length / 12)
         }));
       } else {
-        console.error('❌ [useProducts] Error en respuesta de API:', response.error);
+        log(`Error en respuesta de API: ${response.error}`, 'error');
         setError(response.error || 'Error al cargar productos');
       }
     } catch (err) {
-      console.error('❌ [useProducts] Error de conexión:', err);
+      log(`Error de conexión: ${err}`, 'error');
       setError('Error de conexión al cargar productos');
     } finally {
       setLoading(false);

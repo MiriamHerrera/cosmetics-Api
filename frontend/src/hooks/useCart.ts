@@ -25,16 +25,26 @@ export const useCart = () => {
   // Usar useRef para evitar múltiples actualizaciones simultáneas
   const isProcessing = useRef(false);
 
+  // Configuración de logging (solo en desarrollo)
+  const DEBUG_MODE = process.env.NODE_ENV === 'development';
+  
+  const log = (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+    if (DEBUG_MODE) {
+      const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '🔄';
+      console.log(`${prefix} [useCart] ${message}`);
+    }
+  };
+
   // Función para validar stock antes de operaciones
   const validateStock = useCallback((productId: number, quantity: number, operation: 'add' | 'update' | 'remove') => {
     const product = products.find(p => p.id === productId);
     if (!product) {
-      console.warn(`⚠️ [useCart] Producto ${productId} no encontrado en el store`);
+      log(`Producto ${productId} no encontrado en el store`, 'warn');
       return false;
     }
 
     if (operation === 'add' && product.stock_total < quantity) {
-      console.warn(`⚠️ [useCart] Stock insuficiente para producto ${productId}: ${product.stock_total} < ${quantity}`);
+      log(`Stock insuficiente para producto ${productId}: ${product.stock_total} < ${quantity}`, 'warn');
       return false;
     }
 
@@ -50,7 +60,7 @@ export const useCart = () => {
       setIsUpdatingStock(true);
       setError(null);
 
-      console.log(`🛒 [useCart] Agregando producto ${product.id} al carrito (cantidad: ${quantity})`);
+      log(`Agregando producto ${product.id} al carrito (cantidad: ${quantity})`);
 
       // Validar stock antes de proceder
       if (!validateStock(product.id, quantity, 'add')) {
@@ -66,13 +76,13 @@ export const useCart = () => {
       const response = await unifiedCartApi.addItem(product.id, quantity, cartData);
 
       if (response.success) {
-        console.log(`✅ [useCart] Producto ${product.id} agregado al carrito exitosamente`);
+        log(`Producto ${product.id} agregado al carrito exitosamente`);
         
         // Actualizar el store local
         addToStoreCart(product, quantity);
         
         // Sincronizar stock desde el servidor para confirmar cambios
-        console.log(`🔄 [useCart] Iniciando sincronización de stock después de agregar...`);
+        log('Iniciando sincronización de stock después de agregar...');
         await syncStock(true);
         
         return true;
@@ -81,7 +91,7 @@ export const useCart = () => {
         return false;
       }
     } catch (err) {
-      console.error('Error agregando al carrito:', err);
+      log(`Error agregando al carrito: ${err}`, 'error');
       setError('Error de conexión. Intenta nuevamente.');
       return false;
     } finally {
@@ -99,7 +109,7 @@ export const useCart = () => {
       setIsUpdatingStock(true);
       setError(null);
 
-      console.log(`🗑️ [useCart] Removiendo producto ${productId} del carrito`);
+      log(`Removiendo producto ${productId} del carrito`);
 
       // Usar el sistema unificado para ambos tipos de usuario
       const cartData = isGuestMode 
@@ -109,13 +119,13 @@ export const useCart = () => {
       const response = await unifiedCartApi.removeItem(productId, cartData);
 
       if (response.success) {
-        console.log(`✅ [useCart] Producto ${productId} removido del carrito exitosamente`);
+        log(`Producto ${productId} removido del carrito exitosamente`);
         
         // Remover del store local
         removeFromStoreCart(productId);
         
         // Sincronizar stock desde el servidor para confirmar restauración
-        console.log(`🔄 [useCart] Iniciando sincronización de stock después de remover...`);
+        log('Iniciando sincronización de stock después de remover...');
         await syncStock(true);
         
         return true;
@@ -124,7 +134,7 @@ export const useCart = () => {
         return false;
       }
     } catch (err) {
-      console.error('Error removiendo del carrito:', err);
+      log(`Error removiendo del carrito: ${err}`, 'error');
       setError('Error de conexión. Intenta nuevamente.');
       return false;
     } finally {
@@ -174,7 +184,7 @@ export const useCart = () => {
         return false;
       }
     } catch (err) {
-      console.error('Error actualizando cantidad:', err);
+      log(`Error actualizando cantidad: ${err}`, 'error');
       setError('Error de conexión. Intenta nuevamente.');
       return false;
     } finally {
@@ -211,7 +221,7 @@ export const useCart = () => {
         return false;
       }
     } catch (err) {
-      console.error('Error limpiando carrito:', err);
+      log(`Error limpiando carrito: ${err}`, 'error');
       setError('Error de conexión. Intenta nuevamente.');
       return false;
     } finally {
@@ -223,29 +233,29 @@ export const useCart = () => {
   // Función para cargar carrito del servidor (solo para usuarios autenticados)
   const loadServerCart = useCallback(async () => {
     if (isGuestMode) {
-      console.log('ℹ️ Usuario en modo invitado, no se puede cargar carrito del servidor');
+      log('Usuario en modo invitado, no se puede cargar carrito del servidor');
       return false;
     }
 
     try {
-      console.log('🔄 Cargando carrito del servidor...');
+      log('Cargando carrito del servidor...');
       const response = await unifiedCartApi.getCart({ 
         userId: useStore.getState().user?.id, 
         sessionId: sessionId || undefined 
       });
       
       if (response.success && response.data) {
-        console.log('✅ Carrito del servidor cargado:', response.data);
+        log('Carrito del servidor cargado exitosamente');
         // Actualizar el store con el carrito del servidor
         // Aquí necesitamos mapear la respuesta del servidor al formato del store
         // Por ahora, solo actualizamos el store directamente
         return true;
       } else {
-        console.log('⚠️ No se pudo cargar carrito del servidor:', response.message);
+        log(`No se pudo cargar carrito del servidor: ${response.message}`, 'warn');
         return false;
       }
     } catch (err) {
-      console.error('❌ Error cargando carrito del servidor:', err);
+      log(`Error cargando carrito del servidor: ${err}`, 'error');
       return false;
     }
   }, [isGuestMode, sessionId]);

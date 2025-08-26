@@ -10,6 +10,10 @@ interface AppState {
   categories: string[];
   isLoading: boolean;
   
+  // Configuración de logging
+  DEBUG_MODE: boolean;
+  log: (message: string, level?: 'info' | 'warn' | 'error') => void;
+  
   // Acciones
   setUser: (user: User | null) => void;
   setProducts: (products: Product[]) => void;
@@ -43,14 +47,27 @@ export const useStore = create<AppState>()(
       categories: [],
       isLoading: false,
 
+      // Configuración de logging (solo en desarrollo)
+      DEBUG_MODE: process.env.NODE_ENV === 'development',
+      
+      log: (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+        if (get().DEBUG_MODE) {
+          const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '🔄';
+          console.log(`${prefix} [Store] ${message}`);
+        }
+      },
+
       // Acciones
       setUser: (user) => set({ user }),
       
       setProducts: (products) => {
-        console.log(`🔄 [Store] setProducts llamado con ${products.length} productos`);
-        console.log(`📊 [Store] Primer producto:`, products[0]);
+        const store = get();
+        store.log(`setProducts llamado con ${products.length} productos`);
+        if (products.length > 0) {
+          store.log(`Primer producto: ${products[0].name}`);
+        }
         set({ products });
-        console.log(`✅ [Store] Productos guardados en store: ${products.length} productos`);
+        store.log(`Productos guardados en store: ${products.length} productos`);
       },
       
       setCart: (cart) => set({ cart }),
@@ -149,14 +166,15 @@ export const useStore = create<AppState>()(
       syncServerCart: (serverCart: any) => {
         if (!serverCart) return;
         
-        console.log('🔄 [Store] Recibiendo carrito del servidor:', serverCart);
+        const store = get();
+        store.log('Recibiendo carrito del servidor');
         
         // Mapear la respuesta del servidor al formato del store
         const mappedCart = {
           id: serverCart.id?.toString() || `cart_${Date.now()}`,
           userId: serverCart.userId?.toString() || serverCart.user_id?.toString() || 'anonymous',
           items: serverCart.items?.map((item: any) => {
-            console.log('🔄 [Store] Mapeando item:', item);
+            store.log(`Mapeando item: ${item.product?.name || item.name}`);
             return {
               productId: item.productId || item.product_id,
               quantity: item.quantity,
@@ -178,7 +196,7 @@ export const useStore = create<AppState>()(
           updatedAt: serverCart.updatedAt ? new Date(serverCart.updatedAt) : serverCart.updated_at ? new Date(serverCart.updated_at) : new Date()
         };
         
-        console.log('🔄 [Store] Carrito mapeado:', mappedCart);
+        store.log('Carrito mapeado y guardado');
         set({ cart: mappedCart });
       },
       
@@ -190,8 +208,9 @@ export const useStore = create<AppState>()(
       updateProductStock: (productId, newStock) => {
         const currentProducts = get().products;
         const currentProduct = currentProducts.find(p => p.id === productId);
+        const store = get();
         
-        console.log(`🔄 [Store] Actualizando stock del producto ${productId}: ${currentProduct?.stock_total} → ${newStock}`);
+        store.log(`Actualizando stock del producto ${productId}: ${currentProduct?.stock_total} → ${newStock}`);
         
         // Solo actualizar si el stock realmente cambió y es válido
         if (currentProduct && currentProduct.stock_total !== newStock && newStock >= 0) {
@@ -199,7 +218,7 @@ export const useStore = create<AppState>()(
             product.id === productId ? { ...product, stock_total: newStock } : product
           );
           set({ products: updatedProducts });
-          console.log(`✅ [Store] Stock del producto ${productId} actualizado a ${newStock}`);
+          store.log(`Stock del producto ${productId} actualizado a ${newStock}`);
           
           // También actualizar el stock en el carrito si existe
           const currentCart = get().cart;
@@ -219,14 +238,14 @@ export const useStore = create<AppState>()(
               };
               
               set({ cart: updatedCart });
-              console.log(`✅ [Store] Stock del producto ${productId} actualizado en el carrito`);
+              store.log(`Stock del producto ${productId} actualizado en el carrito`);
             }
           }
         } else {
           if (newStock < 0) {
-            console.warn(`⚠️ [Store] Stock negativo no permitido para producto ${productId}: ${newStock}`);
+            store.log(`Stock negativo no permitido para producto ${productId}: ${newStock}`, 'warn');
           } else {
-            console.log(`ℹ️ [Store] Stock del producto ${productId} no cambió (${currentProduct?.stock_total})`);
+            store.log(`Stock del producto ${productId} no cambió (${currentProduct?.stock_total})`);
           }
         }
       },
@@ -234,11 +253,13 @@ export const useStore = create<AppState>()(
       // Sincronizar todo el stock desde el servidor
       syncAllStock: (serverProducts: Product[]) => {
         if (!serverProducts || !Array.isArray(serverProducts)) {
-          console.warn('⚠️ [Store] syncAllStock: productos del servidor inválidos');
+          const store = get();
+          store.log('syncAllStock: productos del servidor inválidos', 'warn');
           return;
         }
         
-        console.log(`🔄 [Store] Sincronizando stock de ${serverProducts.length} productos desde servidor...`);
+        const store = get();
+        store.log(`Sincronizando stock de ${serverProducts.length} productos desde servidor...`);
         
         const currentProducts = get().products;
         let updatedCount = 0;
@@ -252,7 +273,7 @@ export const useStore = create<AppState>()(
           }
         });
         
-        console.log(`✅ [Store] Stock sincronizado: ${updatedCount} productos actualizados`);
+        store.log(`Stock sincronizado: ${updatedCount} productos actualizados`);
       },
       
       // Computed values
