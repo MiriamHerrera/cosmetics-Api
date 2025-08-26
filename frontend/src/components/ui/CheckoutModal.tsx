@@ -206,7 +206,31 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         
         // Generar enlace de WhatsApp
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
-        const whatsappUrl = `https://wa.me/1234567890?text=${whatsappMessage}`;
+        
+        // Usar el número de WhatsApp del negocio desde las variables de entorno
+        const businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+        
+        if (!businessWhatsAppNumber) {
+          console.error('❌ [ERROR] NEXT_PUBLIC_WHATSAPP_NUMBER no está definido en .env');
+          setError('Error de configuración: número de WhatsApp no disponible');
+          return;
+        }
+        
+        // Formatear número del negocio para WhatsApp (eliminar espacios, guiones, paréntesis)
+        const cleanBusinessPhone = businessWhatsAppNumber.replace(/[\s\-\(\)]/g, '');
+        
+        // Agregar código de país si no lo tiene (asumiendo México +52)
+        const formattedBusinessPhone = cleanBusinessPhone.startsWith('52') ? cleanBusinessPhone : `52${cleanBusinessPhone}`;
+        
+        const whatsappUrl = `https://wa.me/${formattedBusinessPhone}?text=${whatsappMessage}`;
+        
+        console.log('📱 [DEBUG] WhatsApp URL generada:', {
+          businessPhone: businessWhatsAppNumber,
+          cleanBusinessPhone,
+          formattedBusinessPhone,
+          whatsappUrl,
+          customerPhone: customerInfo.phone
+        });
         
         // Marcar que se está procesando una orden para evitar el modal de confirmación
         setOrderProcessing(true);
