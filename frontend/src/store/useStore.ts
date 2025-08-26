@@ -210,42 +210,41 @@ export const useStore = create<AppState>()(
         const currentProduct = currentProducts.find(p => p.id === productId);
         const store = get();
         
-        store.log(`Actualizando stock del producto ${productId}: ${currentProduct?.stock_total} → ${newStock}`);
-        
-        // Solo actualizar si el stock realmente cambió y es válido
-        if (currentProduct && currentProduct.stock_total !== newStock && newStock >= 0) {
-          const updatedProducts = currentProducts.map(product =>
-            product.id === productId ? { ...product, stock_total: newStock } : product
-          );
-          set({ products: updatedProducts });
-          store.log(`Stock del producto ${productId} actualizado a ${newStock}`);
+        // Solo logear si realmente hay un cambio
+        if (currentProduct && currentProduct.stock_total !== newStock) {
+          store.log(`Stock del producto ${productId}: ${currentProduct.stock_total} → ${newStock}`);
           
-          // También actualizar el stock en el carrito si existe
-          const currentCart = get().cart;
-          if (currentCart) {
-            const cartItem = currentCart.items.find(item => item.productId === productId);
-            if (cartItem && cartItem.product.stock_total !== newStock) {
-              const updatedCartItems = currentCart.items.map(item =>
-                item.productId === productId 
-                  ? { ...item, product: { ...item.product, stock_total: newStock } }
-                  : item
-              );
-              
-              const updatedCart = {
-                ...currentCart,
-                items: updatedCartItems,
-                updatedAt: new Date()
-              };
-              
-              set({ cart: updatedCart });
-              store.log(`Stock del producto ${productId} actualizado en el carrito`);
+          // Solo actualizar si el stock realmente cambió y es válido
+          if (newStock >= 0) {
+            const updatedProducts = currentProducts.map(product =>
+              product.id === productId ? { ...product, stock_total: newStock } : product
+            );
+            set({ products: updatedProducts });
+            store.log(`Stock del producto ${productId} actualizado a ${newStock}`);
+            
+            // También actualizar el stock en el carrito si existe
+            const currentCart = get().cart;
+            if (currentCart) {
+              const cartItem = currentCart.items.find(item => item.productId === productId);
+              if (cartItem && cartItem.product.stock_total !== newStock) {
+                const updatedCartItems = currentCart.items.map(item =>
+                  item.productId === productId 
+                    ? { ...item, product: { ...item.product, stock_total: newStock } }
+                    : item
+                );
+                
+                const updatedCart = {
+                  ...currentCart,
+                  items: updatedCartItems,
+                  updatedAt: new Date()
+                };
+                
+                set({ cart: updatedCart });
+                store.log(`Stock del producto ${productId} actualizado en el carrito`);
+              }
             }
-          }
-        } else {
-          if (newStock < 0) {
-            store.log(`Stock negativo no permitido para producto ${productId}: ${newStock}`, 'warn');
           } else {
-            store.log(`Stock del producto ${productId} no cambió (${currentProduct?.stock_total})`);
+            store.log(`Stock negativo no permitido para producto ${productId}: ${newStock}`, 'warn');
           }
         }
       },
@@ -259,10 +258,13 @@ export const useStore = create<AppState>()(
         }
         
         const store = get();
-        store.log(`Sincronizando stock de ${serverProducts.length} productos desde servidor...`);
-        
         const currentProducts = get().products;
         let updatedCount = 0;
+        
+        // Solo logear si hay productos para sincronizar
+        if (serverProducts.length > 0) {
+          store.log(`Sincronizando stock de ${serverProducts.length} productos...`);
+        }
         
         serverProducts.forEach(serverProduct => {
           const localProduct = currentProducts.find(p => p.id === serverProduct.id);
@@ -273,7 +275,12 @@ export const useStore = create<AppState>()(
           }
         });
         
-        store.log(`Stock sincronizado: ${updatedCount} productos actualizados`);
+        // Solo logear si hubo actualizaciones
+        if (updatedCount > 0) {
+          store.log(`Stock sincronizado: ${updatedCount} productos actualizados`);
+        } else if (get().DEBUG_MODE) {
+          store.log('Stock ya está sincronizado');
+        }
       },
       
       // Computed values

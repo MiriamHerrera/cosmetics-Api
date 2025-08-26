@@ -60,7 +60,9 @@ export const useCart = () => {
       setIsUpdatingStock(true);
       setError(null);
 
-      log(`Agregando producto ${product.id} al carrito (cantidad: ${quantity})`);
+      if (DEBUG_MODE) {
+        log(`Agregando producto ${product.id} al carrito (cantidad: ${quantity})`);
+      }
 
       // Validar stock antes de proceder
       if (!validateStock(product.id, quantity, 'add')) {
@@ -76,13 +78,17 @@ export const useCart = () => {
       const response = await unifiedCartApi.addItem(product.id, quantity, cartData);
 
       if (response.success) {
-        log(`Producto ${product.id} agregado al carrito exitosamente`);
+        if (DEBUG_MODE) {
+          log(`Producto ${product.id} agregado al carrito exitosamente`);
+        }
         
         // Actualizar el store local
         addToStoreCart(product, quantity);
         
         // Sincronizar stock desde el servidor para confirmar cambios
-        log('Iniciando sincronización de stock después de agregar...');
+        if (DEBUG_MODE) {
+          log('Iniciando sincronización de stock después de agregar...');
+        }
         await syncStock(true);
         
         return true;
@@ -91,14 +97,16 @@ export const useCart = () => {
         return false;
       }
     } catch (err) {
-      log(`Error agregando al carrito: ${err}`, 'error');
+      if (DEBUG_MODE) {
+        log(`Error agregando al carrito: ${err}`, 'error');
+      }
       setError('Error de conexión. Intenta nuevamente.');
       return false;
     } finally {
       setIsUpdatingStock(false);
       isProcessing.current = false;
     }
-  }, [addToStoreCart, sessionId, isGuestMode, syncStock, validateStock]);
+  }, [addToStoreCart, sessionId, isGuestMode, syncStock, validateStock, DEBUG_MODE]);
 
   // Función para remover del carrito
   const removeFromCart = useCallback(async (productId: number) => {

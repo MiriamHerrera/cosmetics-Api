@@ -30,11 +30,16 @@ export const useProducts = () => {
       setLoading(true);
       setError(null);
       
-      log('Cargando productos desde el servidor...');
+      if (DEBUG_MODE) {
+        log('Cargando productos desde el servidor...');
+      }
+      
       const response: ApiResponse<Product[]> = await publicProductsApi.getAll(params);
       
       if (response.success && response.data) {
-        log(`${response.data.length} productos cargados del servidor`);
+        if (DEBUG_MODE) {
+          log(`${response.data.length} productos cargados del servidor`);
+        }
         
         // Mapear los productos para que coincidan con la estructura esperada
         const mappedProducts = response.data.map((product: Product) => ({
@@ -45,13 +50,17 @@ export const useProducts = () => {
           stock_total: parseInt(product.stock_total.toString()) || 0
         }));
         
-        log('Productos mapeados y guardando en store...');
+        if (DEBUG_MODE) {
+          log('Productos mapeados y guardando en store...');
+        }
         
         // Guardar todos los productos para paginación local
         setAllProducts(mappedProducts);
         setProducts(mappedProducts);
         
-        log(`Productos guardados en store: ${mappedProducts.length} productos`);
+        if (DEBUG_MODE) {
+          log(`Productos guardados en store: ${mappedProducts.length} productos`);
+        }
         
         setPagination(prev => ({
           ...prev,
@@ -61,16 +70,20 @@ export const useProducts = () => {
           totalPages: Math.ceil(mappedProducts.length / 12)
         }));
       } else {
-        log(`Error en respuesta de API: ${response.error}`, 'error');
+        if (DEBUG_MODE) {
+          log(`Error en respuesta de API: ${response.error}`, 'error');
+        }
         setError(response.error || 'Error al cargar productos');
       }
     } catch (err) {
-      log(`Error de conexión: ${err}`, 'error');
+      if (DEBUG_MODE) {
+        log(`Error de conexión: ${err}`, 'error');
+      }
       setError('Error de conexión al cargar productos');
     } finally {
       setLoading(false);
     }
-  }, [setProducts, setLoading]);
+  }, [setProducts, setLoading, DEBUG_MODE]);
 
   // Buscar productos (local - sin llamadas API)
   const searchProducts = useCallback((query: string) => {
