@@ -25,8 +25,25 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Configuración de CORS - DEBE ir ANTES de cualquier otro middleware
+const corsOrigins = [
+  'http://localhost:3000', 
+  'http://127.0.0.1:3000',
+  // Agregar aquí tu dominio de frontend en producción
+  process.env.CORS_ORIGIN || 'https://tu-frontend.vercel.app'
+].filter(Boolean); // Filtrar valores undefined/null
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como aplicaciones móviles)
+    if (!origin) return callback(null, true);
+    
+    if (corsOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('🚫 CORS bloqueado para origen:', origin);
+      callback(new Error('No permitido por CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
