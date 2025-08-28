@@ -246,8 +246,8 @@ const createBasicTables = async () => {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
       
-      // Insertar datos básicos
-      console.log('📝 Insertando datos básicos...');
+      // Insertar datos básicos mínimos para prueba
+      console.log('📝 Insertando datos mínimos de prueba...');
       
       // Usuario admin
       await connection.query(`
@@ -255,37 +255,44 @@ const createBasicTables = async () => {
         (1, 'admin', 'Administrador', '1234567890', 'admin@cosmetics.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1)
       `);
       
-      // Categorías básicas
+      // Una sola categoría
       await connection.query(`
         INSERT IGNORE INTO categories (id, name) VALUES
-        (1, 'Maquillaje'), (2, 'Skincare'), (3, 'Fragancias'), (4, 'Accesorios')
+        (1, 'Cosméticos')
       `);
       
-      // Tipos de producto básicos
+      // Un solo tipo de producto
       await connection.query(`
         INSERT IGNORE INTO product_types (id, category_id, name) VALUES
-        (1, 1, 'Máscara de Pestañas'), (2, 1, 'Labial'), (3, 1, 'Sombras'),
-        (4, 2, 'Crema Hidratante'), (5, 2, 'Serum'), (6, 2, 'Limpiador Facial'),
-        (7, 3, 'Perfume'), (8, 3, 'Colonia')
+        (1, 1, 'Maquillaje')
       `);
       
-      // Productos básicos
+      // Un solo producto
       await connection.query(`
         INSERT IGNORE INTO products (id, product_type_id, name, description, price, stock_total, status, is_approved) VALUES
-        (1, 1, 'Máscara Volumizadora', 'Máscara de pestañas que agrega volumen', 24.99, 50, 'active', 1),
-        (2, 4, 'Crema Hidratante Intensiva', 'Crema hidratante con ácido hialurónico', 29.99, 40, 'active', 1),
-        (3, 7, 'Perfume Floral', 'Perfume con notas florales y frutales', 49.99, 25, 'active', 1)
+        (1, 1, 'Labial de Prueba', 'Labial de color rojo para pruebas del sistema', 19.99, 100, 'active', 1)
       `);
       
-      // Ubicaciones de entrega básicas
+      // Una sola encuesta
+      await connection.query(`
+        INSERT IGNORE INTO surveys (id, question, description, status, created_by) VALUES
+        (1, '¿Te gusta el nuevo sistema?', 'Encuesta de prueba para verificar funcionamiento', 'active', 1)
+      `);
+      
+      // Una sola opción para la encuesta
+      await connection.query(`
+        INSERT IGNORE INTO survey_options (id, survey_id, option_text, is_correct) VALUES
+        (1, 1, 'Sí, me gusta mucho', 1)
+      `);
+      
+      // Una ubicación de entrega
       await connection.query(`
         INSERT IGNORE INTO delivery_locations (id, name, address, description, is_active) VALUES
-        (1, 'Centro Comercial', 'Av. Principal 123, Centro', 'Entrega en centro comercial', 1),
-        (2, 'Zona Norte', 'Calle Norte 456, Zona Norte', 'Entrega en zona norte', 1)
+        (1, 'Oficina Central', 'Av. Principal 123, Centro', 'Entrega en oficina central', 1)
       `);
       
-      console.log('✅ Estructura completa de base de datos creada');
-      console.log('✅ Datos básicos insertados');
+      console.log('✅ Datos mínimos de prueba insertados');
+      console.log('📊 Resumen: 1 usuario, 1 categoría, 1 tipo, 1 producto, 1 encuesta, 1 opción, 1 ubicación');
     } else {
       console.log(`✅ Base de datos ya tiene ${tableNames.length} tablas`);
       
