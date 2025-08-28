@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Survey, SurveyOption, SurveyVote } from '@/types';
+import { API_CONFIG, apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 
 interface UseSurveysReturn {
   // Estado
@@ -35,8 +36,6 @@ export const useSurveys = (): UseSurveysReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE = 'http://localhost:8000/api/enhanced-surveys';
-
   // Función helper para hacer llamadas API
   const apiCall = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('auth_token');
@@ -47,7 +46,7 @@ export const useSurveys = (): UseSurveysReturn => {
     };
 
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
         ...options,
         headers,
       });
@@ -72,7 +71,7 @@ export const useSurveys = (): UseSurveysReturn => {
     };
 
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
         ...options,
         headers,
       });

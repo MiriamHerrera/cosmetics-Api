@@ -10,6 +10,131 @@ import type {
   PaginationParams 
 } from '@/types';
 
+// Configuración centralizada de la API
+export const API_CONFIG = {
+  // URL base de la API (Railway por defecto, localhost para desarrollo)
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://cosmetics-api-production.up.railway.app/api',
+  
+  // Endpoints específicos
+  ENDPOINTS: {
+    // Auth
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    LOGOUT: '/auth/logout',
+    
+    // Products
+    PRODUCTS: '/products',
+    PRODUCT_TYPES: '/products/types',
+    PUBLIC_PRODUCTS: '/public/products',
+    PRODUCT_CATEGORIES: '/products/categories',
+    
+    // Cart
+    CART: '/cart',
+    CART_ITEMS: '/cart/items',
+    
+    // Orders
+    ORDERS: '/orders',
+    GUEST_ORDERS: '/orders/guest',
+    DELIVERY_LOCATIONS: '/orders/delivery-locations',
+    DELIVERY_TIMES: '/orders/delivery-times',
+    
+    // Reservations
+    RESERVATIONS: '/reservations',
+    ADMIN_RESERVATIONS: '/reservations/admin/all',
+    
+    // Surveys
+    SURVEYS: '/enhanced-surveys',
+    SURVEY_OPTIONS: '/enhanced-surveys/options',
+    
+    // Admin
+    ADMIN: '/admin',
+    ADMIN_PRODUCTS: '/admin/products',
+    
+    // Reports
+    REPORTS: '/reports',
+    
+    // Stats
+    STATS: '/stats',
+    
+    // Health
+    HEALTH: '/health'
+  }
+};
+
+// Función helper para construir URLs completas
+export const buildApiUrl = (endpoint: string): string => {
+  return `${API_CONFIG.BASE_URL}${endpoint}`;
+};
+
+// Función helper para hacer fetch con configuración estándar
+export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const url = buildApiUrl(endpoint);
+  
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include',
+    ...options,
+  };
+
+  console.log(`📡 API Call: ${options.method || 'GET'} ${url}`);
+  
+  try {
+    const response = await fetch(url, defaultOptions);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`❌ API Error (${endpoint}):`, error);
+    throw error;
+  }
+};
+
+// Función helper para hacer fetch y parsear JSON
+export const apiFetchJson = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  const response = await apiFetch(endpoint, options);
+  return response.json();
+};
+
+// Función helper para hacer POST
+export const apiPost = async <T>(endpoint: string, data: any, options: RequestInit = {}): Promise<T> => {
+  return apiFetchJson<T>(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    ...options,
+  });
+};
+
+// Función helper para hacer PUT
+export const apiPut = async <T>(endpoint: string, data: any, options: RequestInit = {}): Promise<T> => {
+  return apiFetchJson<T>(endpoint, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    ...options,
+  });
+};
+
+// Función helper para hacer DELETE
+export const apiDelete = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  return apiFetchJson<T>(endpoint, {
+    method: 'DELETE',
+    ...options,
+  });
+};
+
+// Función helper para hacer GET
+export const apiGet = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  return apiFetchJson<T>(endpoint, {
+    method: 'GET',
+    ...options,
+  });
+};
+
 // Configuración base de la API
 const API_BASE_URL = config.apiUrl;
 
