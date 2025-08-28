@@ -1,0 +1,42 @@
+# Archivos de desarrollo
+node_modules/
+.env
+.env.local
+.env.development
+.env.test
+
+# Archivos de testing
+test-create-option.js
+quick-test.js
+*.test.js
+*.spec.js
+
+# Documentación
+*.md
+ADMIN_TESTING.md
+CART_PERFORMANCE_OPTIMIZATION.md
+CART_TESTING.md
+ORDERS_FIX_README.md
+RESERVATION_TESTING.md
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
