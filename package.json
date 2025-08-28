@@ -18,7 +18,9 @@
     "clean": "rimraf frontend/.next frontend/out backend/vendor backend/node_modules",
     "setup": "npm run install:all && npm run build:frontend"
   },
-  "workspaces": [],
+  "workspaces": [
+    "frontend"
+  ],
   "keywords": [
     "cosmetics",
     "inventory",
