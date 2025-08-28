@@ -11,7 +11,10 @@
     "postinstall": "echo 'Dependencies installed successfully'",
     "railway:start": "npm start",
     "railway:build": "npm install",
-    "install-deps": "npm install"
+    "install-deps": "npm install",
+    "db:init": "node scripts/initialize-database.js",
+    "db:setup": "npm run db:init",
+    "db:fix": "node scripts/fix-survey-votes-table.js"
   },
   "engines": {
     "node": "18.x",

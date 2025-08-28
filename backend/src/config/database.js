@@ -246,6 +246,47 @@ const createBasicTables = async () => {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
       
+      // 12. Crear tabla de opciones de encuesta
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS survey_options (
+          id bigint(20) NOT NULL AUTO_INCREMENT,
+          survey_id bigint(20) NOT NULL,
+          option_text varchar(255) NOT NULL,
+          description text DEFAULT NULL,
+          is_approved tinyint(1) DEFAULT 1,
+          created_by bigint(20) NOT NULL DEFAULT 1,
+          created_at datetime DEFAULT current_timestamp(),
+          updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (id),
+          KEY survey_id (survey_id),
+          KEY is_approved (is_approved),
+          CONSTRAINT survey_options_survey_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
+          CONSTRAINT survey_options_created_by_fk FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+      
+      // 13. Crear tabla de votos de encuesta
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS survey_votes (
+          id bigint(20) NOT NULL AUTO_INCREMENT,
+          survey_id bigint(20) NOT NULL,
+          option_id bigint(20) NOT NULL,
+          user_id bigint(20) DEFAULT NULL,
+          session_id varchar(255) DEFAULT NULL,
+          user_type enum('guest','registered') NOT NULL DEFAULT 'guest',
+          created_at datetime DEFAULT current_timestamp(),
+          PRIMARY KEY (id),
+          UNIQUE KEY unique_vote (survey_id, option_id, user_id, session_id),
+          KEY survey_id (survey_id),
+          KEY option_id (option_id),
+          KEY user_id (user_id),
+          KEY session_id (session_id),
+          CONSTRAINT survey_votes_survey_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
+          CONSTRAINT survey_votes_option_fk FOREIGN KEY (option_id) REFERENCES survey_options (id) ON DELETE CASCADE,
+          CONSTRAINT survey_votes_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+      
       // Insertar datos básicos mínimos para prueba
       console.log('📝 Insertando datos mínimos de prueba...');
       
