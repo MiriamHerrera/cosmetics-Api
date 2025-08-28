@@ -24,26 +24,26 @@ const createBasicTables = async () => {
     // Verificar si la base de datos cosmetics_db existe
     const connection = await pool.getConnection();
     
-    // Intentar crear la base de datos si no existe
+    // Intentar crear la base de datos si no existe (usando query directo)
     try {
-      await connection.execute('CREATE DATABASE IF NOT EXISTS `cosmetics_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+      await connection.query('CREATE DATABASE IF NOT EXISTS `cosmetics_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
       console.log('✅ Base de datos cosmetics_db verificada/creada');
     } catch (error) {
       console.log('ℹ️ Base de datos ya existe o no se puede crear');
     }
     
     // Usar la base de datos cosmetics_db
-    await connection.execute('USE `cosmetics_db`');
+    await connection.query('USE `cosmetics_db`');
     
     // Verificar si las tablas principales existen
-    const [tables] = await connection.execute('SHOW TABLES');
+    const [tables] = await connection.query('SHOW TABLES');
     const tableNames = tables.map(row => Object.values(row)[0]);
     
     if (tableNames.length === 0) {
       console.log('🔧 Base de datos vacía, creando estructura básica...');
       
       // Crear tabla de usuarios si no existe
-      await connection.execute(`
+      await connection.query(`
         CREATE TABLE IF NOT EXISTS users (
           id bigint(20) NOT NULL AUTO_INCREMENT,
           username varchar(50) DEFAULT NULL,
@@ -63,7 +63,7 @@ const createBasicTables = async () => {
       `);
       
       // Insertar usuario admin básico
-      await connection.execute(`
+      await connection.query(`
         INSERT IGNORE INTO users (id, username, name, phone, email, password, role, is_active) VALUES
         (1, 'admin', 'Administrador', '1234567890', 'admin@cosmetics.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1)
       `);
