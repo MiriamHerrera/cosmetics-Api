@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:ignore-lint": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "build:prod": "NODE_ENV=production next build",
