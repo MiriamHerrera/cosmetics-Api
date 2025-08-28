@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Optimizaciones para producción
-  output: 'standalone',
+  // output: 'standalone', // Comentado temporalmente para Vercel
   poweredByHeader: false,
   compress: true,
   
