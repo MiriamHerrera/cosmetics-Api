@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { API_CONFIG, apiGet, apiPost } from '@/lib/api';
 
 interface ReportData {
   periods?: any[];
@@ -37,32 +38,38 @@ const useReports = (): UseReportsReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para hacer llamadas a la API
-  const apiCall = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      throw new Error('No hay token de autenticación');
+  const token = localStorage.getItem('auth_token');
+
+  const fetchReportData = useCallback(async (endpoint: string, params = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const url = `${API_CONFIG.BASE_URL}${endpoint}${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('📡 Llamando a:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      setError('Error al cargar datos del reporte');
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-    console.log('🔑 Token encontrado:', token.substring(0, 20) + '...');
-    console.log('📡 Llamando a:', `http://localhost:8000${endpoint}`);
-
-    const response = await fetch(`http://localhost:8000${endpoint}`, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  }, []);
+  }, [token]);
 
   // Cargar un reporte específico
   const loadReport = useCallback(async (reportType: string, params: ReportParams) => {
@@ -107,7 +114,7 @@ const useReports = (): UseReportsReturn => {
           throw new Error(`Tipo de reporte no válido: ${reportType}`);
       }
 
-      const data = await apiCall(endpoint);
+      const data = await fetchReportData(endpoint);
       
       setReports(prev => ({
         ...prev,
@@ -121,7 +128,7 @@ const useReports = (): UseReportsReturn => {
     } finally {
       setLoading(false);
     }
-  }, [apiCall]);
+  }, [fetchReportData]);
 
   // Cargar reporte personalizado combinado
   const loadCustomReport = useCallback(async (params: ReportParams, reportTypes: string[]) => {
@@ -129,15 +136,12 @@ const useReports = (): UseReportsReturn => {
     setError(null);
 
     try {
-      const data = await apiCall('/api/reports/custom', {
-        method: 'POST',
-        body: JSON.stringify({
-          startDate: params.startDate,
-          endDate: params.endDate,
-          reportTypes,
-          groupBy: params.groupBy || 'month',
-          limit: params.limit || 10
-        })
+      const data = await fetchReportData('/api/reports/custom', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        reportTypes,
+        groupBy: params.groupBy || 'month',
+        limit: params.limit || 10
       });
 
       // Actualizar cada reporte individualmente
@@ -161,7 +165,7 @@ const useReports = (): UseReportsReturn => {
     } finally {
       setLoading(false);
     }
-  }, [apiCall]);
+  }, [fetchReportData]);
 
   // Limpiar error
   const clearError = useCallback(() => {

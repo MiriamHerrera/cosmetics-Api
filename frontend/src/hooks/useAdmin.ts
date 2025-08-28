@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks';
+import { API_CONFIG, apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 
 interface User {
   id: number;
@@ -108,7 +109,7 @@ export const useAdmin = () => {
       throw new Error('No hay token de autenticación');
     }
 
-    const response = await fetch(`http://localhost:8000/api/admin/${endpoint}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/admin/${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -229,7 +230,7 @@ export const useAdmin = () => {
         throw new Error('No hay token de autenticación');
       }
 
-      const response = await fetch(`http://localhost:8000/api/reservations/admin/all?${params}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/reservations/admin/all?${params}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -268,7 +269,7 @@ export const useAdmin = () => {
         throw new Error('No hay token de autenticación');
       }
 
-      const response = await fetch(`http://localhost:8000/api/enhanced-surveys?${params}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/enhanced-surveys?${params}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
