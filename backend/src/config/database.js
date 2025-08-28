@@ -19,68 +19,64 @@ const pool = mysql.createPool(dbConfig);
 // Función para crear tablas básicas si no existen
 const createBasicTables = async () => {
   try {
-    console.log('🔧 Creando tablas básicas si no existen...');
+    console.log('🔧 Verificando estructura de base de datos...');
     
-    // Crear tabla de usuarios
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL,
-        role ENUM('admin', 'user') DEFAULT 'user',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Crear tabla de productos
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        price DECIMAL(10,2) NOT NULL,
-        stock_total INT DEFAULT 0,
-        status ENUM('active', 'inactive') DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Crear tabla de carritos unificados
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS carts_unified (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        cart_type ENUM('guest', 'user') DEFAULT 'guest',
-        status ENUM('active', 'completed', 'expired') DEFAULT 'active',
-        expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_user_id (user_id),
-        INDEX idx_status (status),
-        INDEX idx_expires_at (expires_at)
-      )
-    `);
-
-    // Crear tabla de items del carrito
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS cart_items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        cart_id INT NOT NULL,
-        product_id INT NOT NULL,
-        quantity INT NOT NULL DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (cart_id) REFERENCES carts_unified(id) ON DELETE CASCADE,
-        INDEX idx_cart_id (cart_id),
-        INDEX idx_product_id (product_id)
-      )
-    `);
-
-    console.log('✅ Tablas básicas creadas/verificadas correctamente');
+    // Verificar si la base de datos cosmetics_db existe
+    const connection = await pool.getConnection();
+    
+    // Intentar crear la base de datos si no existe
+    try {
+      await connection.execute('CREATE DATABASE IF NOT EXISTS `cosmetics_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+      console.log('✅ Base de datos cosmetics_db verificada/creada');
+    } catch (error) {
+      console.log('ℹ️ Base de datos ya existe o no se puede crear');
+    }
+    
+    // Usar la base de datos cosmetics_db
+    await connection.execute('USE `cosmetics_db`');
+    
+    // Verificar si las tablas principales existen
+    const [tables] = await connection.execute('SHOW TABLES');
+    const tableNames = tables.map(row => Object.values(row)[0]);
+    
+    if (tableNames.length === 0) {
+      console.log('🔧 Base de datos vacía, creando estructura básica...');
+      
+      // Crear tabla de usuarios si no existe
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id bigint(20) NOT NULL AUTO_INCREMENT,
+          username varchar(50) DEFAULT NULL,
+          name varchar(100) NOT NULL,
+          phone varchar(20) NOT NULL,
+          email varchar(120) DEFAULT NULL,
+          password varchar(255) NOT NULL,
+          role enum('client','admin') DEFAULT 'client',
+          created_at datetime DEFAULT current_timestamp(),
+          updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          is_active tinyint(1) DEFAULT 1,
+          PRIMARY KEY (id),
+          UNIQUE KEY phone (phone),
+          UNIQUE KEY email (email),
+          UNIQUE KEY username (username)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+      
+      // Insertar usuario admin básico
+      await connection.execute(`
+        INSERT IGNORE INTO users (id, username, name, phone, email, password, role, is_active) VALUES
+        (1, 'admin', 'Administrador', '1234567890', 'admin@cosmetics.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1)
+      `);
+      
+      console.log('✅ Usuario admin creado con ID 1');
+    } else {
+      console.log(`✅ Base de datos ya tiene ${tableNames.length} tablas`);
+    }
+    
+    connection.release();
+    console.log('✅ Estructura de base de datos verificada correctamente');
   } catch (error) {
-    console.error('❌ Error creando tablas básicas:', error.message);
+    console.error('❌ Error verificando estructura de base de datos:', error.message);
   }
 };
 
@@ -98,7 +94,7 @@ const testConnection = async () => {
     console.log('✅ Conexión a MySQL establecida correctamente');
     connection.release();
 
-    // Crear tablas básicas después de conectar
+    // Verificar estructura de base de datos después de conectar
     await createBasicTables();
     
     return true;
