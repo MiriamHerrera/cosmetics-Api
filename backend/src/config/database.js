@@ -16,6 +16,74 @@ const dbConfig = {
 // Crear pool de conexiones
 const pool = mysql.createPool(dbConfig);
 
+// Función para crear tablas básicas si no existen
+const createBasicTables = async () => {
+  try {
+    console.log('🔧 Creando tablas básicas si no existen...');
+    
+    // Crear tabla de usuarios
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role ENUM('admin', 'user') DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Crear tabla de productos
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS products (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL,
+        stock_total INT DEFAULT 0,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Crear tabla de carritos unificados
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS carts_unified (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        cart_type ENUM('guest', 'user') DEFAULT 'guest',
+        status ENUM('active', 'completed', 'expired') DEFAULT 'active',
+        expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_user_id (user_id),
+        INDEX idx_status (status),
+        INDEX idx_expires_at (expires_at)
+      )
+    `);
+
+    // Crear tabla de items del carrito
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS cart_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cart_id INT NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (cart_id) REFERENCES carts_unified(id) ON DELETE CASCADE,
+        INDEX idx_cart_id (cart_id),
+        INDEX idx_product_id (product_id)
+      )
+    `);
+
+    console.log('✅ Tablas básicas creadas/verificadas correctamente');
+  } catch (error) {
+    console.error('❌ Error creando tablas básicas:', error.message);
+  }
+};
+
 // Función para probar la conexión
 const testConnection = async () => {
   try {
@@ -29,6 +97,10 @@ const testConnection = async () => {
     const connection = await pool.getConnection();
     console.log('✅ Conexión a MySQL establecida correctamente');
     connection.release();
+
+    // Crear tablas básicas después de conectar
+    await createBasicTables();
+    
     return true;
   } catch (error) {
     console.error('❌ Error conectando a MySQL:', error.message);
