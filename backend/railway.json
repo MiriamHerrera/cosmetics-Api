@@ -14,5 +14,9 @@
   "variables": {
     "NODE_ENV": "production",
     "PORT": "8000"
+  },
+  "nixpacks": {
+    "installCommand": "npm install",
+    "startCommand": "npm start"
   }
 }
