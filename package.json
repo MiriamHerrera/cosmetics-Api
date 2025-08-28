@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Sistema completo de inventario y ventas para cosméticos",
   "scripts": {
-    "start": "cd backend && npm start",
+    "start": "cd backend && npm install && npm start",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && php artisan serve",
     "build:frontend": "cd frontend && npm run build",
