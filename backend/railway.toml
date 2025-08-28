@@ -13,3 +13,6 @@
   NODE_ENV = "production"
   PORT = "8000"
   NODE_VERSION = "18.19.0"
+
+[railway]
+  rootDirectory = "backend"
