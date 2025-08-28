@@ -6,16 +6,7 @@
       "use": "@vercel/next"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "buildCommand": "npm run build:ignore-lint",
-  "framework": null,
-  "functions": {},
-  "rewrites": []
+  "buildCommand": "npm run build:ignore-lint"
 }
