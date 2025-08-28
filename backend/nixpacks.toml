@@ -1,5 +1,5 @@
 [phases.setup]
-  nixPkgs = ["nodejs_18", "npm"]
+  nixPkgs = ["nodejs-18_x", "npm"]
 
 [phases.install]
   cmds = ["npm install"]
@@ -13,3 +13,7 @@
 [variables]
   NODE_ENV = "production"
   PORT = "8000"
+
+[phases.setup.nixPkgs]
+  nodejs = "18_x"
+  npm = "9_x"
