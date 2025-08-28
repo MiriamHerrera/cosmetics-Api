@@ -254,47 +254,56 @@ const initializeDatabase = async () => {
     `);
     console.log('✅ Tabla surveys creada');
     
-    // Tabla de opciones de encuesta
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS survey_options (
-        id bigint(20) NOT NULL AUTO_INCREMENT,
-        survey_id bigint(20) NOT NULL,
-        option_text varchar(255) NOT NULL,
-        description text DEFAULT NULL,
-        is_approved tinyint(1) DEFAULT 1,
-        created_by bigint(20) NOT NULL DEFAULT 1,
-        created_at datetime DEFAULT current_timestamp(),
-        updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-        PRIMARY KEY (id),
-        KEY survey_id (survey_id),
-        KEY is_approved (is_approved),
-        CONSTRAINT survey_options_survey_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
-        CONSTRAINT survey_options_created_by_fk FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
+          // Tabla de opciones de encuesta
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS survey_options (
+          id bigint(20) NOT NULL AUTO_INCREMENT,
+          survey_id bigint(20) NOT NULL,
+          option_text varchar(200) NOT NULL,
+          description text DEFAULT NULL COMMENT 'Descripción adicional de la opción',
+          product_id bigint(20) DEFAULT NULL,
+          created_by bigint(20) NOT NULL DEFAULT 1 COMMENT 'ID del usuario que sugirió la opción',
+          is_approved tinyint(1) DEFAULT 0 COMMENT '0 = Pendiente, 1 = Aprobada',
+          admin_notes text DEFAULT NULL COMMENT 'Notas del administrador sobre la aprobación',
+          approved_by bigint(20) DEFAULT NULL COMMENT 'ID del admin que aprobó/rechazó',
+          approved_at datetime DEFAULT NULL COMMENT 'Fecha de aprobación/rechazo',
+          created_at datetime DEFAULT current_timestamp() COMMENT 'Fecha de creación de la opción',
+          updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (id),
+          KEY product_id (product_id),
+          KEY survey_options_approved_by_fk (approved_by),
+          KEY idx_survey_options_survey_id (survey_id),
+          KEY idx_survey_options_approved (is_approved),
+          KEY idx_survey_options_created_by (created_by),
+          KEY idx_survey_options_survey_approved (survey_id,is_approved),
+          CONSTRAINT survey_options_approved_by_fk FOREIGN KEY (approved_by) REFERENCES users (id) ON DELETE SET NULL,
+          CONSTRAINT survey_options_created_by_fk FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE,
+          CONSTRAINT survey_options_ibfk_1 FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
+          CONSTRAINT survey_options_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
     console.log('✅ Tabla survey_options creada');
     
-    // Tabla de votos de encuesta
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS survey_votes (
-        id bigint(20) NOT NULL AUTO_INCREMENT,
-        survey_id bigint(20) NOT NULL,
-        option_id bigint(20) NOT NULL,
-        user_id bigint(20) DEFAULT NULL,
-        session_id varchar(255) DEFAULT NULL,
-        user_type enum('guest','registered') NOT NULL DEFAULT 'guest',
-        created_at datetime DEFAULT current_timestamp(),
-        PRIMARY KEY (id),
-        UNIQUE KEY unique_vote (survey_id, option_id, user_id, session_id),
-        KEY survey_id (survey_id),
-        KEY option_id (option_id),
-        KEY user_id (user_id),
-        KEY session_id (session_id),
-        CONSTRAINT survey_votes_survey_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
-        CONSTRAINT survey_votes_option_fk FOREIGN KEY (option_id) REFERENCES survey_options (id) ON DELETE CASCADE,
-        CONSTRAINT survey_votes_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
+          // Tabla de votos de encuesta
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS survey_votes (
+          id bigint(20) NOT NULL AUTO_INCREMENT,
+          survey_id bigint(20) NOT NULL,
+          option_id bigint(20) NOT NULL,
+          user_id bigint(20) NOT NULL,
+          created_at datetime DEFAULT current_timestamp(),
+          updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (id),
+          UNIQUE KEY unique_user_option (user_id,option_id),
+          KEY idx_survey_votes_survey_id (survey_id),
+          KEY idx_survey_votes_option_id (option_id),
+          KEY idx_survey_votes_user_id (user_id),
+          KEY idx_survey_votes_survey_user (survey_id,user_id),
+          CONSTRAINT survey_votes_ibfk_1 FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
+          CONSTRAINT survey_votes_ibfk_2 FOREIGN KEY (option_id) REFERENCES survey_options (id) ON DELETE CASCADE,
+          CONSTRAINT survey_votes_ibfk_3 FOREIGN KEY (user_id) REFERENCES users (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
     console.log('✅ Tabla survey_votes creada');
     
     // 5. Insertar datos mínimos de prueba
@@ -335,11 +344,11 @@ const initializeDatabase = async () => {
     `);
     console.log('✅ Encuesta de prueba creada');
     
-    // Opción de encuesta
-    await connection.query(`
-      INSERT IGNORE INTO survey_options (id, survey_id, option_text, is_correct) VALUES
-      (1, 1, 'Sí, me gusta mucho', 1)
-    `);
+          // Opción de encuesta
+      await connection.query(`
+        INSERT IGNORE INTO survey_options (id, survey_id, option_text, description, created_by, is_approved) VALUES
+        (1, 1, 'Sí, me gusta mucho', 'Opción de prueba para verificar funcionamiento', 1, 1)
+      `);
     console.log('✅ Opción de encuesta creada');
     
     // Ubicación de entrega
