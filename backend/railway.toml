@@ -1,6 +1,6 @@
 [build]
-  builder = "nixpacks"
-  buildCommand = "npm install"
+  builder = "dockerfile"
+  dockerfilePath = "Dockerfile"
 
 [deploy]
   startCommand = "npm start"
@@ -12,10 +12,4 @@
 [env]
   NODE_ENV = "production"
   PORT = "8000"
-
-[nixpacks]
-  installCommand = "npm install"
-  startCommand = "npm start"
-  phases.install.cmds = ["npm install"]
-  phases.build.cmds = ["echo 'Build completed'"]
-  start.cmd = "npm start"
+  NODE_VERSION = "18.19.0"
