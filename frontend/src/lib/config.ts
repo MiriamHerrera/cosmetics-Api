@@ -9,8 +9,8 @@ export const config = {
   // URL de tu sitio web
   websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://tusitio.com',
   
-  // URL de la API
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
+  // URL de la API (Railway por defecto, localhost para desarrollo)
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'https://cosmetics-api-production.up.railway.app/api',
   
   // Configuración de mensajes
   messages: {
