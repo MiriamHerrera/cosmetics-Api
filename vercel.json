@@ -14,5 +14,8 @@
   ],
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "buildCommand": "npm run build:ignore-lint"
+  "buildCommand": "npm run build:ignore-lint",
+  "framework": null,
+  "functions": {},
+  "rewrites": []
 }
