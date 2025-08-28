@@ -9,3 +9,7 @@
 
 [start]
   cmd = "npm start"
+
+[variables]
+  NODE_ENV = "production"
+  PORT = "8000"
