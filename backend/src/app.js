@@ -26,13 +26,14 @@ const PORT = process.env.PORT || 8000;
 
 // Configuración de CORS - DEBE ir ANTES de cualquier otro middleware
 const corsOrigins = [
-  'http://localhost:3000', 
+  'http://localhost:3000',
   'http://127.0.0.1:3000',
   // Agregar aquí tu dominio de frontend en producción
   process.env.CORS_ORIGIN || 'https://cosmetics-api-frontend-bwlv7q2z2-miriams-projects-0da082f5.vercel.app',
-  'https://cosmetics-api-frontend-bgnag6k78-miriams-projects-0da082f5.vercel.app',
-  'https://cosmetics-api-frontend-mcz1og9ph-miriams-projects-0da082f5.vercel.app'
-].filter(Boolean); // Filtrar valores undefined/null
+'https://cosmetics-api-frontend-bgnag6k78-miriams-projects-0da082f5.vercel.app',
+'https://cosmetics-api-frontend-mcz1og9ph-miriams-projects-0da082f5.vercel.app',
+'https://cosmetics-api-frontend-5n6jolzaa-miriams-projects-0da082f5.vercel.app'
+].filter(Boolean); // Filtrar valores undefined/null</parameter>
 
 app.use(cors({
   origin: function (origin, callback) {
