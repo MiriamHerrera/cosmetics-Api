@@ -41,11 +41,13 @@ app.use(cors({
     // Permitir requests sin origin (como aplicaciones móviles)
     if (!origin) return callback(null, true);
     
-    // Permitir cualquier subdominio de Vercel y dominio personalizado
+    // Permitir cualquier subdominio de Vercel, dominio personalizado y desarrollo
     if (origin.includes('vercel.app') || 
         origin.includes('jeniricosmetics.com') ||
         origin.includes('localhost') || 
-        origin.includes('127.0.0.1')) {
+        origin.includes('127.0.0.1') ||
+        // Temporal: permitir el dominio actual mientras se propaga DNS
+        origin.includes('cosmetics-api-frontend-tia7dx1fy-miriams-projects-0da082f5.vercel.app')) {
       callback(null, true);
     } else {
       console.log('🚫 CORS bloqueado para origen:', origin);
