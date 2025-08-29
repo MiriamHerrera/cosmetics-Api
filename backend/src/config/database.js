@@ -400,9 +400,9 @@ const createBasicTables = async () => {
 const testConnection = async () => {
   try {
     console.log('🔍 CONFIGURACIÓN DE BASE DE DATOS:');
-    console.log('Host:', process.env.DB_HOST || 'localhost');
+    console.log('Host:', process.env.DB_HOST || 'mysql.railway.internal');
     console.log('Usuario:', process.env.DB_USER || 'root');
-    console.log('Base de datos:', process.env.DB_NAME || 'cosmetics_db');
+    console.log('Base de datos:', process.env.DB_NAME || 'railway');
     console.log('Puerto:', process.env.DB_PORT || 3306);
     console.log('¿Tiene contraseña?', process.env.DB_PASSWORD ? 'SÍ' : 'NO');
     
