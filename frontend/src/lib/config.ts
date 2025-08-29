@@ -6,11 +6,11 @@ export const config = {
   // Nombre de tu negocio
   businessName: process.env.NEXT_PUBLIC_BUSINESS_NAME || 'Cosméticos Store',
   
-  // URL de tu sitio web
-  websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://tusitio.com',
+  // Configuración del sitio web
+  websiteUrl: process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://jeniricosmetics.com',
   
   // URL de la API (Railway por defecto, localhost para desarrollo)
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'https://cosmetics-api-production.up.railway.app/api',
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api',
   
   // Configuración de mensajes
   messages: {

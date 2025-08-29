@@ -41,8 +41,11 @@ app.use(cors({
     // Permitir requests sin origin (como aplicaciones móviles)
     if (!origin) return callback(null, true);
     
-    // Permitir cualquier subdominio de Vercel
-    if (origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    // Permitir cualquier subdominio de Vercel y dominio personalizado
+    if (origin.includes('vercel.app') || 
+        origin.includes('jeniricosmetics.com') ||
+        origin.includes('localhost') || 
+        origin.includes('127.0.0.1')) {
       callback(null, true);
     } else {
       console.log('🚫 CORS bloqueado para origen:', origin);

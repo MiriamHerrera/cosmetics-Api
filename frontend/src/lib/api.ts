@@ -12,8 +12,8 @@ import type {
 
 // Configuración centralizada de la API
 export const API_CONFIG = {
-  // URL base de la API (Railway por defecto, localhost para desarrollo)
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://cosmetics-api-production.up.railway.app/api',
+  // URL base de la API (dominio personalizado por defecto, localhost para desarrollo)
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api',
   
   // Endpoints específicos
   ENDPOINTS: {
