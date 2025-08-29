@@ -32,7 +32,8 @@ const corsOrigins = [
   process.env.CORS_ORIGIN || 'https://cosmetics-api-frontend-bwlv7q2z2-miriams-projects-0da082f5.vercel.app',
 'https://cosmetics-api-frontend-bgnag6k78-miriams-projects-0da082f5.vercel.app',
 'https://cosmetics-api-frontend-mcz1og9ph-miriams-projects-0da082f5.vercel.app',
-'https://cosmetics-api-frontend-5n6jolzaa-miriams-projects-0da082f5.vercel.app'
+'https://cosmetics-api-frontend-5n6jolzaa-miriams-projects-0da082f5.vercel.app',
+'https://cosmetics-api-frontend-j4qywoo5x-miriams-projects-0da082f5.vercel.app'
 ].filter(Boolean); // Filtrar valores undefined/null</parameter>
 
 app.use(cors({
