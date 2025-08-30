@@ -8,7 +8,6 @@ WORKDIR /app
 COPY package*.json ./
 COPY src/ ./src/
 COPY server.js ./
-COPY debug-startup.js ./
 
 # Instalar dependencias
 RUN npm ci --only=production
@@ -16,5 +15,5 @@ RUN npm ci --only=production
 # Exponer puerto (Railway lo maneja automáticamente)
 EXPOSE 8000
 
-# Ejecutar diagnóstico primero, luego iniciar servidor
-CMD ["sh", "-c", "node debug-startup.js && node server.js"]
+# Ejecutar el servidor directamente
+CMD ["node", "server.js"]
