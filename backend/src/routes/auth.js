@@ -48,6 +48,32 @@ router.get('/init-database', async (req, res) => {
       });
     }
   });
+
+// Endpoint para arreglar la tabla users (público)
+router.get('/fix-users-table', async (req, res) => {
+    try {
+      console.log('🔧 Fix de tabla users solicitado...');
+      const { fixUsersTable } = require('../../scripts/fix-users-table');
+      
+      console.log('📡 Llamando a fixUsersTable()...');
+      await fixUsersTable();
+      console.log('✅ Fix de tabla users completado');
+      
+      res.json({ 
+        success: true, 
+        message: 'Tabla users arreglada correctamente',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Error en fix de tabla users:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        stack: error.stack,
+        details: 'Error capturado en try-catch'
+      });
+    }
+  });
   
 
 module.exports = router; 
