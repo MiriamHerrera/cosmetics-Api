@@ -24,30 +24,22 @@ const unifiedCartRoutes = require('./routes/unifiedCart');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Configuración de CORS - DEBE ir ANTES de cualquier otro middleware
+// Configuración de CORS
 const corsOrigins = [
+  process.env.CORS_ORIGIN || 'https://jeniricosmetics.com',
+  'https://www.jeniricosmetics.com',
   'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  // Agregar aquí tu dominio de frontend en producción
-  process.env.CORS_ORIGIN || 'https://cosmetics-api-frontend-bwlv7q2z2-miriams-projects-0da082f5.vercel.app',
-'https://cosmetics-api-frontend-bgnag6k78-miriams-projects-0da082f5.vercel.app',
-'https://cosmetics-api-frontend-mcz1og9ph-miriams-projects-0da082f5.vercel.app',
-'https://cosmetics-api-frontend-5n6jolzaa-miriams-projects-0da082f5.vercel.app',
-'https://cosmetics-api-frontend-j4qywoo5x-miriams-projects-0da082f5.vercel.app'
-].filter(Boolean); // Filtrar valores undefined/null</parameter>
+  'http://127.0.0.1:3000'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origin (como aplicaciones móviles)
     if (!origin) return callback(null, true);
     
-    // Permitir cualquier subdominio de Vercel, dominio personalizado y desarrollo
-    if (origin.includes('vercel.app') || 
-        origin.includes('jeniricosmetics.com') ||
+    // Permitir dominio personalizado y localhost para desarrollo
+    if (origin.includes('jeniricosmetics.com') ||
         origin.includes('localhost') || 
-        origin.includes('127.0.0.1') ||
-        // Temporal: permitir el dominio actual mientras se propaga DNS
-        origin.includes('cosmetics-api-frontend-tia7dx1fy-miriams-projects-0da082f5.vercel.app')) {
+        origin.includes('127.0.0.1')) {
       callback(null, true);
     } else {
       console.log('🚫 CORS bloqueado para origen:', origin);

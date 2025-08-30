@@ -173,7 +173,7 @@ export default function OrdersSection() {
     setUpdatingStatus(true);
     
     try {
-      const response = await fetch(`http://localhost:8000/api/orders/${selectedOrder.id}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/orders/${selectedOrder.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

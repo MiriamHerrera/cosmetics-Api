@@ -73,7 +73,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/products/${productId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`

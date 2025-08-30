@@ -185,7 +185,7 @@ const AddUserModal = memo(({ isOpen, onClose, onUserAdded }: AddUserModalProps) 
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:8000/api/auth/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

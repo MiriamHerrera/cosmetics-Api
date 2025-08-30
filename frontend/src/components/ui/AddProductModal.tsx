@@ -44,7 +44,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
 
   const loadProductTypes = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/products/types');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/products/types`);
       if (response.ok) {
         const data = await response.json();
         setProductTypes(data.data || []);
@@ -97,7 +97,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
         return;
       }
 
-      const response = await fetch('http://localhost:8000/api/admin/products', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

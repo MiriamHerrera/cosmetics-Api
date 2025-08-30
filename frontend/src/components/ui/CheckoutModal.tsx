@@ -108,7 +108,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
   // Cargar lugares de entrega
   const loadDeliveryLocations = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/orders/delivery-locations');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/orders/delivery-locations`);
       if (response.ok) {
         const data = await response.json();
         setDeliveryLocations(data.data);
@@ -124,7 +124,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
     setIsLoadingTimes(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/orders/delivery-times?locationId=${locationId}&date=${date}`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/orders/delivery-times?locationId=${locationId}&date=${date}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -190,7 +190,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
       };
 
       // Determinar la URL correcta según el tipo de usuario
-      const orderUrl = user ? 'http://localhost:8000/api/orders' : 'http://localhost:8000/api/orders/guest';
+      const orderUrl = user ? `${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/orders` : `${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/orders/guest`;
       
       const response = await fetch(orderUrl, {
         method: 'POST',
