@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { config } from './config';
-import type { 
+import { 
   Product, 
   User, 
   Cart, 
@@ -24,8 +24,8 @@ export const API_CONFIG = {
     
     // Products
     PRODUCTS: '/products',
+    PUBLIC_PRODUCTS: '/products',
     PRODUCT_TYPES: '/products/types',
-    PUBLIC_PRODUCTS: '/public/products',
     PRODUCT_CATEGORIES: '/products/categories',
     
     // Cart
@@ -189,28 +189,48 @@ api.interceptors.response.use(
 
 // API de Productos Públicos (solo aprobados)
 export const publicProductsApi = {
-  // Obtener todos los productos públicos con paginación
-  getAll: async (params: PaginationParams): Promise<ApiResponse<Product[]>> => {
-    const response = await api.get('/public/products', { params });
-    return response.data;
+  // Obtener productos públicos con paginación y filtros
+  getPublicProducts: async (params: PaginationParams = { page: 1, limit: 50 }) => {
+    try {
+      const response = await api.get('/products', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo productos públicos:', error);
+      throw error;
+    }
   },
 
   // Obtener producto público por ID
-  getById: async (id: number): Promise<ApiResponse<Product>> => {
-    const response = await api.get(`/public/products/${id}`);
-    return response.data;
+  getPublicProductById: async (id: number) => {
+    try {
+      const response = await api.get(`/products/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo producto público:', error);
+      throw error;
+    }
   },
 
   // Buscar productos públicos
-  search: async (query: string): Promise<ApiResponse<Product[]>> => {
-    const response = await api.get('/public/products/search', { params: { q: query } });
-    return response.data;
+  searchPublicProducts: async (query: string, params: PaginationParams = { page: 1, limit: 50 }) => {
+    try {
+      const response = await api.get('/products/search', { params: { q: query } });
+      return response.data;
+    } catch (error) {
+      console.error('Error buscando productos públicos:', error);
+      throw error;
+    }
   },
 
-  // Obtener productos públicos por categoría
-  getByCategory: async (category: string): Promise<ApiResponse<Product[]>> => {
-    const response = await api.get(`/public/products/category/${category}`);
-    return response.data;
+  // Obtener productos por categoría
+  getPublicProductsByCategory: async (category: string, params: PaginationParams = { page: 1, limit: 50 }) => {
+    try {
+      const response = await api.get(`/products/category/${category}`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo productos por categoría:', error);
+      throw error;
+    }
   }
 };
 

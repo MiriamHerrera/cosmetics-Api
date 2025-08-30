@@ -107,7 +107,7 @@ export const useSurveys = (): UseSurveysReturn => {
         }
       } else {
         // Usuario no autenticado: usar ruta pública
-        const response = await publicApiCall('/public/active');
+        const response = await publicApiCall('/surveys');
         if (response.success) {
           console.log('📊 Encuestas cargadas (modo público):', response.data);
           // Agregar user_votes vacío para opciones no autenticadas
@@ -142,7 +142,7 @@ export const useSurveys = (): UseSurveysReturn => {
         }
       } else {
         // Usuario no autenticado: usar ruta pública
-        const response = await publicApiCall(`/public/active/${id}`);
+        const response = await publicApiCall(`/surveys/${id}`);
         if (response.success) {
           // Agregar user_votes vacío para opciones no autenticadas
           return {
