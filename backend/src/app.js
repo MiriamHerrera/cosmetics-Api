@@ -118,19 +118,49 @@ app.use((req, res, next) => {
   next();
 });
 
+// Logging detallado para debugging de rutas
+console.log('🔍 REGISTRANDO RUTAS DE LA API...');
+
 // Registrar rutas de la API
+console.log('📡 Registrando /api/init...');
 app.use('/api/init', require('./routes/init'));
+
+console.log('📡 Registrando /api/auth...');
 app.use('/api/auth', authRoutes);
+
+console.log('📡 Registrando /api/public/products...');
 app.use('/api/public/products', publicProductRoutes);
+
+console.log('📡 Registrando /api/products...');
 app.use('/api/products', productRoutes);
+
+console.log('📡 Registrando /api/unified-cart...');
 app.use('/api/unified-cart', unifiedCartRoutes);
+
+console.log('📡 Registrando /api/reservations...');
 app.use('/api/reservations', reservationRoutes);
+
+console.log('📡 Registrando /api/surveys...');
 app.use('/api/surveys', surveyRoutes);
+
+console.log('📡 Registrando /api/enhanced-surveys...');
 app.use('/api/enhanced-surveys', enhancedSurveyRoutes);
+
+console.log('📡 Registrando /api/stats...');
 app.use('/api/stats', statsRoutes);
+
+console.log('📡 Registrando /api/admin...');
 app.use('/api/admin', adminRoutes);
+
+console.log('📡 Registrando /api/orders...');
 app.use('/api/orders', orderRoutes);
+
+console.log('📡 Registrando /api/reports...');
 app.use('/api/reports', reportRoutes);
+
+console.log('✅ TODAS LAS RUTAS REGISTRADAS');
+
+// Middleware de debug para capturar todas las solicitudes (después de las rutas específicas)
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -162,6 +192,61 @@ app.get('/', (req, res) => {
   });
 });
 
+// Endpoint de debug para diagnosticar problemas de rutas
+app.get('/api/debug/routes', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Debug de rutas',
+    timestamp: new Date().toISOString(),
+    registeredRoutes: [
+      '/api/init',
+      '/api/auth',
+      '/api/public/products',
+      '/api/products',
+      '/api/unified-cart',
+      '/api/reservations',
+      '/api/surveys',
+      '/api/enhanced-surveys',
+      '/api/stats',
+      '/api/admin',
+      '/api/orders',
+      '/api/reports',
+      '/api/health'
+    ],
+    requestInfo: {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      headers: req.headers
+    }
+  });
+});
+
+// Endpoint de debug para probar middleware
+app.use('/api/debug/middleware', (req, res, next) => {
+  console.log('🔍 DEBUG MIDDLEWARE:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl
+  });
+  
+  res.json({
+    success: true,
+    message: 'Middleware funcionando',
+    requestInfo: {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl
+    }
+  });
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
@@ -171,6 +256,26 @@ app.use((err, req, res, next) => {
     message: err.message || 'Error interno del servidor',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
+});
+
+// Middleware de debug para capturar todas las solicitudes (después de las rutas específicas)
+app.use('*', (req, res, next) => {
+  console.log('🔍 DEBUG - RUTA NO ENCONTRADA:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Solo continuar si es una ruta de debug
+  if (req.path.startsWith('/api/debug')) {
+    return next();
+  }
+  
+  // Para todas las demás rutas, continuar al siguiente middleware
+  next();
 });
 
 // Middleware para rutas no encontradas
