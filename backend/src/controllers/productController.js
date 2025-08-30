@@ -16,7 +16,10 @@ const getAllProducts = async (req, res) => {
       sort_order = 'asc'
     } = req.query;
 
-    const offset = (page - 1) * limit;
+    // Validar y convertir parámetros de paginación
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
     
     // Construir WHERE clause dinámicamente
     let whereClause = 'WHERE p.status = "active" AND p.is_approved = 1';
@@ -82,7 +85,7 @@ const getAllProducts = async (req, res) => {
       LIMIT ? OFFSET ?
     `;
 
-    const products = await query(sql, [...whereParams, parseInt(limit), offset]);
+    const products = await query(sql, [...whereParams, parseInt(limitNum), offset]);
 
     // Contar total de productos para paginación
     const countSql = `
@@ -100,10 +103,10 @@ const getAllProducts = async (req, res) => {
       success: true,
       data: products,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(pageNum),
+        limit: parseInt(limitNum),
         total,
-        pages: Math.ceil(total / limit)
+        pages: Math.ceil(total / limitNum)
       }
     });
 
@@ -120,6 +123,14 @@ const getAllProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validar que el ID sea un número válido
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de producto inválido'
+      });
+    }
 
     const products = await query(`
       SELECT 
@@ -140,7 +151,7 @@ const getProductById = async (req, res) => {
       INNER JOIN product_types pt ON p.product_type_id = pt.id
       INNER JOIN categories c ON pt.category_id = c.id
       WHERE p.id = ? AND p.status = 'active' AND p.is_approved = 1
-    `, [id]);
+    `, [parseInt(id)]);
 
     if (products.length === 0) {
       return res.status(404).json({
