@@ -281,6 +281,94 @@ const createBasicTables = async () => {
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
         
+        // 14. Crear tabla de horarios de entrega
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS delivery_schedules (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            location_id int(11) NOT NULL,
+            day_of_week int(11) NOT NULL COMMENT '0=Domingo, 1=Lunes, 2=Martes, ..., 6=Sábado',
+            start_time time NOT NULL,
+            end_time time NOT NULL,
+            is_active tinyint(1) DEFAULT 1,
+            created_at timestamp NOT NULL DEFAULT current_timestamp(),
+            updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (id),
+            UNIQUE KEY unique_location_day (location_id, day_of_week),
+            KEY idx_location_day (location_id, day_of_week),
+            CONSTRAINT delivery_schedules_ibfk_1 FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        
+        // 15. Crear tabla de franjas horarias de entrega
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS delivery_time_slots (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            location_id int(11) NOT NULL,
+            day_of_week int(11) NOT NULL COMMENT '0=Domingo, 1=Lunes, 2=Martes, ..., 6=Sábado',
+            time_slot time NOT NULL COMMENT 'Horario específico disponible',
+            is_active tinyint(1) DEFAULT 1,
+            created_at timestamp NOT NULL DEFAULT current_timestamp(),
+            updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (id),
+            UNIQUE KEY unique_location_day_time (location_id, day_of_week, time_slot),
+            KEY idx_location_day_time (location_id, day_of_week, time_slot),
+            CONSTRAINT delivery_time_slots_ibfk_1 FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        
+        // 16. Crear tabla de programación de inventario
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS inventory_schedule (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            product_id bigint(20) NOT NULL,
+            arrival_date datetime NOT NULL,
+            quantity int(11) NOT NULL,
+            status enum('scheduled','received','cancelled') DEFAULT 'scheduled',
+            created_by bigint(20) NOT NULL,
+            PRIMARY KEY (id),
+            KEY product_id (product_id),
+            KEY created_by (created_by),
+            CONSTRAINT inventory_schedule_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (id),
+            CONSTRAINT inventory_schedule_ibfk_2 FOREIGN KEY (created_by) REFERENCES users (id)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        
+        // 17. Crear tabla de historial de estados de órdenes
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS order_status_history (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            order_id int(11) NOT NULL,
+            previous_status enum('pending','confirmed','preparing','ready','delivered','cancelled') DEFAULT NULL,
+            new_status enum('pending','confirmed','preparing','ready','delivered','cancelled') NOT NULL,
+            changed_by enum('system','admin','customer') NOT NULL,
+            admin_id bigint(20) DEFAULT NULL COMMENT 'ID del admin si fue cambiado por admin',
+            notes text DEFAULT NULL COMMENT 'Notas del cambio de estado',
+            created_at timestamp NOT NULL DEFAULT current_timestamp(),
+            PRIMARY KEY (id),
+            KEY admin_id (admin_id),
+            KEY idx_order_id (order_id),
+            KEY idx_new_status (new_status),
+            KEY idx_created_at (created_at),
+            CONSTRAINT order_status_history_ibfk_1 FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+            CONSTRAINT order_status_history_ibfk_2 FOREIGN KEY (admin_id) REFERENCES users (id) ON DELETE SET NULL
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        
+        // 18. Crear tabla de estadísticas de clientes
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS client_statistics (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            total_purchases int(11) DEFAULT 0,
+            total_spent decimal(10,2) DEFAULT 0.00,
+            created_at datetime DEFAULT current_timestamp(),
+            updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            CONSTRAINT client_statistics_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        
         // Insertar datos básicos mínimos para prueba
         console.log('📝 Insertando datos mínimos de prueba...');
         
@@ -316,7 +404,7 @@ const createBasicTables = async () => {
         
         // Una sola opción para la encuesta
         await connection.query(`
-          INSERT IGNORE INTO survey_options (id, survey_id, option_text, is_correct) VALUES
+          INSERT IGNORE INTO survey_options (id, survey_id, option_text, is_approved) VALUES
           (1, 1, 'Sí, me gusta mucho', 1)
         `);
         
@@ -328,6 +416,7 @@ const createBasicTables = async () => {
         
         console.log('✅ Datos mínimos de prueba insertados');
         console.log('📊 Resumen: 1 usuario, 1 categoría, 1 tipo, 1 producto, 1 encuesta, 1 opción, 1 ubicación');
+        console.log('🏗️ Estructura completa: 18 tablas creadas con todas las funcionalidades del sistema');
         
       } else {
         console.log(`✅ Base de datos ya tiene ${tableNames.length} tablas`);
