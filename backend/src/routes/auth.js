@@ -13,12 +13,15 @@ router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, validate(profileUpdateSchema), authController.updateProfile);
 router.post('/logout', authenticateToken, authController.logout);
 
+// Endpoint temporal para inicializar la base de datos (público)
 router.get('/init-database', async (req, res) => {
     try {
       console.log('🔧 Inicialización manual de base de datos solicitada...');
       const { createBasicTables } = require('../config/database');
       
+      console.log('📡 Llamando a createBasicTables()...');
       const result = await createBasicTables();
+      console.log('📊 Resultado de createBasicTables:', result);
       
       if (result) {
         console.log('✅ Base de datos inicializada correctamente');
@@ -31,7 +34,8 @@ router.get('/init-database', async (req, res) => {
         console.log('❌ Error en la inicialización de la base de datos');
         res.status(500).json({ 
           success: false, 
-          message: 'Error en la inicialización de la base de datos' 
+          message: 'Error en la inicialización de la base de datos',
+          details: 'createBasicTables() retornó false'
         });
       }
     } catch (error) {
@@ -39,7 +43,8 @@ router.get('/init-database', async (req, res) => {
       res.status(500).json({ 
         success: false, 
         error: error.message,
-        stack: error.stack 
+        stack: error.stack,
+        details: 'Error capturado en try-catch'
       });
     }
   });
