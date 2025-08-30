@@ -151,6 +151,7 @@ const createAllTables = async (connection) => {
         name varchar(200) NOT NULL,
         description text DEFAULT NULL,
         price decimal(10,2) NOT NULL,
+        image_url text DEFAULT NULL COMMENT 'URL de la imagen del producto',
         stock_total int(11) DEFAULT 0,
         status enum('active','inactive') DEFAULT 'active',
         created_at datetime DEFAULT current_timestamp(),
