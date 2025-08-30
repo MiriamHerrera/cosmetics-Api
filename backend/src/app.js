@@ -348,6 +348,41 @@ app.get('/api/debug/database', async (req, res) => {
   }
 });
 
+// Endpoint para corregir la columna phone
+app.post('/api/debug/fix-phone-column', async (req, res) => {
+  try {
+    console.log('🔧 CORRECCIÓN DE COLUMNA PHONE SOLICITADA...');
+    
+    const { fixPhoneColumn } = require('../../scripts/fix-phone-column');
+    
+    const success = await fixPhoneColumn();
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Columna phone corregida exitosamente',
+        timestamp: new Date().toISOString(),
+        details: 'La columna phone ahora es VARCHAR(20) y puede almacenar números de teléfono'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Error al corregir la columna phone',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ ERROR EN CORRECCIÓN DE PHONE:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno al corregir columna phone',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
