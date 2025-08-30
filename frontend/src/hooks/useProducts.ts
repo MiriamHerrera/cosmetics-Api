@@ -34,7 +34,7 @@ export const useProducts = () => {
         log('Cargando productos desde el servidor...');
       }
       
-      const response: ApiResponse<Product[]> = await publicProductsApi.getAll(params);
+      const response: ApiResponse<Product[]> = await publicProductsApi.getPublicProducts(params);
       
       if (response.success && response.data) {
         if (DEBUG_MODE) {
