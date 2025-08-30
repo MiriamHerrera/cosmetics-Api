@@ -76,19 +76,18 @@ const createAllTables = async (connection) => {
     // ORDEN 2: Tablas que dependen de las base
     console.log('📝 Creando tablas de primer nivel...');
     
-    // 4. Crear tabla de tipos de producto (depende de categories)
+    // 4. Crear tabla de tipos de producto (depende de categories) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS product_types (
         id int(11) NOT NULL AUTO_INCREMENT,
         category_id int(11) NOT NULL,
         name varchar(100) NOT NULL,
         PRIMARY KEY (id),
-        KEY category_id (category_id),
-        CONSTRAINT product_types_ibfk_1 FOREIGN KEY (category_id) REFERENCES categories (id)
+        KEY category_id (category_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 5. Crear tabla de encuestas (depende de users)
+    // 5. Crear tabla de encuestas (depende de users) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS surveys (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -104,13 +103,11 @@ const createAllTables = async (connection) => {
         KEY surveys_closed_by_fk (closed_by),
         KEY idx_surveys_status (status),
         KEY idx_surveys_created_by (created_by),
-        KEY idx_surveys_status_created (status, created_at),
-        CONSTRAINT surveys_closed_by_fk FOREIGN KEY (closed_by) REFERENCES users (id) ON DELETE SET NULL,
-        CONSTRAINT surveys_created_by_fk FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
+        KEY idx_surveys_status_created (status, created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 6. Crear tabla de horarios de entrega (depende de delivery_locations)
+    // 6. Crear tabla de horarios de entrega (depende de delivery_locations) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS delivery_schedules (
         id int(11) NOT NULL AUTO_INCREMENT,
@@ -123,12 +120,11 @@ const createAllTables = async (connection) => {
         updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (id),
         UNIQUE KEY unique_location_day (location_id, day_of_week),
-        KEY idx_location_day (location_id, day_of_week),
-        CONSTRAINT delivery_schedules_ibfk_1 FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+        KEY idx_location_day (location_id, day_of_week)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 7. Crear tabla de franjas horarias (depende de delivery_locations)
+    // 7. Crear tabla de franjas horarias (depende de delivery_locations) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS delivery_time_slots (
         id int(11) NOT NULL AUTO_INCREMENT,
@@ -140,15 +136,14 @@ const createAllTables = async (connection) => {
         updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (id),
         UNIQUE KEY unique_location_day_time (location_id, day_of_week, time_slot),
-        KEY idx_location_day_time (location_id, day_of_week, time_slot),
-        CONSTRAINT delivery_time_slots_ibfk_1 FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+        KEY idx_location_day_time (location_id, day_of_week, time_slot)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // ORDEN 3: Tablas que dependen de segundo nivel
     console.log('📝 Creando tablas de segundo nivel...');
     
-    // 8. Crear tabla de productos (depende de product_types)
+    // 8. Crear tabla de productos (depende de product_types) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS products (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -165,15 +160,14 @@ const createAllTables = async (connection) => {
         PRIMARY KEY (id),
         KEY product_type_id (product_type_id),
         KEY idx_products_cost_price (cost_price),
-        KEY idx_products_price_cost (price, cost_price),
-        CONSTRAINT products_ibfk_1 FOREIGN KEY (product_type_id) REFERENCES product_types (id)
+        KEY idx_products_price_cost (price, cost_price)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // ORDEN 4: Tablas que dependen de products y users
     console.log('📝 Creando tablas de tercer nivel...');
     
-    // 9. Crear tabla de carritos unificados
+    // 9. Crear tabla de carritos unificados - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS carts_unified (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -192,12 +186,11 @@ const createAllTables = async (connection) => {
         KEY idx_user_session (user_id, session_id),
         KEY idx_cart_user_status (user_id, status),
         KEY idx_cart_session_status (session_id, status),
-        KEY idx_cart_type_status (cart_type, status),
-        CONSTRAINT carts_unified_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+        KEY idx_cart_type_status (cart_type, status)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 10. Crear tabla de items del carrito (depende de carts_unified y products)
+    // 10. Crear tabla de items del carrito (depende de carts_unified y products) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS cart_items_unified (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -208,13 +201,11 @@ const createAllTables = async (connection) => {
         created_at timestamp NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (id),
         KEY idx_cart_items_cart_id (cart_id),
-        KEY idx_cart_items_product_id (product_id),
-        CONSTRAINT cart_items_unified_ibfk_1 FOREIGN KEY (cart_id) REFERENCES carts_unified (id) ON DELETE CASCADE,
-        CONSTRAINT cart_items_unified_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (id)
+        KEY idx_cart_items_product_id (product_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 11. Crear tabla de órdenes (CORREGIDA: int en lugar de bigint)
+    // 11. Crear tabla de órdenes (CORREGIDA: int en lugar de bigint) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id int(11) NOT NULL AUTO_INCREMENT,
@@ -246,13 +237,11 @@ const createAllTables = async (connection) => {
         KEY idx_session_id (session_id),
         KEY idx_status (status),
         KEY idx_delivery_date (delivery_date),
-        KEY idx_created_at (created_at),
-        CONSTRAINT orders_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL,
-        CONSTRAINT orders_ibfk_2 FOREIGN KEY (delivery_location_id) REFERENCES delivery_locations (id)
+        KEY idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 12. Crear tabla de items de orden (depende de orders y products)
+    // 12. Crear tabla de items de orden (depende de orders y products) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS order_items (
         id int(11) NOT NULL AUTO_INCREMENT,
@@ -265,13 +254,11 @@ const createAllTables = async (connection) => {
         created_at timestamp NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (id),
         KEY idx_order_id (order_id),
-        KEY idx_product_id (product_id),
-        CONSTRAINT order_items_ibfk_1 FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-        CONSTRAINT order_items_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+        KEY idx_product_id (product_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 13. Crear tabla de reservaciones (depende de users y products)
+    // 13. Crear tabla de reservaciones (depende de users y products) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS reservations (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -291,13 +278,11 @@ const createAllTables = async (connection) => {
         KEY product_id (product_id),
         KEY idx_reserved_until (reserved_until),
         KEY idx_user_type (user_type),
-        KEY idx_status (status),
-        CONSTRAINT reservations_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id),
-        CONSTRAINT reservations_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (id)
+        KEY idx_status (status)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 14. Crear tabla de opciones de encuesta (depende de surveys, products y users)
+    // 14. Crear tabla de opciones de encuesta (depende de surveys, products y users) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS survey_options (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -318,15 +303,11 @@ const createAllTables = async (connection) => {
         KEY idx_survey_options_survey_id (survey_id),
         KEY idx_survey_options_approved (is_approved),
         KEY idx_survey_options_created_by (created_by),
-        KEY idx_survey_options_survey_approved (survey_id, is_approved),
-        CONSTRAINT survey_options_approved_by_fk FOREIGN KEY (approved_by) REFERENCES users (id) ON DELETE SET NULL,
-        CONSTRAINT survey_options_created_by_fk FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE,
-        CONSTRAINT survey_options_ibfk_1 FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
-        CONSTRAINT survey_options_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (id)
+        KEY idx_survey_options_survey_approved (survey_id, is_approved)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 15. Crear tabla de votos de encuesta (depende de surveys, survey_options y users)
+    // 15. Crear tabla de votos de encuesta (depende de surveys, survey_options y users) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS survey_votes (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -340,14 +321,11 @@ const createAllTables = async (connection) => {
         KEY idx_survey_votes_survey_id (survey_id),
         KEY idx_survey_votes_option_id (option_id),
         KEY idx_survey_votes_user_id (user_id),
-        KEY idx_survey_votes_survey_user (survey_id, user_id),
-        CONSTRAINT survey_votes_ibfk_1 FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE,
-        CONSTRAINT survey_votes_ibfk_2 FOREIGN KEY (option_id) REFERENCES survey_options (id) ON DELETE CASCADE,
-        CONSTRAINT survey_votes_ibfk_3 FOREIGN KEY (user_id) REFERENCES users (id)
+        KEY idx_survey_votes_survey_user (survey_id, user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 16. Crear tabla de programación de inventario (depende de products y users)
+    // 16. Crear tabla de programación de inventario (depende de products y users) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS inventory_schedule (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -358,13 +336,11 @@ const createAllTables = async (connection) => {
         created_by bigint(20) NOT NULL,
         PRIMARY KEY (id),
         KEY product_id (product_id),
-        KEY created_by (created_by),
-        CONSTRAINT inventory_schedule_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (id),
-        CONSTRAINT inventory_schedule_ibfk_2 FOREIGN KEY (created_by) REFERENCES users (id)
+        KEY created_by (created_by)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 17. Crear tabla de historial de estados de órdenes (CORREGIDA: order_id int)
+    // 17. Crear tabla de historial de estados de órdenes (CORREGIDA: order_id int) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS order_status_history (
         id int(11) NOT NULL AUTO_INCREMENT,
@@ -379,13 +355,11 @@ const createAllTables = async (connection) => {
         KEY admin_id (admin_id),
         KEY idx_order_id (order_id),
         KEY idx_new_status (new_status),
-        KEY idx_created_at (created_at),
-        CONSTRAINT order_status_history_ibfk_1 FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-        CONSTRAINT order_status_history_ibfk_2 FOREIGN KEY (admin_id) REFERENCES users (id) ON DELETE SET NULL
+        KEY idx_created_at (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
-    // 18. Crear tabla de estadísticas de clientes (depende de users)
+    // 18. Crear tabla de estadísticas de clientes (depende de users) - SIN FK inicialmente
     await connection.query(`
       CREATE TABLE IF NOT EXISTS client_statistics (
         id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -395,9 +369,190 @@ const createAllTables = async (connection) => {
         created_at datetime DEFAULT current_timestamp(),
         updated_at datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (id),
-        KEY user_id (user_id),
-        CONSTRAINT client_statistics_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (id)
+        KEY user_id (user_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    console.log('✅ Todas las tablas creadas sin claves foráneas');
+    
+    // AGREGAR CLAVES FORÁNEAS DESPUÉS DE CREAR TODAS LAS TABLAS
+    console.log('🔧 Agregando claves foráneas...');
+    
+    // 1. product_types -> categories
+    await connection.query(`
+      ALTER TABLE product_types 
+      ADD CONSTRAINT product_types_ibfk_1 
+      FOREIGN KEY (category_id) REFERENCES categories (id)
+    `);
+    
+    // 2. surveys -> users (created_by y closed_by)
+    await connection.query(`
+      ALTER TABLE surveys 
+      ADD CONSTRAINT surveys_created_by_fk 
+      FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE surveys 
+      ADD CONSTRAINT surveys_closed_by_fk 
+      FOREIGN KEY (closed_by) REFERENCES users (id) ON DELETE SET NULL
+    `);
+    
+    // 3. delivery_schedules -> delivery_locations
+    await connection.query(`
+      ALTER TABLE delivery_schedules 
+      ADD CONSTRAINT delivery_schedules_ibfk_1 
+      FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+    `);
+    
+    // 4. delivery_time_slots -> delivery_locations
+    await connection.query(`
+      ALTER TABLE delivery_time_slots 
+      ADD CONSTRAINT delivery_time_slots_ibfk_1 
+      FOREIGN KEY (location_id) REFERENCES delivery_locations (id) ON DELETE CASCADE
+    `);
+    
+    // 5. products -> product_types
+    await connection.query(`
+      ALTER TABLE products 
+      ADD CONSTRAINT products_ibfk_1 
+      FOREIGN KEY (product_type_id) REFERENCES product_types (id)
+    `);
+    
+    // 6. carts_unified -> users
+    await connection.query(`
+      ALTER TABLE carts_unified 
+      ADD CONSTRAINT carts_unified_ibfk_1 
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    `);
+    
+    // 7. cart_items_unified -> carts_unified y products
+    await connection.query(`
+      ALTER TABLE cart_items_unified 
+      ADD CONSTRAINT cart_items_unified_ibfk_1 
+      FOREIGN KEY (cart_id) REFERENCES carts_unified (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE cart_items_unified 
+      ADD CONSTRAINT cart_items_unified_ibfk_2 
+      FOREIGN KEY (product_id) REFERENCES products (id)
+    `);
+    
+    // 8. orders -> users y delivery_locations
+    await connection.query(`
+      ALTER TABLE orders 
+      ADD CONSTRAINT orders_ibfk_1 
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    `);
+    
+    await connection.query(`
+      ALTER TABLE orders 
+      ADD CONSTRAINT orders_ibfk_2 
+      FOREIGN KEY (delivery_location_id) REFERENCES delivery_locations (id)
+    `);
+    
+    // 9. order_items -> orders y products
+    await connection.query(`
+      ALTER TABLE order_items 
+      ADD CONSTRAINT order_items_ibfk_1 
+      FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE order_items 
+      ADD CONSTRAINT order_items_ibfk_2 
+      FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+    `);
+    
+    // 10. reservations -> users y products
+    await connection.query(`
+      ALTER TABLE reservations 
+      ADD CONSTRAINT reservations_ibfk_1 
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    `);
+    
+    await connection.query(`
+      ALTER TABLE reservations 
+      ADD CONSTRAINT reservations_ibfk_2 
+      FOREIGN KEY (product_id) REFERENCES products (id)
+    `);
+    
+    // 11. survey_options -> surveys, products y users
+    await connection.query(`
+      ALTER TABLE survey_options 
+      ADD CONSTRAINT survey_options_ibfk_1 
+      FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE survey_options 
+      ADD CONSTRAINT survey_options_ibfk_2 
+      FOREIGN KEY (product_id) REFERENCES products (id)
+    `);
+    
+    await connection.query(`
+      ALTER TABLE survey_options 
+      ADD CONSTRAINT survey_options_created_by_fk 
+      FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE survey_options 
+      ADD CONSTRAINT survey_options_approved_by_fk 
+      FOREIGN KEY (approved_by) REFERENCES users (id) ON DELETE SET NULL
+    `);
+    
+    // 12. survey_votes -> surveys, survey_options y users
+    await connection.query(`
+      ALTER TABLE survey_votes 
+      ADD CONSTRAINT survey_votes_ibfk_1 
+      FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE survey_votes 
+      ADD CONSTRAINT survey_votes_ibfk_2 
+      FOREIGN KEY (option_id) REFERENCES survey_options (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE survey_votes 
+      ADD CONSTRAINT survey_votes_ibfk_3 
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    `);
+    
+    // 13. inventory_schedule -> products y users
+    await connection.query(`
+      ALTER TABLE inventory_schedule 
+      ADD CONSTRAINT inventory_schedule_ibfk_1 
+      FOREIGN KEY (product_id) REFERENCES products (id)
+    `);
+    
+    await connection.query(`
+      ALTER TABLE inventory_schedule 
+      ADD CONSTRAINT inventory_schedule_ibfk_2 
+      FOREIGN KEY (created_by) REFERENCES users (id)
+    `);
+    
+    // 14. order_status_history -> orders y users
+    await connection.query(`
+      ALTER TABLE order_status_history 
+      ADD CONSTRAINT order_status_history_ibfk_1 
+      FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+    `);
+    
+    await connection.query(`
+      ALTER TABLE order_status_history 
+      ADD CONSTRAINT order_status_history_ibfk_2 
+      FOREIGN KEY (admin_id) REFERENCES users (id) ON DELETE SET NULL
+    `);
+    
+    // 15. client_statistics -> users
+    await connection.query(`
+      ALTER TABLE client_statistics 
+      ADD CONSTRAINT client_statistics_ibfk_1 
+      FOREIGN KEY (user_id) REFERENCES users (id)
     `);
     
     // Rehabilitar verificación de claves foráneas
@@ -450,6 +605,7 @@ const createAllTables = async (connection) => {
     `);
     
     console.log('✅ Todas las tablas creadas exitosamente en orden correcto');
+    console.log('✅ Todas las claves foráneas agregadas correctamente');
     console.log('✅ Datos de prueba insertados correctamente');
     console.log('📊 Estructura completa: 18 tablas con relaciones correctas');
     
