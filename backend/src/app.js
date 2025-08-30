@@ -270,13 +270,42 @@ app.get('/api/debug/database', async (req, res) => {
     console.log('🔍 Probando consulta simple...');
     const [result] = await query('SELECT 1 as test');
     
-    // Probar consulta de usuarios
+    // Verificar estructura de la tabla users
+    console.log('🔍 Verificando estructura de tabla users...');
+    const tableStructure = await query('DESCRIBE users');
+    
+    // Probar consulta de usuarios con columnas existentes
     console.log('🔍 Probando consulta de usuarios...');
     const users = await query('SELECT COUNT(*) as total FROM users');
     
+    // Obtener todas las columnas disponibles
+    const availableColumns = tableStructure.map(col => col.Field);
+    console.log('🔍 Columnas disponibles en users:', availableColumns);
+    
+    // Construir consulta dinámica basada en columnas existentes
+    let userQuery = 'SELECT ';
+    if (availableColumns.includes('id')) userQuery += 'id, ';
+    if (availableColumns.includes('name')) userQuery += 'name, ';
+    if (availableColumns.includes('username')) userQuery += 'username, ';
+    if (availableColumns.includes('phone')) userQuery += 'phone, ';
+    if (availableColumns.includes('email')) userQuery += 'email, ';
+    if (availableColumns.includes('role')) userQuery += 'role, ';
+    if (availableColumns.includes('password')) userQuery += 'password, ';
+    
+    // Remover la última coma
+    userQuery = userQuery.replace(/,\s*$/, '');
+    userQuery += ' FROM users WHERE phone = ?';
+    
+    console.log('🔍 Query dinámica construida:', userQuery);
+    
     // Probar consulta específica del usuario de login
     console.log('🔍 Probando consulta de usuario específico...');
-    const testUser = await query('SELECT id, name, phone, role FROM users WHERE phone = ?', ['8124307494']);
+    let testUser = [];
+    try {
+      testUser = await query(userQuery, ['8124307494']);
+    } catch (queryError) {
+      console.log('❌ Error en consulta específica:', queryError.message);
+    }
     
     res.json({
       success: true,
@@ -286,15 +315,16 @@ app.get('/api/debug/database', async (req, res) => {
         connected: isConnected,
         testQuery: result,
         totalUsers: users[0]?.total || 0,
+        tableStructure: tableStructure,
+        availableColumns: availableColumns,
+        dynamicQuery: userQuery,
         testUser: testUser.length > 0 ? {
           found: true,
-          id: testUser[0].id,
-          name: testUser[0].name,
-          phone: testUser[0].phone,
-          role: testUser[0].role
+          data: testUser[0]
         } : {
           found: false,
-          phone: '8124307494'
+          phone: '8124307494',
+          reason: 'Usuario no encontrado o error en consulta'
         }
       },
       environment: {
