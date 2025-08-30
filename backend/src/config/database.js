@@ -871,5 +871,9 @@ module.exports = {
   pool,
   testConnection,
   query,
-  getConnection
+  getConnection,
+  createBasicTables,
+  createAllTables,
+  createMissingTables,
+  createSingleTable
 }; 
