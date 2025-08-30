@@ -119,6 +119,7 @@ app.use((req, res, next) => {
 });
 
 // Registrar rutas de la API
+app.use('/api/init', require('./routes/init'));
 app.use('/api/auth', authRoutes);
 app.use('/api/public/products', publicProductRoutes);
 app.use('/api/products', productRoutes);
