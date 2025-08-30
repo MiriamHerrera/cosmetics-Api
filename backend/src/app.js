@@ -383,6 +383,93 @@ app.post('/api/debug/fix-phone-column', async (req, res) => {
   }
 });
 
+// Endpoint temporal para corregir columna phone directamente
+app.post('/api/debug/fix-phone-direct', async (req, res) => {
+  try {
+    console.log('🔧 CORRECCIÓN DIRECTA DE COLUMNA PHONE SOLICITADA...');
+    
+    const { query, getConnection } = require('./config/database');
+    
+    let connection;
+    try {
+      // Obtener conexión
+      connection = await getConnection();
+      console.log('✅ Conexión obtenida');
+      
+      // Verificar estructura actual
+      console.log('🔍 Verificando estructura actual...');
+      const [currentStructure] = await connection.query('DESCRIBE users');
+      const phoneColumn = currentStructure.find(col => col.Field === 'phone');
+      
+      console.log('📱 Columna phone actual:', {
+        field: phoneColumn.Field,
+        type: phoneColumn.Type,
+        null: phoneColumn.Null
+      });
+      
+      // Verificar si ya está corregida
+      if (phoneColumn && phoneColumn.Type.includes('varchar')) {
+        console.log('✅ La columna phone ya está corregida');
+        return res.json({
+          success: true,
+          message: 'Columna phone ya está corregida (VARCHAR)',
+          currentType: phoneColumn.Type,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Ejecutar la corrección
+      console.log('🔧 Cambiando tipo de dato de phone a VARCHAR(20)...');
+      await connection.query('ALTER TABLE users MODIFY COLUMN phone VARCHAR(20) NOT NULL');
+      console.log('✅ Columna phone corregida exitosamente');
+      
+      // Verificar que el cambio se aplicó
+      console.log('🔍 Verificando cambio aplicado...');
+      const [newStructure] = await connection.query('DESCRIBE users');
+      const newPhoneColumn = newStructure.find(col => col.Field === 'phone');
+      
+      console.log('📱 Nueva estructura de columna phone:', {
+        field: newPhoneColumn.Field,
+        type: newPhoneColumn.Type,
+        null: newPhoneColumn.Null
+      });
+      
+      // Verificar datos existentes
+      console.log('🔍 Verificando datos existentes...');
+      const [users] = await connection.query('SELECT id, username, phone, email, role FROM users LIMIT 5');
+      console.log('📋 Usuarios encontrados:', users.length);
+      
+      res.json({
+        success: true,
+        message: 'Columna phone corregida exitosamente',
+        timestamp: new Date().toISOString(),
+        details: {
+          oldType: phoneColumn.Type,
+          newType: newPhoneColumn.Type,
+          usersFound: users.length,
+          sampleUsers: users
+        }
+      });
+      
+    } finally {
+      if (connection) {
+        connection.release();
+        console.log('🔓 Conexión liberada');
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ ERROR EN CORRECCIÓN DIRECTA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al corregir columna phone',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
