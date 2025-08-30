@@ -91,7 +91,6 @@ const initializeDatabase = async () => {
         name varchar(200) NOT NULL,
         description text DEFAULT NULL,
         price decimal(10,2) NOT NULL,
-        image_url varchar(255) DEFAULT NULL,
         stock_total int(11) DEFAULT 0,
         status enum('active','inactive') DEFAULT 'active',
         created_at datetime DEFAULT current_timestamp(),
@@ -161,7 +160,7 @@ const initializeDatabase = async () => {
     // Tabla de órdenes
     await connection.query(`
       CREATE TABLE IF NOT EXISTS orders (
-        id bigint(20) NOT NULL AUTO_INCREMENT,
+        id int(11) NOT NULL AUTO_INCREMENT,
         order_number varchar(50) NOT NULL,
         customer_type enum('registered','guest') NOT NULL,
         user_id bigint(20) DEFAULT NULL,
@@ -194,7 +193,7 @@ const initializeDatabase = async () => {
     await connection.query(`
       CREATE TABLE IF NOT EXISTS order_items (
         id int(11) NOT NULL AUTO_INCREMENT,
-        order_id bigint(20) NOT NULL,
+        order_id int(11) NOT NULL,
         product_id bigint(20) NOT NULL,
         product_name varchar(255) NOT NULL,
         product_price decimal(10,2) NOT NULL,
