@@ -247,6 +247,77 @@ app.use('/api/debug/middleware', (req, res, next) => {
   });
 });
 
+// Endpoint de diagnóstico de base de datos
+app.get('/api/debug/database', async (req, res) => {
+  try {
+    console.log('🔍 DIAGNÓSTICO DE BASE DE DATOS SOLICITADO...');
+    
+    const { testConnection, query } = require('./config/database');
+    
+    // Probar conexión
+    console.log('🔍 Probando conexión...');
+    const isConnected = await testConnection();
+    
+    if (!isConnected) {
+      return res.status(500).json({
+        success: false,
+        message: 'No se pudo conectar a la base de datos',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Probar consulta simple
+    console.log('🔍 Probando consulta simple...');
+    const [result] = await query('SELECT 1 as test');
+    
+    // Probar consulta de usuarios
+    console.log('🔍 Probando consulta de usuarios...');
+    const users = await query('SELECT COUNT(*) as total FROM users');
+    
+    // Probar consulta específica del usuario de login
+    console.log('🔍 Probando consulta de usuario específico...');
+    const testUser = await query('SELECT id, name, phone, role FROM users WHERE phone = ?', ['8124307494']);
+    
+    res.json({
+      success: true,
+      message: 'Diagnóstico de base de datos completado',
+      timestamp: new Date().toISOString(),
+      database: {
+        connected: isConnected,
+        testQuery: result,
+        totalUsers: users[0]?.total || 0,
+        testUser: testUser.length > 0 ? {
+          found: true,
+          id: testUser[0].id,
+          name: testUser[0].name,
+          phone: testUser[0].phone,
+          role: testUser[0].role
+        } : {
+          found: false,
+          phone: '8124307494'
+        }
+      },
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        dbHost: process.env.DB_HOST,
+        dbName: process.env.DB_NAME,
+        dbUser: process.env.DB_USER,
+        hasPassword: !!process.env.DB_PASSWORD
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR EN DIAGNÓSTICO DE BD:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en diagnóstico de base de datos',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);

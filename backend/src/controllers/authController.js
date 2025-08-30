@@ -120,7 +120,19 @@ const register = async (req, res) => {
 // Login de usuario
 const login = async (req, res) => {
   try {
+    console.log('🔍 INICIANDO PROCESO DE LOGIN...');
+    console.log('📱 Request body recibido:', req.body);
+    
     const { phone, password } = req.body;
+    
+    // Validar que se proporcionen los campos requeridos
+    if (!phone || !password) {
+      console.log('❌ Campos faltantes:', { phone: !!phone, password: !!password });
+      return res.status(400).json({
+        success: false,
+        message: 'Teléfono y contraseña son requeridos'
+      });
+    }
     
     // Limpiar el teléfono: eliminar espacios, guiones y paréntesis, mantener solo dígitos
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
@@ -131,12 +143,14 @@ const login = async (req, res) => {
       password: password ? '***' : 'undefined' 
     });
 
+    console.log('🔍 CONECTANDO A BASE DE DATOS...');
     // Buscar usuario por teléfono (usando el teléfono limpio)
     const users = await query(
       'SELECT id, name, phone, email, password, role FROM users WHERE phone = ?',
       [cleanPhone]
     );
 
+    console.log('🔍 CONSULTA COMPLETADA');
     console.log('🔍 Usuarios encontrados:', users.length);
     if (users.length > 0) {
       console.log('🔍 Usuario encontrado:', { 
@@ -160,10 +174,19 @@ const login = async (req, res) => {
     const user = users[0];
 
     // Verificar contraseña
-    console.log('🔍 Verificando contraseña...');
+    console.log('🔍 VERIFICANDO CONTRASEÑA...');
     console.log('🔍 Contraseña recibida:', password);
     console.log('🔍 Hash en BD:', user.password);
     console.log('🔍 Longitud del hash en BD:', user.password ? user.password.length : 0);
+    
+    if (!user.password) {
+      console.log('❌ Usuario no tiene contraseña hash');
+      return res.status(500).json({
+        success: false,
+        message: 'Error en la configuración del usuario'
+      });
+    }
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
     console.log('🔍 Contraseña válida:', isPasswordValid);
     
@@ -177,7 +200,7 @@ const login = async (req, res) => {
     }
 
     // Generar token
-    console.log('🔍 Generando token para usuario:', user.id);
+    console.log('🔍 GENERANDO TOKEN...');
     const token = generateToken({
       id: user.id,
       name: user.name,
@@ -186,7 +209,10 @@ const login = async (req, res) => {
       role: user.role
     });
 
-    console.log('✅ Login exitoso para usuario:', user.id);
+    console.log('✅ LOGIN EXITOSO');
+    console.log('✅ Usuario autenticado:', user.id);
+    console.log('✅ Token generado:', token ? 'SÍ' : 'NO');
+    
     res.json({
       success: true,
       message: 'Login exitoso',
@@ -204,10 +230,35 @@ const login = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error en login:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor'
-    });
+    console.error('   Stack trace:', error.stack);
+    console.error('   Error code:', error.code);
+    console.error('   SQL Message:', error.sqlMessage);
+    console.error('   SQL State:', error.sqlState);
+    console.error('   Error Number:', error.errno);
+    console.error('   Request body:', req.body);
+    
+    // En desarrollo, mostrar más detalles
+    if (process.env.NODE_ENV === 'development') {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message,
+        stack: error.stack,
+        details: {
+          code: error.code,
+          sqlMessage: error.sqlMessage,
+          sqlState: error.sqlState,
+          errno: error.errno
+        }
+      });
+    } else {
+      // En producción, solo mostrar mensaje genérico pero log completo
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        errorId: Date.now() // Para tracking en logs
+      });
+    }
   }
 };
 
