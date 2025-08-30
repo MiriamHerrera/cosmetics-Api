@@ -48,7 +48,7 @@ export const useStockSync = () => {
         log(force ? 'Sincronización forzada iniciada...' : 'Iniciando sincronización de stock...');
       }
       
-      const response = await publicProductsApi.getAll({ page: 1, limit: 1000 });
+      const response = await publicProductsApi.getPublicProducts({ page: 1, limit: 1000 });
       
       if (response.success && response.data) {
         if (DEBUG_MODE) {

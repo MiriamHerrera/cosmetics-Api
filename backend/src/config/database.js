@@ -544,7 +544,7 @@ const testConnection = async () => {
 // Función para ejecutar consultas
 const query = async (sql, params = []) => {
   try {
-    const [rows] = await pool.execute(sql, params);
+    const [rows] = await pool.query(sql, params);
     return rows;
   } catch (error) {
     console.error('Error en consulta SQL:', error);
