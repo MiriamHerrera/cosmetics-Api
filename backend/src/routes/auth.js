@@ -13,41 +13,49 @@ router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, validate(profileUpdateSchema), authController.updateProfile);
 router.post('/logout', authenticateToken, authController.logout);
 
-// Endpoint temporal para inicializar la base de datos (público)
-router.get('/init-database', async (req, res) => {
+// Función para crear todas las tablas necesarias
+const createBasicTables = async () => {
     try {
-      console.log('🔧 Inicialización manual de base de datos solicitada...');
-      const { createBasicTables } = require('../config/database');
+      console.log('🔧 Verificando estructura de base de datos...');
       
-      console.log('📡 Llamando a createBasicTables()...');
-      const result = await createBasicTables();
-      console.log('📊 Resultado de createBasicTables:', result);
+      // Obtener conexión del pool
+      const connection = await pool.getConnection();
+      console.log('✅ Conexión obtenida del pool');
       
-      if (result) {
-        console.log('✅ Base de datos inicializada correctamente');
-        res.json({ 
-          success: true, 
-          message: 'Base de datos inicializada correctamente',
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        console.log('❌ Error en la inicialización de la base de datos');
-        res.status(500).json({ 
-          success: false, 
-          message: 'Error en la inicialización de la base de datos',
-          details: 'createBasicTables() retornó false'
-        });
+      try {
+        // Verificar si las tablas principales existen
+        console.log('🔍 Ejecutando SHOW TABLES...');
+        const [tables] = await connection.query('SHOW TABLES');
+        const tableNames = tables.map(row => Object.values(row)[0]);
+        console.log(`�� Tablas encontradas: ${tableNames.length} - ${tableNames.join(', ')}`);
+        
+        if (tableNames.length === 0) {
+          console.log('🔧 Base de datos vacía, creando estructura completa...');
+          
+          // Crear todas las tablas desde cero
+          await createAllTables(connection);
+          
+        } else {
+          console.log(`✅ Base de datos ya tiene ${tableNames.length} tablas`);
+          
+          // Verificar si faltan tablas críticas y crearlas
+          await createMissingTables(connection, tableNames);
+        }
+        
+      } finally {
+        // Liberar la conexión
+        connection.release();
+        console.log('🔓 Conexión liberada del pool');
       }
+      
+      console.log('✅ createBasicTables completado exitosamente');
+      return true;
+      
     } catch (error) {
-      console.error('❌ Error en endpoint de inicialización:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message,
-        stack: error.stack,
-        details: 'Error capturado en try-catch'
-      });
+      console.error('❌ Error verificando estructura de base de datos:', error.message);
+      console.error('❌ Stack trace completo:', error.stack);
+      return false;
     }
-  });
-  
+  };
 
 module.exports = router; 

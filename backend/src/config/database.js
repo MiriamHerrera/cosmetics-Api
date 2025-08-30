@@ -794,11 +794,14 @@ const createBasicTables = async () => {
     
     // Obtener conexión del pool
     const connection = await pool.getConnection();
+    console.log('✅ Conexión obtenida del pool');
     
     try {
       // Verificar si las tablas principales existen
+      console.log('🔍 Ejecutando SHOW TABLES...');
       const [tables] = await connection.query('SHOW TABLES');
       const tableNames = tables.map(row => Object.values(row)[0]);
+      console.log(`�� Tablas encontradas: ${tableNames.length} - ${tableNames.join(', ')}`);
       
       if (tableNames.length === 0) {
         console.log('🔧 Base de datos vacía, creando estructura completa...');
@@ -816,14 +819,17 @@ const createBasicTables = async () => {
     } finally {
       // Liberar la conexión
       connection.release();
+      console.log('🔓 Conexión liberada del pool');
     }
+    
+    console.log('✅ createBasicTables completado exitosamente');
+    return true;
     
   } catch (error) {
     console.error('❌ Error verificando estructura de base de datos:', error.message);
+    console.error('❌ Stack trace completo:', error.stack);
     return false;
   }
-  
-  return true;
 };
 
 // Función para probar la conexión
