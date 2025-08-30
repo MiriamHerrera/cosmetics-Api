@@ -36,8 +36,9 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     
-    // Permitir dominio personalizado y localhost para desarrollo
-    if (origin.includes('jeniricosmetics.com') ||
+    // Permitir cualquier subdominio de Vercel, dominio personalizado y desarrollo
+    if (origin.includes('vercel.app') || 
+        origin.includes('jeniricosmetics.com') ||
         origin.includes('localhost') || 
         origin.includes('127.0.0.1')) {
       callback(null, true);
