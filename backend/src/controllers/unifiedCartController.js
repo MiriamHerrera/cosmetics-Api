@@ -214,10 +214,25 @@ class UnifiedCartController {
       }
 
       const product = products[0];
-      if (product.stock_total < quantity) {
+      
+      // Calcular stock disponible considerando items ya en carritos
+      const reservedStock = await query(
+        `SELECT COALESCE(SUM(ci.quantity), 0) as reserved
+         FROM cart_items_unified ci
+         JOIN carts_unified c ON ci.cart_id = c.id
+         WHERE ci.product_id = ? AND c.status = "active"`,
+        [productId]
+      );
+      
+      const totalReserved = reservedStock[0].reserved;
+      const availableStock = product.stock_total - totalReserved;
+      
+      console.log(`📊 [UnifiedCart] Stock del producto ${productId}: Total=${product.stock_total}, Reservado=${totalReserved}, Disponible=${availableStock}`);
+      
+      if (availableStock < quantity) {
         return res.status(400).json({
           success: false,
-          message: 'Stock insuficiente'
+          message: `Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`
         });
       }
 

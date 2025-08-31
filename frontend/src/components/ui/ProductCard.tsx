@@ -157,8 +157,8 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
 
         {/* Botones de acción */}
         <div className="flex gap-1.5 sm:gap-2">
-          {/* Botón de compra rápida */}
-          <button
+          {/* Botón de compra rápida - COMENTADO TEMPORALMENTE */}
+          {/* <button
             onClick={() => onQuickBuy(product)}
             disabled={product.stock_total === 0}
             className="
@@ -174,7 +174,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
           >
             <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="text-xs sm:text-sm">Comprar</span>
-          </button>
+          </button> */}
 
           {/* Botón de agregar al carrito */}
           <button
