@@ -1,61 +1,52 @@
 'use client';
 
-import { ShoppingCart, Zap, Heart } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
-import type { Product } from '@/types';
 import { useState } from 'react';
 import Image from 'next/image';
+import { Heart, ShoppingCart, Eye, Zap } from 'lucide-react';
+import { useStore } from '@/store/useStore';
+import { getImageUrl } from '@/lib/config';
+import ImageCarousel from './ImageCarousel';
+import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
-  onQuickBuy?: (product: Product) => void;
-  onOpenCart?: () => void; // Nueva prop para abrir el carrito
+  onQuickBuy: (product: Product) => void;
+  onOpenCart: () => void;
 }
 
 export default function ProductCard({ product, onQuickBuy, onOpenCart }: ProductCardProps) {
-  const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  const handleQuickBuy = async () => {
-    console.log('🚀 handleQuickBuy iniciado para:', product.name);
-    console.log('📦 Producto:', product);
-    console.log('🔑 onQuickBuy existe:', !!onQuickBuy);
-    console.log('🔑 onOpenCart existe:', !!onOpenCart);
-    
-    // Siempre agregar al carrito primero
-    console.log('➕ Intentando agregar al carrito...');
-    const success = await addToCart(product, 1);
-    console.log('✅ Resultado de addToCart:', success);
-    
-    if (success) {
-      console.log('🎉 Producto agregado exitosamente');
-      // Mostrar indicador de éxito
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-      
-      if (onQuickBuy) {
-        console.log('📞 Ejecutando onQuickBuy...');
-        // Si se pasa onQuickBuy, ejecutar esa función
-        onQuickBuy(product);
-      } else if (onOpenCart) {
-        console.log('📞 Ejecutando onOpenCart...');
-        // Lógica por defecto: abrir modal del carrito
-        onOpenCart();
-      } else {
-        console.log('⚠️ No hay onQuickBuy ni onOpenCart definidos');
-      }
-    } else {
-      console.log('❌ Error al agregar al carrito');
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
+  const { addToCart } = useStore();
 
   const handleAddToCart = async () => {
-    const success = await addToCart(product, 1);
-    if (success) {
-      // Opcional: mostrar notificación de éxito
+    try {
+      setError(null);
+      await addToCart(product, 1);
+      onOpenCart();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al agregar al carrito');
     }
   };
+
+  // Convertir image_url a array de imágenes
+  const getProductImages = (): string[] => {
+    if (!product.image_url) return [];
+    
+    // Si image_url es una cadena con múltiples URLs separadas por comas
+    if (typeof product.image_url === 'string' && product.image_url.includes(',')) {
+      return product.image_url.split(',').map(url => url.trim()).filter(url => url);
+    }
+    
+    // Si es una sola URL
+    if (typeof product.image_url === 'string') {
+      return [product.image_url];
+    }
+    
+    return [];
+  };
+
+  const productImages = getProductImages();
 
   return (
     <div className="
@@ -68,18 +59,13 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
       border border-purple-100 hover:border-purple-200
       sm:rounded-2xl rounded-xl
     ">
-      {/* Imagen del producto */}
-      <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
-        <Image
-          src={product.image_url || '/NoImage.jpg'}
-          alt={product.name}
-          fill
-          sizes="(max-width: 640px) 100vw, 50vw"
-          className="
-            object-cover
-            transition-transform duration-500
-            group-hover:scale-110
-          "
+      {/* Carrusel de Imágenes del Producto */}
+      <div className="relative">
+        <ImageCarousel
+          images={productImages}
+          productName={product.name}
+          className="w-full"
+          showFullscreen={true}
         />
         
         {/* Botón de favorito */}
@@ -93,6 +79,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
             focus:outline-none focus:ring-4 focus:ring-pink-200
             shadow-lg hover:shadow-xl
             transform hover:scale-110
+            z-10
           "
         >
           <Heart 
@@ -102,37 +89,31 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
           />
         </button>
 
-        {/* Badge de stock */}
+        {/* Badge de stock bajo */}
         {product.stock_total <= 5 && product.stock_total > 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
-              px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
-              bg-gradient-to-r from-orange-400 to-red-500 text-white
-              rounded-full shadow-lg
-              border border-orange-300
+              inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+              bg-orange-100 text-orange-800 border border-orange-200
+              shadow-sm
             ">
-              <span className="hidden sm:inline">Solo {product.stock_total} disponibles</span>
-              <span className="sm:hidden">{product.stock_total}</span>
+              Solo {product.stock_total} disponible{product.stock_total !== 1 ? 's' : ''}
             </span>
           </div>
         )}
 
-        {/* Badge de agotado */}
+        {/* Badge de stock agotado */}
         {product.stock_total === 0 && (
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
             <span className="
-              px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
-              bg-gradient-to-r from-red-400 to-red-600 text-white
-              rounded-full shadow-lg
-              border border-red-300
+              inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+              bg-red-100 text-red-800 border border-red-200
+              shadow-sm
             ">
               Agotado
             </span>
           </div>
         )}
-
-        {/* Overlay de gradiente sutil */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       </div>
 
       {/* Información del producto */}
@@ -176,69 +157,53 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
 
         {/* Botones de acción */}
         <div className="flex gap-1.5 sm:gap-2">
-          {/* Botón de compra inmediata */}
+          {/* Botón de compra rápida */}
           <button
-            onClick={handleQuickBuy}
+            onClick={() => onQuickBuy(product)}
             disabled={product.stock_total === 0}
-            className={`
-              flex-1 relative overflow-hidden
-              ${showSuccess 
-                ? 'bg-gradient-to-r from-green-500 to-green-600' 
-                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-              }
-              disabled:bg-gray-300 disabled:cursor-not-allowed
-              text-white text-xs sm:text-sm font-semibold
-              py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl
-              transition-all duration-300
-              flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-4 focus:ring-purple-200
-              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
-            `}
+            className="
+              flex-1 bg-gradient-to-r from-purple-600 to-pink-600 
+              hover:from-purple-700 hover:to-pink-700
+              disabled:from-gray-400 disabled:to-gray-500
+              text-white font-medium py-2 px-3 sm:px-4 rounded-xl
+              transition-all duration-300 transform hover:scale-105
+              disabled:cursor-not-allowed disabled:transform-none
+              flex items-center justify-center gap-2
+              shadow-lg hover:shadow-xl
+            "
           >
-            {showSuccess ? (
-              <>
-                <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                <span className="relative z-10">✓ Agregado</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Comprar</span>
-                <span className="sm:hidden">Ya</span>
-              </>
-            )}
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="text-xs sm:text-sm">Comprar</span>
           </button>
 
           {/* Botón de agregar al carrito */}
           <button
             onClick={handleAddToCart}
-            disabled={product.stock_total === 0 || isUpdatingStock}
+            disabled={product.stock_total === 0}
             className="
-              flex-1 border-2 border-purple-400 hover:bg-gradient-to-r hover:from-purple-400 hover:to-pink-500 hover:text-white hover:border-transparent
-              disabled:bg-gray-300 disabled:cursor-not-allowed
-              text-purple-600 text-xs sm:text-sm font-semibold
-              py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl
-              transition-all duration-300
-              flex items-center justify-center gap-1 sm:gap-2
-              focus:outline-none focus:ring-4 focus:ring-purple-200
-              shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
+              bg-white border-2 border-purple-200 
+              hover:border-purple-300 hover:bg-purple-50
+              disabled:border-gray-200 disabled:bg-gray-50
+              text-purple-600 font-medium py-2 px-3 sm:px-4 rounded-xl
+              transition-all duration-300 transform hover:scale-105
+              disabled:cursor-not-allowed disabled:transform-none
+              flex items-center justify-center gap-2
+              shadow-md hover:shadow-lg
             "
           >
-            {isUpdatingStock ? (
-              <>
-                <div className="w-3 h-3 sm:w-4 h-4 mr-1 sm:mr-2 inline animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
-                <span className="hidden sm:inline text-purple-600">Actualizando...</span>
-                <span className="sm:hidden text-purple-600">...</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="w-3 h-3 sm:w-4 h-4 text-purple-600" />
-                <span className="hidden sm:inline text-purple-600">Carrito</span>
-                <span className="sm:hidden text-purple-600">+</span>
-              </>
-            )}
+            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="text-xs sm:text-sm">Carrito</span>
           </button>
         </div>
+
+        {/* Indicador de múltiples imágenes */}
+        {productImages.length > 1 && (
+          <div className="mt-3 text-center">
+            <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+              📸 {productImages.length} imagen{productImages.length !== 1 ? 'es' : ''}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

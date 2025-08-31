@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useState, useCallback, useMemo, memo } from 'react';
 import CheckoutModal from './CheckoutModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
+import { getImageUrl } from '@/lib/config';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -95,7 +96,7 @@ const CartModal = memo(({ isOpen, onClose }: CartModalProps) => {
                     <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                       <div className="relative w-12 h-12">
                         <Image 
-                          src={item.product.image_url || '/NoImage.jpg'} 
+                          src={getImageUrl(item.product.image_url)} 
                           alt={item.product.name || 'Producto'}
                           fill
                           sizes="48px"

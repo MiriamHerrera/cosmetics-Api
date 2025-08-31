@@ -1,15 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Package, Save, Loader2, Upload, AlertCircle } from 'lucide-react';
+import { X, Package, Save, Loader2, Upload, AlertCircle, Edit } from 'lucide-react';
 import { useImageUpload } from '../../hooks/useImageUpload';
+import { getImageUrl } from '@/lib/config';
 import ImagePreview from './ImagePreview';
 import DragAndDropZone from './DragAndDropZone';
 
-interface AddProductModalProps {
+interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProductAdded: () => void;
+  onProductUpdated: () => void;
+  product: {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    image_url: string;
+    stock_total: number;
+    status: string;
+    product_type: string;
+    category: string;
+    is_approved?: number;
+    total_reservations?: number;
+    total_carts?: number;
+    active_reservations?: number;
+    popularity_score?: number;
+  } | null;
 }
 
 interface ProductType {
@@ -18,7 +35,7 @@ interface ProductType {
   category: string;
 }
 
-export default function AddProductModal({ isOpen, onClose, onProductAdded }: AddProductModalProps) {
+export default function EditProductModal({ isOpen, onClose, onProductUpdated, product }: EditProductModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -27,9 +44,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     name: '',
     description: '',
     price: '',
-    cost_price: '',
     stock_total: '',
-    product_type_id: '',
     image_url: '',
     status: 'active'
   });
@@ -58,6 +73,26 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
       loadProductTypes();
     }
   }, [isOpen]);
+
+  // Cargar datos del producto cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && product) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price?.toString() || '',
+        stock_total: product.stock_total?.toString() || '',
+        image_url: product.image_url || '',
+        status: product.status || 'active'
+      });
+      
+      // Si hay imagen existente, convertirla a vista previa
+      if (product.image_url) {
+        // Por ahora solo mostramos la URL existente
+        // En el futuro podríamos cargar la imagen real
+      }
+    }
+  }, [isOpen, product]);
 
   const loadProductTypes = async () => {
     try {
@@ -97,9 +132,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
       name: '',
       description: '',
       price: '',
-      cost_price: '',
       stock_total: '',
-      product_type_id: '',
       image_url: '',
       status: 'active'
     });
@@ -107,65 +140,120 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     setError('');
   };
 
-// En AddProductModal.tsx, modificar handleSubmit:
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
+    try {
+      // Validaciones básicas
+      if (!formData.name.trim() || !formData.price || !formData.stock_total) {
+        setError('Nombre, precio de venta y stock inicial son requeridos');
+        setLoading(false);
+        return;
+      }
 
-  try {
-    // ... validaciones existentes ...
+      if (parseFloat(formData.price) <= 0) {
+        setError('El precio de venta debe ser mayor a 0');
+        setLoading(false);
+        return;
+      }
 
-    // 1. PRIMERO subir las imágenes si existen
-    let imageUrls: string[] = [];
-    if (selectedImages.length > 0) {
-      const formData = new FormData();
-      selectedImages.forEach((image, index) => {
-        formData.append('images', image.file);
-      });
+      if (parseInt(formData.stock_total) < 0) {
+        setError('El stock inicial no puede ser negativo');
+        setLoading(false);
+        return;
+      }
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
-        method: 'POST',
+      if (!product) {
+        setError('No hay producto seleccionado para editar');
+        setLoading(false);
+        return;
+      }
+
+      // 1. PRIMERO subir las imágenes si existen
+      let imageUrls: string[] = [];
+      if (selectedImages.length > 0) {
+        const formDataImages = new FormData();
+        selectedImages.forEach((image, index) => {
+          formDataImages.append('images', image.file);
+        });
+
+        console.log('Subiendo imágenes al servidor...');
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: formDataImages
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          console.log('Imágenes subidas exitosamente:', uploadResult);
+          imageUrls = uploadResult.data.map((file: any) => file.path);
+        } else {
+          const errorData = await uploadResponse.json();
+          console.error('Error subiendo imágenes:', errorData);
+          setError(`Error subiendo imágenes: ${errorData.message || 'Error desconocido'}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. LUEGO actualizar el producto con las URLs de las imágenes
+      const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url;
+
+      // Preparar datos del producto para actualizar
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stock_total: parseInt(formData.stock_total) || 0,
+        // Solo incluir image_url si se proporcionó una URL válida o hay imágenes subidas
+        ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() })
+      };
+
+      // Debug: mostrar qué datos se van a enviar
+      console.log('Datos a enviar al backend:', productData);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products/${product.id}`, {
+        method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: formData
+        body: JSON.stringify(productData)
       });
 
-      if (uploadResponse.ok) {
-        const uploadResult = await uploadResponse.json();
-        imageUrls = uploadResult.data.map((file: any) => file.path);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Producto actualizado:', result);
+        
+        if (imageUrls.length > 0) {
+          console.log('✅ Imágenes subidas y producto actualizado exitosamente');
+          console.log('📁 URLs de las imágenes:', imageUrls);
+        }
+        
+        // Limpiar formulario
+        clearForm();
+        
+        // Cerrar modal y notificar
+        onProductUpdated();
+        onClose();
       } else {
-        throw new Error('Error subiendo imágenes');
+        const errorData = await response.json();
+        console.error('Error del backend:', errorData);
+        setError(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
+    } catch (error) {
+      console.error('Error actualizando producto:', error);
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // 2. LUEGO crear el producto con las URLs de las imágenes
-    const productData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      cost_price: parseFloat(formData.cost_price),
-      stock_total: parseInt(formData.stock_total) || 0,
-      image_url: imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url || null
-    };
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      },
-      body: JSON.stringify(productData)
-    });
-
-    // ... resto del código existente ...
-  } catch (error) {
-    // ... manejo de errores ...
-  }
-};
-
-  if (!isOpen) return null;
+  if (!isOpen || !product) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -178,8 +266,8 @@ const handleSubmit = async (e: React.FormEvent) => {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <Package className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Agregar Nuevo Producto</h2>
+              <Edit className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Editar Producto</h2>
             </div>
             <button
               onClick={onClose}
@@ -196,6 +284,17 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
+
+            {/* Información del producto */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="w-5 h-5 text-blue-600" />
+                <h3 className="font-medium text-blue-800">Editando: {product.name}</h3>
+              </div>
+              <p className="text-sm text-blue-700">
+                ID: {product.id} • Categoría: {product.category}
+              </p>
+            </div>
 
             {/* Nombre y Tipo de Producto */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,22 +315,17 @@ const handleSubmit = async (e: React.FormEvent) => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Producto *
+                  Tipo de Producto
                 </label>
-                <select
-                  name="product_type_id"
-                  value={formData.product_type_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Seleccionar tipo</option>
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} - {type.category}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={product?.product_type || 'No especificado'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                  disabled
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  El tipo de producto no se puede editar desde aquí
+                </p>
               </div>
             </div>
 
@@ -250,8 +344,8 @@ const handleSubmit = async (e: React.FormEvent) => {
               />
             </div>
 
-            {/* Precio, Costo y Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Precio y Stock */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Precio de Venta *
@@ -270,45 +364,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                     required
                   />
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio de Inversión *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    name="cost_price"
-                    value={formData.cost_price}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Precio que pagaste por el producto
-                </p>
-                {/* Indicador de ganancia */}
-                {formData.price && formData.cost_price && parseFloat(formData.price) > parseFloat(formData.cost_price) && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                    <p className="text-xs text-green-700">
-                      💰 Ganancia esperada: ${(parseFloat(formData.price) - parseFloat(formData.cost_price)).toFixed(2)} 
-                      ({((parseFloat(formData.price) - parseFloat(formData.cost_price)) / parseFloat(formData.price) * 100).toFixed(1)}%)
-                    </p>
-                  </div>
-                )}
-                {formData.price && formData.cost_price && parseFloat(formData.price) <= parseFloat(formData.cost_price) && (
-                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-xs text-red-700">
-                      ⚠️ El precio de venta debe ser mayor al de inversión
-                    </p>
-                  </div>
-                )}
               </div>
               
               <div>
@@ -333,7 +388,34 @@ const handleSubmit = async (e: React.FormEvent) => {
                 Imágenes del Producto
               </label>
               <div className="space-y-4">
-                {/* Vista previa de imágenes */}
+                {/* Vista previa de imágenes existentes */}
+                {formData.image_url && (
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Imagen actual:</h4>
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={getImageUrl(formData.image_url)} 
+                        alt="Imagen actual" 
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-600">{formData.image_url}</p>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                          className="text-red-600 hover:text-red-800 text-sm mt-1"
+                        >
+                          Eliminar imagen actual
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vista previa de nuevas imágenes */}
                 <ImagePreview 
                   images={selectedImages}
                   onRemove={removeImage}
@@ -362,7 +444,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-2">
-                      Seleccionar imágenes (múltiples)
+                      Agregar nuevas imágenes
                     </label>
                     <DragAndDropZone
                       onFilesSelected={(files) => {
@@ -379,7 +461,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <div className="mt-2 text-xs text-gray-500 space-y-1">
                       {selectedImages.length > 0 && (
                         <p className="text-blue-600 font-medium">
-                          • {selectedImages.length} imagen(es) seleccionada(s) • {(totalSize / (1024 * 1024)).toFixed(2)} MB total
+                          • {selectedImages.length} nueva(s) imagen(es) seleccionada(s) • {(totalSize / (1024 * 1024)).toFixed(2)} MB total
                         </p>
                       )}
                     </div>
@@ -439,12 +521,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creando...
+                    Actualizando...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Crear Producto
+                    Actualizar Producto
                   </>
                 )}
               </button>
@@ -454,4 +536,4 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
     </div>
   );
-} 
+}

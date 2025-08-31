@@ -1,3 +1,4 @@
+// Componentes de UI
 export { default as AddProductModal } from './AddProductModal';
 export { default as AddUserModal } from './AddUserModal';
 export { default as AdminPanel } from './AdminPanel';
@@ -5,12 +6,16 @@ export { default as AuthButton } from './AuthButton';
 export { default as CartButton } from './CartButton';
 export { default as CartModal } from './CartModal';
 export { default as CheckoutModal } from './CheckoutModal';
+export { default as DragAndDropZone } from './DragAndDropZone';
+export { default as EditProductModal } from './EditProductModal';
 export { default as ExitConfirmationModal } from './ExitConfirmationModal';
+export { default as ImageCarousel } from './ImageCarousel';
+export { default as ImagePreview } from './ImagePreview';
 export { default as LoginButton } from './LoginButton';
 export { default as LoginModal } from './LoginModal';
 export { default as LogoutButton } from './LogoutButton';
 export { default as ProductCard } from './ProductCard';
 export { default as ProtectedReloadButton } from './ProtectedReloadButton';
+export { StockSyncStatus } from './StockSyncStatus';
 export { default as TestNavigationButton } from './TestNavigationButton';
-export { default as WhatsAppOrderModal } from './WhatsAppOrderModal';
-export { StockSyncStatus } from './StockSyncStatus'; 
+export { default as WhatsAppOrderModal } from './WhatsAppOrderModal'; 

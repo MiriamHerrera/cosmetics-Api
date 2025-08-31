@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
 const reportRoutes = require('./routes/reports');
 const unifiedCartRoutes = require('./routes/unifiedCart');
+const imageRoutes = require('./routes/images');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -75,6 +76,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware para archivos estáticos
+app.use('/uploads', express.static('uploads'));
+// Agregar ruta estática con prefijo /api para Railway
+app.use('/api/uploads', express.static('uploads'));
+
 // Configuración de rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000), // 1 minuto en desarrollo, 15 en producción
@@ -118,19 +124,52 @@ app.use((req, res, next) => {
   next();
 });
 
+// Logging detallado para debugging de rutas
+console.log('🔍 REGISTRANDO RUTAS DE LA API...');
+
 // Registrar rutas de la API
+console.log('📡 Registrando /api/init...');
 app.use('/api/init', require('./routes/init'));
+
+console.log('📡 Registrando /api/auth...');
 app.use('/api/auth', authRoutes);
+
+console.log('📡 Registrando /api/public/products...');
 app.use('/api/public/products', publicProductRoutes);
+
+console.log('📡 Registrando /api/products...');
 app.use('/api/products', productRoutes);
+
+console.log('📡 Registrando /api/unified-cart...');
 app.use('/api/unified-cart', unifiedCartRoutes);
+
+console.log('📡 Registrando /api/reservations...');
 app.use('/api/reservations', reservationRoutes);
+
+console.log('📡 Registrando /api/surveys...');
 app.use('/api/surveys', surveyRoutes);
+
+console.log('📡 Registrando /api/enhanced-surveys...');
 app.use('/api/enhanced-surveys', enhancedSurveyRoutes);
+
+console.log('📡 Registrando /api/stats...');
 app.use('/api/stats', statsRoutes);
+
+console.log('📡 Registrando /api/admin...');
 app.use('/api/admin', adminRoutes);
+
+console.log('📡 Registrando /api/orders...');
 app.use('/api/orders', orderRoutes);
+
+console.log('📡 Registrando /api/reports...');
 app.use('/api/reports', reportRoutes);
+
+console.log('📡 Registrando /api/images...');
+app.use('/api/images', imageRoutes);
+
+console.log('✅ TODAS LAS RUTAS REGISTRADAS');
+
+// Middleware de debug para capturar todas las solicitudes (después de las rutas específicas)
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -162,6 +201,284 @@ app.get('/', (req, res) => {
   });
 });
 
+// Endpoint de debug para diagnosticar problemas de rutas
+app.get('/api/debug/routes', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Debug de rutas',
+    timestamp: new Date().toISOString(),
+    registeredRoutes: [
+      '/api/init',
+      '/api/auth',
+      '/api/public/products',
+      '/api/products',
+      '/api/unified-cart',
+      '/api/reservations',
+      '/api/surveys',
+      '/api/enhanced-surveys',
+      '/api/stats',
+      '/api/admin',
+      '/api/orders',
+      '/api/reports',
+      '/api/health'
+    ],
+    requestInfo: {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      headers: req.headers
+    }
+  });
+});
+
+// Endpoint de debug para probar middleware
+app.use('/api/debug/middleware', (req, res, next) => {
+  console.log('🔍 DEBUG MIDDLEWARE:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl
+  });
+  
+  res.json({
+    success: true,
+    message: 'Middleware funcionando',
+    requestInfo: {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl
+    }
+  });
+});
+
+// Endpoint de diagnóstico de base de datos
+app.get('/api/debug/database', async (req, res) => {
+  try {
+    console.log('🔍 DIAGNÓSTICO DE BASE DE DATOS SOLICITADO...');
+    
+    const { testConnection, query } = require('./config/database');
+    
+    // Probar conexión
+    console.log('🔍 Probando conexión...');
+    const isConnected = await testConnection();
+    
+    if (!isConnected) {
+      return res.status(500).json({
+        success: false,
+        message: 'No se pudo conectar a la base de datos',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Probar consulta simple
+    console.log('🔍 Probando consulta simple...');
+    const [result] = await query('SELECT 1 as test');
+    
+    // Verificar estructura de la tabla users
+    console.log('🔍 Verificando estructura de tabla users...');
+    const tableStructure = await query('DESCRIBE users');
+    
+    // Probar consulta de usuarios con columnas existentes
+    console.log('🔍 Probando consulta de usuarios...');
+    const users = await query('SELECT COUNT(*) as total FROM users');
+    
+    // Obtener todas las columnas disponibles
+    const availableColumns = tableStructure.map(col => col.Field);
+    console.log('🔍 Columnas disponibles en users:', availableColumns);
+    
+    // Construir consulta dinámica basada en columnas existentes
+    let userQuery = 'SELECT ';
+    if (availableColumns.includes('id')) userQuery += 'id, ';
+    if (availableColumns.includes('name')) userQuery += 'name, ';
+    if (availableColumns.includes('username')) userQuery += 'username, ';
+    if (availableColumns.includes('phone')) userQuery += 'phone, ';
+    if (availableColumns.includes('email')) userQuery += 'email, ';
+    if (availableColumns.includes('role')) userQuery += 'role, ';
+    if (availableColumns.includes('password')) userQuery += 'password, ';
+    
+    // Remover la última coma
+    userQuery = userQuery.replace(/,\s*$/, '');
+    userQuery += ' FROM users WHERE phone = ?';
+    
+    console.log('🔍 Query dinámica construida:', userQuery);
+    
+    // Probar consulta específica del usuario de login
+    console.log('🔍 Probando consulta de usuario específico...');
+    let testUser = [];
+    try {
+      testUser = await query(userQuery, ['8124307494']);
+    } catch (queryError) {
+      console.log('❌ Error en consulta específica:', queryError.message);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Diagnóstico de base de datos completado',
+      timestamp: new Date().toISOString(),
+      database: {
+        connected: isConnected,
+        testQuery: result,
+        totalUsers: users[0]?.total || 0,
+        tableStructure: tableStructure,
+        availableColumns: availableColumns,
+        dynamicQuery: userQuery,
+        testUser: testUser.length > 0 ? {
+          found: true,
+          data: testUser[0]
+        } : {
+          found: false,
+          phone: '8124307494',
+          reason: 'Usuario no encontrado o error en consulta'
+        }
+      },
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        dbHost: process.env.DB_HOST,
+        dbName: process.env.DB_NAME,
+        dbUser: process.env.DB_USER,
+        hasPassword: !!process.env.DB_PASSWORD
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ ERROR EN DIAGNÓSTICO DE BD:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en diagnóstico de base de datos',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Endpoint para corregir la columna phone
+app.post('/api/debug/fix-phone-column', async (req, res) => {
+  try {
+    console.log('🔧 CORRECCIÓN DE COLUMNA PHONE SOLICITADA...');
+    
+    const { fixPhoneColumn } = require('../../scripts/fix-phone-column');
+    
+    const success = await fixPhoneColumn();
+    
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Columna phone corregida exitosamente',
+        timestamp: new Date().toISOString(),
+        details: 'La columna phone ahora es VARCHAR(20) y puede almacenar números de teléfono'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Error al corregir la columna phone',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ ERROR EN CORRECCIÓN DE PHONE:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno al corregir columna phone',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Endpoint temporal para corregir columna phone directamente
+app.post('/api/debug/fix-phone-direct', async (req, res) => {
+  try {
+    console.log('🔧 CORRECCIÓN DIRECTA DE COLUMNA PHONE SOLICITADA...');
+    
+    const { query, getConnection } = require('./config/database');
+    
+    let connection;
+    try {
+      // Obtener conexión
+      connection = await getConnection();
+      console.log('✅ Conexión obtenida');
+      
+      // Verificar estructura actual
+      console.log('🔍 Verificando estructura actual...');
+      const [currentStructure] = await connection.query('DESCRIBE users');
+      const phoneColumn = currentStructure.find(col => col.Field === 'phone');
+      
+      console.log('📱 Columna phone actual:', {
+        field: phoneColumn.Field,
+        type: phoneColumn.Type,
+        null: phoneColumn.Null
+      });
+      
+      // Verificar si ya está corregida
+      if (phoneColumn && phoneColumn.Type.includes('varchar')) {
+        console.log('✅ La columna phone ya está corregida');
+        return res.json({
+          success: true,
+          message: 'Columna phone ya está corregida (VARCHAR)',
+          currentType: phoneColumn.Type,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Ejecutar la corrección
+      console.log('🔧 Cambiando tipo de dato de phone a VARCHAR(20)...');
+      await connection.query('ALTER TABLE users MODIFY COLUMN phone VARCHAR(20) NOT NULL');
+      console.log('✅ Columna phone corregida exitosamente');
+      
+      // Verificar que el cambio se aplicó
+      console.log('🔍 Verificando cambio aplicado...');
+      const [newStructure] = await connection.query('DESCRIBE users');
+      const newPhoneColumn = newStructure.find(col => col.Field === 'phone');
+      
+      console.log('📱 Nueva estructura de columna phone:', {
+        field: newPhoneColumn.Field,
+        type: newPhoneColumn.Type,
+        null: newPhoneColumn.Null
+      });
+      
+      // Verificar datos existentes
+      console.log('🔍 Verificando datos existentes...');
+      const [users] = await connection.query('SELECT id, username, phone, email, role FROM users LIMIT 5');
+      console.log('📋 Usuarios encontrados:', users.length);
+      
+      res.json({
+        success: true,
+        message: 'Columna phone corregida exitosamente',
+        timestamp: new Date().toISOString(),
+        details: {
+          oldType: phoneColumn.Type,
+          newType: newPhoneColumn.Type,
+          usersFound: users.length,
+          sampleUsers: users
+        }
+      });
+      
+    } finally {
+      if (connection) {
+        connection.release();
+        console.log('🔓 Conexión liberada');
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ ERROR EN CORRECCIÓN DIRECTA:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al corregir columna phone',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
@@ -171,6 +488,26 @@ app.use((err, req, res, next) => {
     message: err.message || 'Error interno del servidor',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
+});
+
+// Middleware de debug para capturar todas las solicitudes (después de las rutas específicas)
+app.use('*', (req, res, next) => {
+  console.log('🔍 DEBUG - RUTA NO ENCONTRADA:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Solo continuar si es una ruta de debug
+  if (req.path.startsWith('/api/debug')) {
+    return next();
+  }
+  
+  // Para todas las demás rutas, continuar al siguiente middleware
+  next();
 });
 
 // Middleware para rutas no encontradas
