@@ -14,10 +14,11 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onQuickBuy, onOpenCart }: ProductCardProps) {
-  const { addToCart, isUpdatingStock, error } = useStore();
+  const { addToCart } = useStore();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   
   // Obtener todas las URLs de imágenes
   const allImageUrls = getAllImageUrls(product.image_url);
@@ -33,42 +34,34 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
   };
 
   const handleQuickBuy = async () => {
-    console.log('🚀 handleQuickBuy iniciado para:', product.name);
-    console.log('📦 Producto:', product);
-    console.log('🔑 onQuickBuy existe:', !!onQuickBuy);
-    console.log('🔑 onOpenCart existe:', !!onOpenCart);
-    
-    // Siempre agregar al carrito primero
-    console.log('➕ Intentando agregar al carrito...');
-    const success = await addToCart(product, 1);
-    console.log('✅ Resultado de addToCart:', success);
-    
-    if (success) {
-      console.log('🎉 Producto agregado exitosamente');
-      // Mostrar indicador de éxito
+    try {
+      setError(null);
+      await addToCart(product, 1);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
       
       if (onQuickBuy) {
-        console.log('📞 Ejecutando onQuickBuy...');
-        // Si se pasa onQuickBuy, ejecutar esa función
-        onQuickBuy(product);
-      } else if (onOpenCart) {
-        console.log('📞 Ejecutando onOpenCart...');
-        // Lógica por defecto: abrir modal del carrito
-        onOpenCart();
-      } else {
-        console.log('⚠️ No hay onQuickBuy ni onOpenCart definidos');
+        onQuickBuy();
       }
-    } else {
-      console.log('❌ Error al agregar al carrito');
+    } catch (err) {
+      setError('Error al agregar al carrito');
+      console.error('Error en quick buy:', err);
     }
   };
 
   const handleAddToCart = async () => {
-    const success = await addToCart(product, 1);
-    if (success) {
-      // Opcional: mostrar notificación de éxito
+    try {
+      setError(null);
+      await addToCart(product, 1);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      
+      if (onOpenCart) {
+        onOpenCart();
+      }
+    } catch (err) {
+      setError('Error al agregar al carrito');
+      console.error('Error al agregar al carrito:', err);
     }
   };
 
@@ -265,7 +258,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
           {/* Botón de agregar al carrito */}
           <button
             onClick={handleAddToCart}
-            disabled={product.stock_total === 0 || isUpdatingStock}
+            disabled={product.stock_total === 0}
             className="
               flex-1 border-2 border-purple-400 hover:bg-gradient-to-r hover:from-purple-400 hover:to-pink-500 hover:text-white hover:border-transparent
               disabled:bg-gray-300 disabled:cursor-not-allowed
