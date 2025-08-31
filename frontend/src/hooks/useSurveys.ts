@@ -46,7 +46,11 @@ export const useSurveys = (): UseSurveysReturn => {
     };
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+      const fullUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SURVEYS}${endpoint}`;
+      console.log(`🔗 API Call URL: ${fullUrl}`);
+      console.log(`🔑 Token presente: ${!!token}`);
+      
+      const response = await fetch(fullUrl, {
         ...options,
         headers,
       });
@@ -71,7 +75,11 @@ export const useSurveys = (): UseSurveysReturn => {
     };
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+      // Las rutas públicas usan el mismo endpoint base que las autenticadas
+      const fullUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SURVEYS}${endpoint}`;
+      console.log(`🌐 Public API Call URL: ${fullUrl}`);
+      
+      const response = await fetch(fullUrl, {
         ...options,
         headers,
       });
@@ -107,7 +115,7 @@ export const useSurveys = (): UseSurveysReturn => {
         }
       } else {
         // Usuario no autenticado: usar ruta pública
-        const response = await publicApiCall('/surveys');
+        const response = await publicApiCall('/public/active');
         if (response.success) {
           console.log('📊 Encuestas cargadas (modo público):', response.data);
           // Agregar user_votes vacío para opciones no autenticadas
@@ -142,7 +150,7 @@ export const useSurveys = (): UseSurveysReturn => {
         }
       } else {
         // Usuario no autenticado: usar ruta pública
-        const response = await publicApiCall(`/surveys/${id}`);
+        const response = await publicApiCall(`/public/active/${id}`);
         if (response.success) {
           // Agregar user_votes vacío para opciones no autenticadas
           return {
@@ -317,7 +325,7 @@ export const useSurveys = (): UseSurveysReturn => {
       setLoading(true);
       setError(null);
       
-      const response = await apiCall('/all');
+      const response = await apiCall('');
       if (response.success) {
         setSurveys(response.data);
       } else {
@@ -351,7 +359,7 @@ export const useSurveys = (): UseSurveysReturn => {
     try {
       setError(null);
       
-      const response = await apiCall('/create', {
+      const response = await apiCall('', {
         method: 'POST',
         body: JSON.stringify({
           question,
