@@ -1,7 +1,8 @@
 'use client';
 
-import { ShoppingCart, Zap, Heart } from 'lucide-react';
+import { ShoppingCart, Zap, Heart, Image as ImageIcon } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useProductImages } from '@/hooks/useProductImages';
 import type { Product } from '@/types';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -16,6 +17,12 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
   const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Usar el hook para manejar las imágenes
+  const { primary, all, hasImages } = useProductImages({ 
+    imageUrl: product.image_url 
+  });
 
   const handleQuickBuy = async () => {
     console.log('🚀 handleQuickBuy iniciado para:', product.name);
@@ -57,6 +64,18 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
     }
   };
 
+  const nextImage = () => {
+    if (all.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % all.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (all.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + all.length) % all.length);
+    }
+  };
+
   return (
     <div className="
       bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl
@@ -70,17 +89,88 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
     ">
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
-        <Image
-          src={product.image_url || '/NoImage.jpg'}
-          alt={product.name}
-          fill
-          sizes="(max-width: 640px) 100vw, 50vw"
-          className="
-            object-cover
-            transition-transform duration-500
-            group-hover:scale-110
-          "
-        />
+        {hasImages ? (
+          <>
+            <Image
+              src={all[currentImageIndex]}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="
+                object-cover
+                transition-transform duration-500
+                group-hover:scale-110
+              "
+            />
+            
+            {/* Indicador de múltiples imágenes */}
+            {all.length > 1 && (
+              <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+                <span className="
+                  px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
+                  bg-gradient-to-r from-blue-400 to-purple-500 text-white
+                  rounded-full shadow-lg
+                  border border-blue-300
+                  flex items-center gap-1
+                ">
+                  <ImageIcon className="w-3 h-3" />
+                  {currentImageIndex + 1}/{all.length}
+                </span>
+              </div>
+            )}
+
+            {/* Navegación de imágenes (solo si hay más de una) */}
+            {all.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="
+                    absolute left-2 top-1/2 -translate-y-1/2
+                    p-1.5 rounded-full
+                    bg-white/90 backdrop-blur-sm
+                    hover:bg-white transition-all duration-300
+                    focus:outline-none focus:ring-2 focus:ring-purple-200
+                    shadow-lg hover:shadow-xl
+                    transform hover:scale-110
+                    opacity-0 group-hover:opacity-100
+                  "
+                >
+                  <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={nextImage}
+                  className="
+                    absolute right-2 top-1/2 -translate-y-1/2
+                    p-1.5 rounded-full
+                    bg-white/90 backdrop-blur-sm
+                    hover:bg-white transition-all duration-300
+                    focus:outline-none focus:ring-2 focus:ring-purple-200
+                    shadow-lg hover:shadow-xl
+                    transform hover:scale-110
+                    opacity-0 group-hover:opacity-100
+                  "
+                >
+                  <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="
+            w-full h-full flex items-center justify-center
+            bg-gradient-to-br from-gray-100 to-gray-200
+          ">
+            <div className="text-center text-gray-400">
+              <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+              <p className="text-xs">Sin imagen</p>
+            </div>
+          </div>
+        )}
         
         {/* Botón de favorito */}
         <button
@@ -104,7 +194,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
 
         {/* Badge de stock */}
         {product.stock_total <= 5 && product.stock_total > 0 && (
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
             <span className="
               px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
               bg-gradient-to-r from-orange-400 to-red-500 text-white
@@ -119,7 +209,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
 
         {/* Badge de agotado */}
         {product.stock_total === 0 && (
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
             <span className="
               px-2 py-1 sm:px-3 sm:py-1.5 text-xs font-semibold
               bg-gradient-to-r from-red-400 to-red-600 text-white

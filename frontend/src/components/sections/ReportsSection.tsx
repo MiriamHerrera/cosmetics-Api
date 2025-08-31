@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import useReports from '../../hooks/useReports';
+import { useProductImages } from '@/hooks/useProductImages';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -279,13 +280,19 @@ const ReportsSection: React.FC<ReportsSectionProps> = ({ className = '' }) => {
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {product.image_url && (
-                          <img 
-                            className="h-10 w-10 rounded-full mr-3" 
-                            src={product.image_url} 
-                            alt={product.product_name}
-                          />
-                        )}
+                        {(() => {
+                          const { primary, hasImages } = useProductImages({ 
+                            imageUrl: product.image_url 
+                          });
+                          
+                          return hasImages ? (
+                            <img 
+                              className="h-10 w-10 rounded-full mr-3" 
+                              src={primary} 
+                              alt={product.product_name}
+                            />
+                          ) : null;
+                        })()}
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {product.product_name}
