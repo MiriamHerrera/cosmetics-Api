@@ -52,15 +52,13 @@ const uploadImages = async (req, res) => {
     // Obtener la URL base del servidor
     const protocol = req.protocol;
     const host = req.get('host');
-    
-    // Forzar HTTPS para Railway y usar ruta correcta
-    const baseUrl = `https://${host}`;
-    
+    const baseUrl = `${protocol}://${host}`;
+
     const uploadedFiles = req.files.map(file => ({
       filename: file.filename,
       originalName: file.originalname,
-      // Generar URL absoluta completa para Railway (ruta correcta /uploads)
-      path: `${baseUrl}/uploads/products/${file.filename}`,
+      // Generar URL absoluta completa para Railway (con prefijo /api)
+      path: `${baseUrl}/api/uploads/products/${file.filename}`,
       size: file.size,
       mimetype: file.mimetype
     }));
