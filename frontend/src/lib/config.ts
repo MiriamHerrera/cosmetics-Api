@@ -42,28 +42,42 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 [getImageUrl] Multiple URLs detected, using first:', firstImageUrl);
     }
-    imagePath = firstImageUrl;
+    // Recursivamente llamar a getImageUrl con la primera URL
+    return getImageUrl(firstImageUrl);
   }
-  
-  // Si ya es una URL absoluta (http/https), retornarla tal como está
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+
+  let processedUrl = imagePath;
+
+  // Normalizar URLs absolutas: forzar HTTPS y corregir ruta /api/uploads a /uploads
+  if (processedUrl.startsWith('http://') || processedUrl.startsWith('https://')) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Absolute URL, returning as-is:', imagePath);
+      console.log('🔍 [getImageUrl] Absolute URL detected, normalizing:', processedUrl);
     }
-    return imagePath;
+    // Forzar HTTPS
+    if (processedUrl.startsWith('http://')) {
+      processedUrl = 'https://' + processedUrl.substring(7);
+    }
+    // Corregir /api/uploads a /uploads si existe
+    if (processedUrl.includes('/api/uploads')) {
+      processedUrl = processedUrl.replace('/api/uploads', '/uploads');
+    }
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] Normalized absolute URL:', processedUrl);
+    }
+    return processedUrl;
   }
   
   // Si es una ruta relativa que empieza con /uploads, construir URL completa para Railway
-  if (imagePath.startsWith('/uploads')) {
+  if (processedUrl.startsWith('/uploads')) {
     // Para Railway, usar la URL base sin /api ya que las imágenes están en /uploads
     const baseUrl = config.apiUrl.replace('/api', '');
-    const fullUrl = `${baseUrl}${imagePath}`;
+    const fullUrl = `${baseUrl}${processedUrl}`;
     
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 [getImageUrl] Building Railway URL:');
       console.log('  - Original API URL:', config.apiUrl);
       console.log('  - Base URL (without /api):', baseUrl);
-      console.log('  - Image path:', imagePath);
+      console.log('  - Image path:', processedUrl);
       console.log('  - Full URL:', fullUrl);
     }
     
@@ -71,15 +85,15 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   }
   
   // Si es cualquier otra ruta relativa, asumir que es relativa al dominio actual
-  if (imagePath.startsWith('/')) {
+  if (processedUrl.startsWith('/')) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Relative path, returning as-is:', imagePath);
+      console.log('🔍 [getImageUrl] Relative path, returning as-is:', processedUrl);
     }
-    return imagePath;
+    return processedUrl;
   }
   
   // Si no empieza con /, agregar / al inicio
-  const result = `/${imagePath}`;
+  const result = `/${processedUrl}`;
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 [getImageUrl] Adding slash, returning:', result);
   }
