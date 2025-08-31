@@ -195,15 +195,6 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
             <span className="text-xs sm:text-sm">Carrito</span>
           </button>
         </div>
-
-        {/* Indicador de múltiples imágenes */}
-        {productImages.length > 1 && (
-          <div className="mt-3 text-center">
-            <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-              📸 {productImages.length} imagen{productImages.length !== 1 ? 'es' : ''}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
