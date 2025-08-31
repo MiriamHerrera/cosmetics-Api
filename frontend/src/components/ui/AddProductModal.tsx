@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Package, Save, Loader2 } from 'lucide-react';
+import { X, Package, Save, Loader2, Upload, AlertCircle } from 'lucide-react';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import ImagePreview from './ImagePreview';
+import DragAndDropZone from './DragAndDropZone';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -34,6 +37,20 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
   // Estados para las opciones
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  
+  // Hook para manejo de imágenes
+  const {
+    images: selectedImages,
+    addImages,
+    removeImage,
+    clearImages,
+    totalSize,
+    errors: imageErrors
+  } = useImageUpload({
+    maxFiles: 10,
+    maxFileSize: 5 * 1024 * 1024, // 5MB
+    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+  });
 
   // Cargar tipos de productos y categorías al abrir el modal
   useEffect(() => {
@@ -64,6 +81,30 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
       ...prev,
       [name]: value
     }));
+  };
+
+  // Función para manejar la selección de archivos
+  const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      addImages(files);
+    }
+  };
+
+  // Función para limpiar el formulario
+  const clearForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      cost_price: '',
+      stock_total: '',
+      product_type_id: '',
+      image_url: '',
+      status: 'active'
+    });
+    clearImages();
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,35 +138,37 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
         return;
       }
 
+      // Preparar datos del producto (sin imagen por ahora)
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        cost_price: parseFloat(formData.cost_price),
+        stock_total: parseInt(formData.stock_total) || 0,
+        // Solo incluir image_url si se proporcionó una URL
+        ...(formData.image_url && { image_url: formData.image_url })
+      };
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          cost_price: parseFloat(formData.cost_price),
-          stock_total: parseInt(formData.stock_total) || 0
-        })
+        body: JSON.stringify(productData)
       });
 
       if (response.ok) {
         const result = await response.json();
         console.log('Producto creado:', result);
         
+        // TODO: Aquí implementaremos la subida de imágenes cuando tengamos el endpoint
+        if (selectedImages.length > 0) {
+          console.log('Imágenes seleccionadas para subir:', selectedImages.map(img => img.file.name));
+          console.log('Tamaño total de imágenes:', (totalSize / (1024 * 1024)).toFixed(2), 'MB');
+        }
+        
         // Limpiar formulario
-        setFormData({
-          name: '',
-          description: '',
-          price: '',
-          cost_price: '',
-          stock_total: '',
-          product_type_id: '',
-          image_url: '',
-          status: 'active'
-        });
+        clearForm();
         
         // Cerrar modal y notificar
         onProductAdded();
@@ -151,7 +194,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl">
+        <div className="relative w-full max-w-5xl bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
@@ -304,57 +347,67 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
               </div>
             </div>
 
-            {/* Imagen del Producto */}
+            {/* Imágenes del Producto */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Imagen del Producto
+                Imágenes del Producto
               </label>
-              <div className="space-y-3">
-                {/* Vista previa de imagen */}
-                {formData.image_url && (
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={formData.image_url} 
-                      alt="Vista previa" 
-                      className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Eliminar imagen
-                    </button>
+              <div className="space-y-4">
+                {/* Vista previa de imágenes */}
+                <ImagePreview 
+                  images={selectedImages}
+                  onRemove={removeImage}
+                  maxImages={10}
+                  showFileInfo={true}
+                />
+                
+                {/* Errores de imágenes */}
+                {imageErrors.length > 0 && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-red-700">Errores en las imágenes:</p>
+                        <ul className="text-xs text-red-600 space-y-1">
+                          {imageErrors.map((error, index) => (
+                            <li key={index}>• {error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
-                {/* Opciones de imagen */}
+                {/* Selector de archivos múltiples */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-2">
-                      Seleccionar archivo
+                      Seleccionar imágenes (múltiples)
                     </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          // Por ahora solo mostramos el nombre del archivo
-                          // En el siguiente paso implementaremos la subida real
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            image_url: `Archivo seleccionado: ${file.name}` 
-                          }));
-                        }
+                    <DragAndDropZone
+                      onFilesSelected={(files) => {
+                        // Convertir File[] a FileList para compatibilidad con el hook
+                        const dataTransfer = new DataTransfer();
+                        files.forEach(file => dataTransfer.items.add(file));
+                        addImages(dataTransfer.files);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      accept="image/*"
+                      multiple={true}
+                      maxFiles={10}
+                      disabled={loading}
                     />
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      {selectedImages.length > 0 && (
+                        <p className="text-blue-600 font-medium">
+                          • {selectedImages.length} imagen(es) seleccionada(s) • {(totalSize / (1024 * 1024)).toFixed(2)} MB total
+                        </p>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-500 mb-2">
-                      O usar URL
+                      O usar URL (opcional)
                     </label>
                     <input
                       type="url"
@@ -364,6 +417,9 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="https://ejemplo.com/imagen.jpg"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Campo opcional - puedes dejarlo vacío
+                    </p>
                   </div>
                 </div>
               </div>

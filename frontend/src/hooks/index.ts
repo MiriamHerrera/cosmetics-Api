@@ -6,6 +6,7 @@ export { useCartMigration } from './useCartMigration';
 export { useCategories } from './useCategories';
 export { useGuestMode } from './useGuestMode';
 export { useGuestSession } from './useGuestSession';
+export { useImageUpload } from './useImageUpload';
 export { useNavigationGuard } from './useNavigationGuard';
 export { usePageReloadGuard } from './usePageReloadGuard';
 export { useProducts } from './useProducts';

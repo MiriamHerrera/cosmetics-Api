@@ -12,13 +12,23 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'example.com' },
       { protocol: 'http', hostname: 'localhost' },
-      { protocol: 'https', hostname: 'localhost' }
+      { protocol: 'https', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'jeniricosmetics.com' },
+      { protocol: 'https', hostname: 'www.jeniricosmetics.com' },
+      { protocol: 'https', hostname: 'api.jeniricosmetics.com' },
+      { protocol: 'https', hostname: 'vercel.app' },
+      { protocol: 'https', hostname: '*.vercel.app' }
     ],
+    // Permitir imágenes locales (data URLs)
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     // Optimizaciones para producción
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
-    dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Configuración para imágenes locales
+    unoptimized: false,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   
   // Headers de seguridad
