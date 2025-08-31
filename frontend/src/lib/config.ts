@@ -55,7 +55,7 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   
   // Si es una ruta relativa que empieza con /uploads, construir URL completa para Railway
   if (imagePath.startsWith('/uploads')) {
-    // Para Railway, remover /api del path base y construir URL correcta
+    // Para Railway, usar la URL base sin /api ya que las imágenes están en /uploads
     const baseUrl = config.apiUrl.replace('/api', '');
     const fullUrl = `${baseUrl}${imagePath}`;
     
