@@ -41,7 +41,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
       setTimeout(() => setShowSuccess(false), 2000);
       
       if (onQuickBuy) {
-        onQuickBuy();
+        onQuickBuy(product);
       }
     } catch (err) {
       setError('Error al agregar al carrito');
@@ -270,19 +270,9 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
               shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
             "
           >
-            {isUpdatingStock ? (
-              <>
-                <div className="w-3 h-3 sm:w-4 h-4 mr-1 sm:mr-2 inline animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
-                <span className="hidden sm:inline text-purple-600">Actualizando...</span>
-                <span className="sm:hidden text-purple-600">...</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="w-3 h-3 sm:w-4 h-4 text-purple-600" />
-                <span className="hidden sm:inline text-purple-600">Carrito</span>
-                <span className="sm:hidden text-purple-600">+</span>
-              </>
-            )}
+            <ShoppingCart className="w-3 h-3 sm:w-4 h-4 text-purple-600" />
+            <span className="hidden sm:inline text-purple-600">Carrito</span>
+            <span className="sm:hidden text-purple-600">+</span>
           </button>
         </div>
       </div>
