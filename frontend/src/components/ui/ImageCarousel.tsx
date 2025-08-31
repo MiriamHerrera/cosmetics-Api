@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { getImageUrl } from '@/lib/config';
+import { getImageUrl, shouldOptimizeImage } from '@/lib/config';
 
 interface ImageCarouselProps {
   images: string[];
@@ -49,6 +49,7 @@ export default function ImageCarousel({
           fill
           sizes="(max-width: 640px) 100vw, 50vw"
           className="object-cover transition-transform duration-300 hover:scale-105"
+          unoptimized={!shouldOptimizeImage(images[0])}
         />
       </div>
     );
@@ -88,6 +89,7 @@ export default function ImageCarousel({
           sizes="(max-width: 640px) 100vw, 50vw"
           className="object-cover cursor-pointer transition-all duration-300"
           onClick={openFullscreen}
+          unoptimized={!shouldOptimizeImage(images[currentIndex])}
         />
 
         {/* Controles de Navegación */}
@@ -146,6 +148,7 @@ export default function ImageCarousel({
               fill
               sizes="100vw"
               className="object-contain"
+              unoptimized={!shouldOptimizeImage(images[currentIndex])}
             />
 
             {/* Botón Cerrar */}

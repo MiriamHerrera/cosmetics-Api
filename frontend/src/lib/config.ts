@@ -76,6 +76,29 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   return result;
 };
 
+// Función helper para determinar si una imagen debe ser optimizada por Next.js
+export const shouldOptimizeImage = (imageUrl: string): boolean => {
+  // No optimizar imágenes del backend (Railway)
+  if (imageUrl.includes('api.jeniricosmetics.com')) {
+    return false;
+  }
+  
+  // No optimizar imágenes locales del proyecto
+  if (imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+    return false;
+  }
+  
+  // Optimizar imágenes externas (Unsplash, etc.)
+  if (imageUrl.includes('images.unsplash.com') || 
+      imageUrl.includes('example.com') || 
+      imageUrl.includes('vercel.app')) {
+    return true;
+  }
+  
+  // Por defecto, no optimizar
+  return false;
+};
+
 // Función para generar el enlace de WhatsApp
 export const generateWhatsAppLink = (message: string): string => {
   const encodedMessage = encodeURIComponent(message);
