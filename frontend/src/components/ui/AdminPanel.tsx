@@ -24,7 +24,6 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 import { useAdmin } from '@/hooks/useAdmin';
-import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
@@ -42,7 +41,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showEditProductModal, setShowEditProductModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   // Estados para filtros y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,7 +107,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   };
 
   // Función para editar producto
-  const handleEditProduct = (product: AdminProduct) => {
+  const handleEditProduct = (product: any) => {
     setSelectedProduct(product);
     setShowEditProductModal(true);
   };

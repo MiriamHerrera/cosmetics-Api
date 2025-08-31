@@ -15,12 +15,16 @@ interface EditProductModalProps {
     name: string;
     description: string;
     price: number;
+    image_url: string;
     stock_total: number;
     status: string;
-    image_url: string;
     product_type: string;
     category: string;
     is_approved?: number;
+    total_reservations?: number;
+    total_carts?: number;
+    active_reservations?: number;
+    popularity_score?: number;
   } | null;
 }
 
