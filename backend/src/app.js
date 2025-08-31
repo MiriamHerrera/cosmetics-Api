@@ -78,6 +78,8 @@ app.use((req, res, next) => {
 
 // Middleware para archivos estáticos
 app.use('/uploads', express.static('uploads'));
+// Agregar ruta estática con prefijo /api para Railway
+app.use('/api/uploads', express.static('uploads'));
 
 // Configuración de rate limiting
 const limiter = rateLimit({

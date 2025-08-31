@@ -57,8 +57,8 @@ const uploadImages = async (req, res) => {
     const uploadedFiles = req.files.map(file => ({
       filename: file.filename,
       originalName: file.originalname,
-      // Generar URL absoluta completa para que funcione en el frontend
-      path: `${baseUrl}/uploads/products/${file.filename}`,
+      // Generar URL absoluta completa para Railway (con prefijo /api)
+      path: `${baseUrl}/api/uploads/products/${file.filename}`,
       size: file.size,
       mimetype: file.mimetype
     }));
