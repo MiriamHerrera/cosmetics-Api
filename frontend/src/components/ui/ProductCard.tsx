@@ -1,11 +1,11 @@
 'use client';
 
-import { ShoppingCart, Zap, Heart } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
-import type { Product } from '@/types';
 import { useState } from 'react';
 import Image from 'next/image';
+import { Heart, ShoppingCart, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 import { getImageUrl, getAllImageUrls } from '@/lib/config';
+import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +14,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onQuickBuy, onOpenCart }: ProductCardProps) {
-  const { addToCart, isUpdatingStock, error } = useCart();
+  const { addToCart, isUpdatingStock, error } = useStore();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -255,7 +255,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
               </>
             ) : (
               <>
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Comprar</span>
                 <span className="sm:hidden">Ya</span>
               </>
