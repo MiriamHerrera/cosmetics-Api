@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
 import { useAdmin } from '@/hooks/useAdmin';
+import { getImageUrl } from '@/lib/config';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
@@ -628,7 +629,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                   {product.image_url ? (
                                     <img 
                                       className="h-10 w-10 rounded-full object-cover" 
-                                      src={product.image_url} 
+                                      src={getImageUrl(product.image_url)} 
                                       alt={product.name}
                                     />
                                   ) : (
@@ -725,7 +726,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             {product.image_url ? (
                               <img 
                                 className="h-16 w-16 rounded-lg object-cover" 
-                                src={product.image_url} 
+                                src={getImageUrl(product.image_url)} 
                                 alt={product.name}
                               />
                             ) : (

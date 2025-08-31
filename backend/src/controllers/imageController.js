@@ -49,10 +49,16 @@ const uploadImages = async (req, res) => {
       });
     }
 
+    // Obtener la URL base del servidor
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     const uploadedFiles = req.files.map(file => ({
       filename: file.filename,
       originalName: file.originalname,
-      path: `/uploads/products/${file.filename}`,
+      // Generar URL absoluta completa para que funcione en el frontend
+      path: `${baseUrl}/uploads/products/${file.filename}`,
       size: file.size,
       mimetype: file.mimetype
     }));

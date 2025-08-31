@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuth } from '../../hooks/useAuth';
+import { getImageUrl } from '../../lib/config';
 
 interface Reservation {
   id: number;
@@ -413,7 +416,7 @@ const ReservationsSection: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <img
-                            src={reservation.product_image || '/NoImage.jpg'}
+                            src={getImageUrl(reservation.product_image)}
                             alt={reservation.product_name}
                             className="w-10 h-10 rounded-md object-cover mr-3"
                           />

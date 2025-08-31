@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Package, Save, Loader2, Upload, AlertCircle, Edit } from 'lucide-react';
 import { useImageUpload } from '../../hooks/useImageUpload';
+import { getImageUrl } from '@/lib/config';
 import ImagePreview from './ImagePreview';
 import DragAndDropZone from './DragAndDropZone';
 
@@ -393,7 +394,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Imagen actual:</h4>
                     <div className="flex items-center gap-3">
                       <img 
-                        src={formData.image_url} 
+                        src={getImageUrl(formData.image_url)} 
                         alt="Imagen actual" 
                         className="w-20 h-20 object-cover rounded-lg border border-gray-300"
                         onError={(e) => {

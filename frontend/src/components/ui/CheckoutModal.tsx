@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { useCart } from '@/hooks/useCart';
+import { getImageUrl } from '@/lib/config';
 
 interface CartItem {
   productId: number;
@@ -671,7 +672,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                           <div className="flex items-center gap-3">
                             {item.product.image_url ? (
                               <img 
-                                src={item.product.image_url} 
+                                src={getImageUrl(item.product.image_url)}
                                 alt={item.product.name}
                                 className="w-10 h-10 rounded object-cover"
                               />

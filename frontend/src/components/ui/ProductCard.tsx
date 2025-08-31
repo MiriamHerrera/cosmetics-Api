@@ -5,6 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import type { Product } from '@/types';
 import { useState } from 'react';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/config';
 
 interface ProductCardProps {
   product: Product;
@@ -71,7 +72,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
         <Image
-          src={product.image_url || '/NoImage.jpg'}
+          src={getImageUrl(product.image_url)}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, 50vw"

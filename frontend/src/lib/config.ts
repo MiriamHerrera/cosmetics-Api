@@ -21,6 +21,34 @@ export const config = {
   }
 };
 
+// Función helper para manejar URLs de imágenes de manera consistente
+export const getImageUrl = (imagePath: string | null | undefined): string => {
+  // Si no hay imagen, retornar imagen por defecto
+  if (!imagePath || imagePath.trim() === '') {
+    return '/NoImage.jpg';
+  }
+  
+  // Si ya es una URL absoluta (http/https), retornarla tal como está
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Si es una ruta relativa que empieza con /uploads, construir URL completa
+  if (imagePath.startsWith('/uploads')) {
+    // Extraer la URL base de la API sin el /api
+    const baseUrl = config.apiUrl.replace('/api', '');
+    return `${baseUrl}${imagePath}`;
+  }
+  
+  // Si es cualquier otra ruta relativa, asumir que es relativa al dominio actual
+  if (imagePath.startsWith('/')) {
+    return imagePath;
+  }
+  
+  // Si no empieza con /, agregar / al inicio
+  return `/${imagePath}`;
+};
+
 // Función para generar el enlace de WhatsApp
 export const generateWhatsAppLink = (message: string): string => {
   const encodedMessage = encodeURIComponent(message);
