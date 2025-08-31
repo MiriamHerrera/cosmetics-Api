@@ -36,6 +36,15 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
     return '/NoImage.jpg';
   }
   
+  // Si la imagen contiene múltiples URLs separadas por comas, tomar la primera
+  if (imagePath.includes(',')) {
+    const firstImageUrl = imagePath.split(',')[0].trim();
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] Multiple URLs detected, using first:', firstImageUrl);
+    }
+    imagePath = firstImageUrl;
+  }
+  
   // Si ya es una URL absoluta (http/https), retornarla tal como está
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     if (process.env.NODE_ENV === 'development') {
@@ -75,6 +84,43 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
     console.log('🔍 [getImageUrl] Adding slash, returning:', result);
   }
   return result;
+};
+
+// Función para obtener todas las URLs de imágenes (útil para galerías)
+export const getAllImageUrls = (imagePath: string | null | undefined): string[] => {
+  if (!imagePath || imagePath.trim() === '') {
+    return [];
+  }
+  
+  // Si contiene múltiples URLs separadas por comas
+  if (imagePath.includes(',')) {
+    const urls = imagePath.split(',').map(url => url.trim()).filter(url => url);
+    
+    // Procesar cada URL individualmente
+    return urls.map(url => {
+      // Si ya es una URL absoluta, retornarla tal como está
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      // Si es una ruta relativa, construir URL completa
+      if (url.startsWith('/uploads')) {
+        const baseUrl = config.apiUrl.replace('/api', '');
+        return `${baseUrl}${url}`;
+      }
+      
+      // Si es cualquier otra ruta relativa
+      if (url.startsWith('/')) {
+        return url;
+      }
+      
+      // Si no empieza con /, agregar / al inicio
+      return `/${url}`;
+    });
+  }
+  
+  // Si es una sola imagen, retornar array con una URL
+  return [getImageUrl(imagePath)];
 };
 
 // Función para generar el enlace de WhatsApp

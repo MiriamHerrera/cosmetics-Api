@@ -5,7 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import type { Product } from '@/types';
 import { useState } from 'react';
 import Image from 'next/image';
-import { getImageUrl } from '@/lib/config';
+import { getImageUrl, getAllImageUrls } from '@/lib/config';
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +17,20 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
   const { addToCart, isUpdatingStock, error } = useCart();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Obtener todas las URLs de imágenes
+  const allImageUrls = getAllImageUrls(product.image_url);
+  const hasMultipleImages = allImageUrls.length > 1;
+  
+  // Función para cambiar imagen
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImageUrls.length);
+  };
+  
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImageUrls.length) % allImageUrls.length);
+  };
 
   const handleQuickBuy = async () => {
     console.log('🚀 handleQuickBuy iniciado para:', product.name);
@@ -71,17 +85,55 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
     ">
       {/* Imagen del producto */}
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
-        <Image
-          src={getImageUrl(product.image_url)}
-          alt={product.name}
-          fill
-          sizes="(max-width: 640px) 100vw, 50vw"
-          className="
-            object-cover
-            transition-transform duration-500
-            group-hover:scale-110
-          "
-        />
+        {allImageUrls.length > 0 ? (
+          <>
+            <Image
+              src={allImageUrls[currentImageIndex]}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 50vw"
+              className="
+                object-cover
+                transition-transform duration-500
+                group-hover:scale-110
+              "
+            />
+            
+            {/* Navegación de imágenes si hay múltiples */}
+            {hasMultipleImages && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </button>
+                
+                {/* Indicador de imagen actual */}
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+                  {allImageUrls.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full ${
+                        index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-gray-400 text-sm">Sin imagen</span>
+          </div>
+        )}
         
         {/* Botón de favorito */}
         <button
