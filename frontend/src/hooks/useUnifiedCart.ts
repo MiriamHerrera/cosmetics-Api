@@ -30,9 +30,11 @@ export const useUnifiedCart = () => {
    */
   const getCartData = useCallback(() => {
     if (isGuestMode) {
+      console.log('🔍 [getCartData] Modo invitado, sessionId:', sessionId);
       return { sessionId: sessionId || undefined };
     } else {
       const user = useStore.getState().user;
+      console.log('🔍 [getCartData] Usuario autenticado:', user);
       return { userId: user?.id };
     }
   }, [isGuestMode, sessionId]);
@@ -43,24 +45,30 @@ export const useUnifiedCart = () => {
   const loadCart = useCallback(async () => {
     try {
       const cartData = getCartData();
+      console.log('🔍 [loadCart] Datos del carrito obtenidos:', cartData);
+      
       if (!cartData.userId && !cartData.sessionId) {
-        console.log('No hay usuario ni sesión para cargar carrito');
+        console.log('⚠️ [loadCart] No hay usuario ni sesión para cargar carrito');
         return false;
       }
 
-      console.log('🔄 Cargando carrito unificado:', cartData);
+      console.log('🔄 [loadCart] Cargando carrito unificado:', cartData);
       const response = await unifiedCartApi.getCart(cartData);
       
       if (response.success && response.data) {
-        console.log('✅ Carrito unificado cargado:', response.data);
+        console.log('✅ [loadCart] Carrito unificado cargado:', response.data);
         syncServerCart(response.data);
         return true;
       } else {
-        console.log('⚠️ No se pudo cargar carrito:', response.message);
+        console.log('⚠️ [loadCart] No se pudo cargar carrito:', response.message);
         return false;
       }
     } catch (err) {
-      console.error('❌ Error cargando carrito unificado:', err);
+      console.error('❌ [loadCart] Error cargando carrito unificado:', err);
+      if (err instanceof Error) {
+        console.error('❌ [loadCart] Mensaje de error:', err.message);
+        console.error('❌ [loadCart] Stack trace:', err.stack);
+      }
       return false;
     }
   }, [getCartData, syncServerCart]);

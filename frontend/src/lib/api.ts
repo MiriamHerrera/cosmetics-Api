@@ -31,6 +31,7 @@ export const API_CONFIG = {
     // Cart
     CART: '/cart',
     CART_ITEMS: '/cart/items',
+    UNIFIED_CART: '/unified-cart',
     
     // Orders
     ORDERS: '/orders',
@@ -387,25 +388,25 @@ export const categoriesApi = {
 export const unifiedCartApi = {
   // Obtener carrito (usuario autenticado o invitado)
   getCart: async (cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<Cart>> => {
-    const response = await api.post('/unified-cart/get', cartData);
+    const response = await api.post(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/get`, cartData);
     return response.data;
   },
 
   // Agregar producto al carrito
   addItem: async (productId: number, quantity: number, cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<Cart>> => {
-    const response = await api.post('/unified-cart/add-item', { productId, quantity, ...cartData });
+    const response = await api.post(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/add-item`, { productId, quantity, ...cartData });
     return response.data;
   },
 
   // Actualizar cantidad de item
   updateQuantity: async (productId: number, quantity: number, cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<Cart>> => {
-    const response = await api.put('/unified-cart/update-quantity', { productId, quantity, ...cartData });
+    const response = await api.put(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/update-quantity`, { productId, quantity, ...cartData });
     return response.data;
   },
 
   // Remover item del carrito
   removeItem: async (productId: number, cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<Cart>> => {
-    const response = await api.delete('/unified-cart/remove-item', { 
+    const response = await api.delete(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/remove-item`, { 
       data: { productId, ...cartData } 
     });
     return response.data;
@@ -413,7 +414,7 @@ export const unifiedCartApi = {
 
   // Limpiar carrito
   clearCart: async (cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<void>> => {
-    const response = await api.delete('/unified-cart/clear', { 
+    const response = await api.delete(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/clear`, { 
       data: cartData 
     });
     return response.data;
@@ -421,13 +422,13 @@ export const unifiedCartApi = {
 
   // Migrar carrito de invitado a usuario autenticado
   migrateGuestToUser: async (sessionId: string, userId: number): Promise<ApiResponse<Cart>> => {
-    const response = await api.post('/unified-cart/migrate-guest-to-user', { sessionId, userId });
+    const response = await api.post(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/migrate-guest-to-user`, { sessionId, userId });
     return response.data;
   },
 
   // Limpiar carritos expirados
   cleanupExpired: async (): Promise<ApiResponse<{ cleaned: number }>> => {
-    const response = await api.post('/unified-cart/cleanup-expired');
+    const response = await api.post(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/cleanup-expired`);
     return response.data;
   }
 };
