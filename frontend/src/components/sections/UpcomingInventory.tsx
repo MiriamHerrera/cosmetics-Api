@@ -8,7 +8,6 @@ import { Plus } from 'lucide-react';
 import type { Product } from '@/types';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useProductImages } from '@/hooks/useProductImages';
 
 interface UpcomingInventoryProps {
   arrivalDate: string;

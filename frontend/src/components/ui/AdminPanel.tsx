@@ -28,7 +28,6 @@ import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
 import { OrdersSection, ReservationsSection, ReportsSection, SurveysManagementSection } from '@/components/sections';
-import { useProductImages } from '@/hooks/useProductImages';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -626,23 +625,17 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             <td className="px-4 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
-                                  {(() => {
-                                    const { primary, hasImages } = useProductImages({ 
-                                      imageUrl: product.image_url 
-                                    });
-                                    
-                                    return hasImages ? (
-                                      <img 
-                                        className="h-10 w-10 rounded-full object-cover" 
-                                        src={primary} 
-                                        alt={product.name}
-                                      />
-                                    ) : (
-                                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                        <Package className="w-5 h-5 text-gray-400" />
-                                      </div>
-                                    );
-                                  })()}
+                                  {product.image_url ? (
+                                    <img 
+                                      className="h-10 w-10 rounded-full object-cover" 
+                                      src={product.image_url} 
+                                      alt={product.name}
+                                    />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                      <Package className="w-5 h-5 text-gray-400" />
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">{product.name}</div>
@@ -729,23 +722,17 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                       <div key={product.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0 h-16 w-16">
-                            {(() => {
-                              const { primary, hasImages } = useProductImages({ 
-                                imageUrl: product.image_url 
-                              });
-                              
-                              return hasImages ? (
-                                <img 
-                                  className="h-16 w-16 rounded-lg object-cover" 
-                                  src={primary} 
-                                  alt={product.name}
-                                />
-                              ) : (
-                                <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center">
-                                  <Package className="w-8 h-8 text-gray-400" />
-                                </div>
-                              );
-                            })()}
+                            {product.image_url ? (
+                              <img 
+                                className="h-16 w-16 rounded-lg object-cover" 
+                                src={product.image_url} 
+                                alt={product.name}
+                              />
+                            ) : (
+                              <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                                <Package className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-medium text-gray-900 truncate">{product.name}</h4>

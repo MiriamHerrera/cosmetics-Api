@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { useCart } from '@/hooks/useCart';
-import { useProductImages } from '@/hooks/useProductImages';
 
 interface CartItem {
   productId: number;
@@ -670,23 +669,17 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                       {cart.items.map((item, index) => (
                         <div key={`${item.productId}-${index}`} className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            {(() => {
-                              const { primary, hasImages } = useProductImages({ 
-                                imageUrl: item.product.image_url 
-                              });
-                              
-                              return hasImages ? (
-                                <img 
-                                  src={primary} 
-                                  alt={item.product.name}
-                                  className="w-10 h-10 rounded object-cover"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
-                                  <span className="text-gray-500 text-xs">IMG</span>
-                                </div>
-                              );
-                            })()}
+                            {item.product.image_url ? (
+                              <img 
+                                src={item.product.image_url} 
+                                alt={item.product.name}
+                                className="w-10 h-10 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
+                                <span className="text-gray-500 text-xs">IMG</span>
+                              </div>
+                            )}
                             <div>
                               <p className="font-medium text-sm text-gray-700">{item.product.name}</p>
                               <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>

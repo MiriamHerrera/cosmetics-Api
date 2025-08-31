@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingCart, X, MessageCircle, Trash2, Package } from 'lucide-react';
+import { ShoppingCart, X, MessageCircle, Trash2 } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useGuestMode } from '@/hooks/useGuestMode';
 import LoginButton from './LoginButton';
@@ -8,7 +8,6 @@ import Image from 'next/image';
 import { useState, useCallback, useMemo, memo } from 'react';
 import CheckoutModal from './CheckoutModal';
 import { useGuestSession } from '@/hooks/useGuestSession';
-import { useProductImages } from '@/hooks/useProductImages';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -95,25 +94,13 @@ const CartModal = memo(({ isOpen, onClose }: CartModalProps) => {
                   <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                       <div className="relative w-12 h-12">
-                        {(() => {
-                          const { primary, hasImages } = useProductImages({ 
-                            imageUrl: item.product.image_url 
-                          });
-                          
-                          return hasImages ? (
-                            <Image 
-                              src={primary} 
-                              alt={item.product.name || 'Producto'}
-                              fill
-                              sizes="48px"
-                              className="object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg">
-                              <Package className="w-6 h-6 text-gray-400" />
-                            </div>
-                          );
-                        })()}
+                        <Image 
+                          src={item.product.image_url || '/NoImage.jpg'} 
+                          alt={item.product.name || 'Producto'}
+                          fill
+                          sizes="48px"
+                          className="object-cover rounded-lg"
+                        />
                       </div>
                     </div>
                     <div className="flex-1">
