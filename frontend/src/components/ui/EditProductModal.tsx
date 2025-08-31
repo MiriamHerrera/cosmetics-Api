@@ -170,13 +170,46 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         return;
       }
 
+      // 1. PRIMERO subir las imágenes si existen
+      let imageUrls: string[] = [];
+      if (selectedImages.length > 0) {
+        const formDataImages = new FormData();
+        selectedImages.forEach((image, index) => {
+          formDataImages.append('images', image.file);
+        });
+
+        console.log('Subiendo imágenes al servidor...');
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: formDataImages
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          console.log('Imágenes subidas exitosamente:', uploadResult);
+          imageUrls = uploadResult.data.map((file: any) => file.path);
+        } else {
+          const errorData = await uploadResponse.json();
+          console.error('Error subiendo imágenes:', errorData);
+          setError(`Error subiendo imágenes: ${errorData.message || 'Error desconocido'}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 2. LUEGO actualizar el producto con las URLs de las imágenes
+      const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url;
+
       // Preparar datos del producto para actualizar
       const productData = {
         ...formData,
         price: parseFloat(formData.price),
         stock_total: parseInt(formData.stock_total) || 0,
-        // Solo incluir image_url si se proporcionó una URL válida (no vacía)
-        ...(formData.image_url && formData.image_url.trim() !== '' && { image_url: formData.image_url.trim() })
+        // Solo incluir image_url si se proporcionó una URL válida o hay imágenes subidas
+        ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() })
       };
 
       // Debug: mostrar qué datos se van a enviar
@@ -195,10 +228,9 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         const result = await response.json();
         console.log('Producto actualizado:', result);
         
-        // TODO: Aquí implementaremos la subida de imágenes cuando tengamos el endpoint
-        if (selectedImages.length > 0) {
-          console.log('Imágenes seleccionadas para subir:', selectedImages.map(img => img.file.name));
-          console.log('Tamaño total de imágenes:', (totalSize / (1024 * 1024)).toFixed(2), 'MB');
+        if (imageUrls.length > 0) {
+          console.log('✅ Imágenes subidas y producto actualizado exitosamente');
+          console.log('📁 URLs de las imágenes:', imageUrls);
         }
         
         // Limpiar formulario

@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const orderRoutes = require('./routes/orders');
 const reportRoutes = require('./routes/reports');
 const unifiedCartRoutes = require('./routes/unifiedCart');
+const imageRoutes = require('./routes/images');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -74,6 +75,9 @@ app.use((req, res, next) => {
   
   next();
 });
+
+// Middleware para archivos estáticos
+app.use('/uploads', express.static('uploads'));
 
 // Configuración de rate limiting
 const limiter = rateLimit({
@@ -157,6 +161,9 @@ app.use('/api/orders', orderRoutes);
 
 console.log('📡 Registrando /api/reports...');
 app.use('/api/reports', reportRoutes);
+
+console.log('📡 Registrando /api/images...');
+app.use('/api/images', imageRoutes);
 
 console.log('✅ TODAS LAS RUTAS REGISTRADAS');
 

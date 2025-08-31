@@ -1,7 +1,7 @@
 // backend/src/routes/images.js
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../controllers/imageController');
+const { upload, uploadImages } = require('../controllers/imageController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // Subir múltiples imágenes (admin)
