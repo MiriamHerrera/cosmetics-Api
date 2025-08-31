@@ -16,6 +16,6 @@ export { default as LoginModal } from './LoginModal';
 export { default as LogoutButton } from './LogoutButton';
 export { default as ProductCard } from './ProductCard';
 export { default as ProtectedReloadButton } from './ProtectedReloadButton';
-export { default as StockSyncStatus } from './StockSyncStatus';
+export { StockSyncStatus } from './StockSyncStatus';
 export { default as TestNavigationButton } from './TestNavigationButton';
 export { default as WhatsAppOrderModal } from './WhatsAppOrderModal'; 
