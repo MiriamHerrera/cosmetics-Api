@@ -6,6 +6,7 @@ export { default as CartButton } from './CartButton';
 export { default as CartModal } from './CartModal';
 export { default as CheckoutModal } from './CheckoutModal';
 export { default as DragAndDropZone } from './DragAndDropZone';
+export { default as EditProductModal } from './EditProductModal';
 export { default as ExitConfirmationModal } from './ExitConfirmationModal';
 export { default as ImagePreview } from './ImagePreview';
 export { default as LoginButton } from './LoginButton';

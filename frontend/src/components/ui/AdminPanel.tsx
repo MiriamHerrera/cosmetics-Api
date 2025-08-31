@@ -27,6 +27,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { AdminProduct } from '@/types';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
+import EditProductModal from './EditProductModal';
 import { OrdersSection, ReservationsSection, ReportsSection, SurveysManagementSection } from '@/components/sections';
 
 interface AdminPanelProps {
@@ -40,6 +41,8 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
   
   // Estados para filtros y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,6 +105,23 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     } catch (error) {
       console.error('Error actualizando aprobación del producto:', error);
     }
+  };
+
+  // Función para editar producto
+  const handleEditProduct = (product: AdminProduct) => {
+    setSelectedProduct(product);
+    setShowEditProductModal(true);
+  };
+
+  // Función para cerrar modal de edición
+  const handleCloseEditModal = () => {
+    setShowEditProductModal(false);
+    setSelectedProduct(null);
+  };
+
+  // Función para cuando se actualiza un producto
+  const handleProductUpdated = () => {
+    loadProducts(); // Recargar la lista de productos
   };
 
   // Debug: Log cuando cambia el estado del modal - solo en desarrollo y con throttling
@@ -675,7 +695,11 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                 <button className="text-blue-600 hover:text-blue-900">
                                   <Eye className="w-4 h-4" />
                                 </button>
-                                <button className="text-indigo-600 hover:text-indigo-900">
+                                <button 
+                                  onClick={() => handleEditProduct(product)}
+                                  className="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 p-1 rounded transition-colors"
+                                  title="Editar producto"
+                                >
                                   <Edit className="w-4 h-4" />
                                 </button>
                                                               <button 
@@ -760,7 +784,11 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             <button className="p-2 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50">
+                            <button 
+                              onClick={() => handleEditProduct(product)}
+                              className="p-2 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50"
+                              title="Editar producto"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
@@ -979,6 +1007,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       isOpen={showAddProductModal}
       onClose={() => setShowAddProductModal(false)}
       onProductAdded={loadProducts}
+    />
+
+    {/* Modal para editar producto */}
+    <EditProductModal
+      isOpen={showEditProductModal}
+      onClose={handleCloseEditModal}
+      product={selectedProduct}
+      onProductUpdated={handleProductUpdated}
     />
     </>
   );
