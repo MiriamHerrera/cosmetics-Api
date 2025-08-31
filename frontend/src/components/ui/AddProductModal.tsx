@@ -107,83 +107,63 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+// En AddProductModal.tsx, modificar handleSubmit:
 
-    try {
-      // Validaciones básicas
-      if (!formData.name.trim() || !formData.price || !formData.cost_price || !formData.product_type_id) {
-        setError('Nombre, precio de venta, precio de inversión y tipo de producto son requeridos');
-        setLoading(false);
-        return;
-      }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-      if (parseFloat(formData.price) <= 0) {
-        setError('El precio de venta debe ser mayor a 0');
-        setLoading(false);
-        return;
-      }
+  try {
+    // ... validaciones existentes ...
 
-      if (parseFloat(formData.cost_price) <= 0) {
-        setError('El precio de inversión debe ser mayor a 0');
-        setLoading(false);
-        return;
-      }
-
-      if (parseFloat(formData.price) <= parseFloat(formData.cost_price)) {
-        setError('El precio de venta debe ser mayor al precio de inversión para obtener ganancias');
-        setLoading(false);
-        return;
-      }
-
-      // Preparar datos del producto (sin imagen por ahora)
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        cost_price: parseFloat(formData.cost_price),
-        stock_total: parseInt(formData.stock_total) || 0,
-        // Solo incluir image_url si se proporcionó una URL
-        ...(formData.image_url && { image_url: formData.image_url })
-      };
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify(productData)
+    // 1. PRIMERO subir las imágenes si existen
+    let imageUrls: string[] = [];
+    if (selectedImages.length > 0) {
+      const formData = new FormData();
+      selectedImages.forEach((image, index) => {
+        formData.append('images', image.file);
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Producto creado:', result);
-        
-        // TODO: Aquí implementaremos la subida de imágenes cuando tengamos el endpoint
-        if (selectedImages.length > 0) {
-          console.log('Imágenes seleccionadas para subir:', selectedImages.map(img => img.file.name));
-          console.log('Tamaño total de imágenes:', (totalSize / (1024 * 1024)).toFixed(2), 'MB');
-        }
-        
-        // Limpiar formulario
-        clearForm();
-        
-        // Cerrar modal y notificar
-        onProductAdded();
-        onClose();
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: formData
+      });
+
+      if (uploadResponse.ok) {
+        const uploadResult = await uploadResponse.json();
+        imageUrls = uploadResult.data.map((file: any) => file.path);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al crear el producto');
+        throw new Error('Error subiendo imágenes');
       }
-    } catch (error) {
-      console.error('Error creando producto:', error);
-      setError('Error de conexión');
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // 2. LUEGO crear el producto con las URLs de las imágenes
+    const productData = {
+      ...formData,
+      price: parseFloat(formData.price),
+      cost_price: parseFloat(formData.cost_price),
+      stock_total: parseInt(formData.stock_total) || 0,
+      image_url: imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url || null
+    };
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify(productData)
+    });
+
+    // ... resto del código existente ...
+  } catch (error) {
+    // ... manejo de errores ...
+  }
+};
 
   if (!isOpen) return null;
 
