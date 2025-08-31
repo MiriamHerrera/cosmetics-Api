@@ -175,9 +175,12 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         ...formData,
         price: parseFloat(formData.price),
         stock_total: parseInt(formData.stock_total) || 0,
-        // Solo incluir image_url si se proporcionó una URL o hay imágenes seleccionadas
-        ...(formData.image_url && { image_url: formData.image_url })
+        // Solo incluir image_url si se proporcionó una URL válida (no vacía)
+        ...(formData.image_url && formData.image_url.trim() !== '' && { image_url: formData.image_url.trim() })
       };
+
+      // Debug: mostrar qué datos se van a enviar
+      console.log('Datos a enviar al backend:', productData);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products/${product.id}`, {
         method: 'PUT',
@@ -206,7 +209,8 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         onClose();
       } else {
         const errorData = await response.json();
-        setError(errorData.message || 'Error al actualizar el producto');
+        console.error('Error del backend:', errorData);
+        setError(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error actualizando producto:', error);

@@ -317,7 +317,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock_total, product_type_id, image_url, status, is_approved } = req.body;
+    const { name, description, price, stock_total, image_url, status } = req.body;
 
     // Verificar que el producto existe
     const products = await query('SELECT id FROM products WHERE id = ?', [id]);
@@ -328,13 +328,45 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Construir query de actualización dinámicamente
+    const updateFields = [];
+    const updateValues = [];
+
+    if (name !== undefined) {
+      updateFields.push('name = ?');
+      updateValues.push(name);
+    }
+    if (description !== undefined) {
+      updateFields.push('description = ?');
+      updateValues.push(description);
+    }
+    if (price !== undefined) {
+      updateFields.push('price = ?');
+      updateValues.push(price);
+    }
+    if (stock_total !== undefined) {
+      updateFields.push('stock_total = ?');
+      updateValues.push(stock_total);
+    }
+    if (image_url !== undefined) {
+      updateFields.push('image_url = ?');
+      updateValues.push(image_url);
+    }
+    if (status !== undefined) {
+      updateFields.push('status = ?');
+      updateValues.push(status);
+    }
+
+    // Agregar updated_at y el ID
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(id);
+
     // Actualizar producto
     await query(`
       UPDATE products 
-      SET name = ?, description = ?, price = ?, stock_total = ?, 
-          product_type_id = ?, image_url = ?, status = ?, is_approved = ?, updated_at = CURRENT_TIMESTAMP
+      SET ${updateFields.join(', ')}
       WHERE id = ?
-    `, [name, description, price, stock_total, product_type_id, image_url, status, is_approved, id]);
+    `, updateValues);
 
     res.json({
       success: true,
