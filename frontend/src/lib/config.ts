@@ -23,30 +23,57 @@ export const config = {
 
 // Función helper para manejar URLs de imágenes de manera consistente
 export const getImageUrl = (imagePath: string | null | undefined): string => {
+  // Debug logging (solo en desarrollo)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 [getImageUrl] Input:', imagePath);
+  }
+  
   // Si no hay imagen, retornar imagen por defecto
   if (!imagePath || imagePath.trim() === '') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] No image, returning default');
+    }
     return '/NoImage.jpg';
   }
   
   // Si ya es una URL absoluta (http/https), retornarla tal como está
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] Absolute URL, returning as-is:', imagePath);
+    }
     return imagePath;
   }
   
-  // Si es una ruta relativa que empieza con /uploads, construir URL completa
+  // Si es una ruta relativa que empieza con /uploads, construir URL completa para Railway
   if (imagePath.startsWith('/uploads')) {
-    // Extraer la URL base de la API sin el /api
-    const baseUrl = config.apiUrl.replace('/api', '');
-    return `${baseUrl}${imagePath}`;
+    // Para Railway, usar la URL base de la API directamente
+    const baseUrl = config.apiUrl;
+    const fullUrl = `${baseUrl}${imagePath}`;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] Building Railway URL:');
+      console.log('  - Base URL:', baseUrl);
+      console.log('  - Image path:', imagePath);
+      console.log('  - Full URL:', fullUrl);
+    }
+    
+    return fullUrl;
   }
   
   // Si es cualquier otra ruta relativa, asumir que es relativa al dominio actual
   if (imagePath.startsWith('/')) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [getImageUrl] Relative path, returning as-is:', imagePath);
+    }
     return imagePath;
   }
   
   // Si no empieza con /, agregar / al inicio
-  return `/${imagePath}`;
+  const result = `/${imagePath}`;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 [getImageUrl] Adding slash, returning:', result);
+  }
+  return result;
 };
 
 // Función para generar el enlace de WhatsApp
