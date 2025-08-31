@@ -44,6 +44,19 @@ else
     fi
 fi
 
+# Restaurar imágenes si existen backups
+echo "🖼️  Verificando backups de imágenes..."
+if [ -d "image-backups" ] && [ "$(ls -A image-backups)" ]; then
+    echo "📸 Restaurando imágenes desde backup..."
+    if ./scripts/restore-images.sh; then
+        echo "✅ Imágenes restauradas correctamente"
+    else
+        echo "⚠️  Error restaurando imágenes, continuando..."
+    fi
+else
+    echo "ℹ️  No hay backups de imágenes para restaurar"
+fi
+
 # Verificar que el servidor pueda iniciar
 echo "🔍 Verificando que el servidor pueda iniciar..."
 if timeout 30s node -e "

@@ -8,3 +8,7 @@ README.md
 coverage
 .DS_Store
 *.log
+
+# NO ignorar uploads - mantener imágenes
+!uploads/
+!uploads/products/
