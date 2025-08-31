@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { getImageUrl, shouldOptimizeImage } from '@/lib/config';
@@ -69,13 +70,58 @@ export default function ImageCarousel({
 
   const openFullscreen = useCallback(() => {
     if (showFullscreen) {
+      console.log('🖼️ Abriendo modal fullscreen');
       setIsFullscreen(true);
     }
   }, [showFullscreen]);
 
   const closeFullscreen = useCallback(() => {
+    console.log('❌ Cerrando modal fullscreen');
     setIsFullscreen(false);
   }, []);
+
+  // Efecto para manejar el scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (isFullscreen) {
+      // Deshabilitar scroll del body
+      document.body.style.overflow = 'hidden';
+      console.log('🔒 Scroll del body deshabilitado');
+    } else {
+      // Rehabilitar scroll del body
+      document.body.style.overflow = 'unset';
+      console.log('🔓 Scroll del body habilitado');
+    }
+
+    // Cleanup al desmontar el componente
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isFullscreen]);
+
+  // Efecto para manejar teclas cuando el modal está abierto
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          closeFullscreen();
+          break;
+        case 'ArrowLeft':
+          if (images.length > 1) prevImage();
+          break;
+        case 'ArrowRight':
+          if (images.length > 1) nextImage();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen, closeFullscreen, prevImage, nextImage, images.length]);
 
   return (
     <>
@@ -137,73 +183,77 @@ export default function ImageCarousel({
         )}
       </div>
 
-      {/* Modal Fullscreen */}
-      {isFullscreen && showFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
-          <div className="relative w-full h-full flex items-center justify-center">
-            {/* Imagen Fullscreen */}
-            <Image
-              src={getImageUrl(images[currentIndex])}
-              alt={`${productName} - Imagen ${currentIndex + 1} (Fullscreen)`}
-              fill
-              sizes="100vw"
-              className="object-contain"
-              unoptimized={!shouldOptimizeImage(images[currentIndex])}
-            />
+      {/* Modal Fullscreen usando Portal */}
+      {isFullscreen && showFullscreen && typeof window !== 'undefined' && (() => {
+        console.log('🖼️ Renderizando modal fullscreen');
+        return createPortal(
+          <div className="fixed inset-0 z-[9999] bg-black bg-opacity-90 flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Imagen Fullscreen */}
+              <Image
+                src={getImageUrl(images[currentIndex])}
+                alt={`${productName} - Imagen ${currentIndex + 1} (Fullscreen)`}
+                fill
+                sizes="100vw"
+                className="object-contain"
+                unoptimized={!shouldOptimizeImage(images[currentIndex])}
+              />
 
-            {/* Botón Cerrar */}
-            <button
-              onClick={closeFullscreen}
-              className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
-              aria-label="Cerrar vista fullscreen"
-            >
-              <X className="w-6 h-6" />
-            </button>
+              {/* Botón Cerrar */}
+              <button
+                onClick={closeFullscreen}
+                className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+                aria-label="Cerrar vista fullscreen"
+              >
+                <X className="w-6 h-6" />
+              </button>
 
-            {/* Controles de Navegación Fullscreen */}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-4 rounded-full transition-all duration-200 hover:scale-110"
-                  aria-label="Imagen anterior"
-                >
-                  <ChevronLeft className="w-8 h-8" />
-                </button>
+              {/* Controles de Navegación Fullscreen */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-4 rounded-full transition-all duration-200 hover:scale-110"
+                    aria-label="Imagen anterior"
+                  >
+                    <ChevronLeft className="w-8 h-8" />
+                  </button>
 
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-4 rounded-full transition-all duration-200 hover:scale-110"
-                  aria-label="Imagen siguiente"
-                >
-                  <ChevronRight className="w-8 h-8" />
-                </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-4 rounded-full transition-all duration-200 hover:scale-110"
+                    aria-label="Imagen siguiente"
+                  >
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
 
-                {/* Indicadores Fullscreen */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => goToImage(index)}
-                      className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                        index === currentIndex 
-                          ? 'bg-white scale-125' 
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                      aria-label={`Ir a imagen ${index + 1}`}
-                    />
-                  ))}
-                </div>
+                  {/* Indicadores Fullscreen */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => goToImage(index)}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                          index === currentIndex 
+                            ? 'bg-white scale-125' 
+                            : 'bg-white/50 hover:bg-white/75'
+                        }`}
+                        aria-label={`Ir a imagen ${index + 1}`}
+                      />
+                    ))}
+                  </div>
 
-                {/* Contador Fullscreen */}
-                <div className="absolute top-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-                  {currentIndex + 1} de {images.length}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                  {/* Contador Fullscreen */}
+                  <div className="absolute top-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                    {currentIndex + 1} de {images.length}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
     </>
   );
 }
