@@ -40,19 +40,56 @@ export default function ImageCarousel({
     );
   }
 
-  // Si solo hay una imagen, mostrarla sin controles
+  // Si solo hay una imagen, mostrarla sin controles pero con modal
   if (images.length === 1) {
     return (
-      <div className={`relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 cursor-pointer ${className}`} onClick={() => showFullscreen && setIsFullscreen(true)}>
-        <Image
-          src={getImageUrl(images[0])}
-          alt={`${productName} - Imagen 1`}
-          fill
-          sizes="(max-width: 640px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 hover:scale-105"
-          unoptimized={!shouldOptimizeImage(images[0])}
-        />
-      </div>
+      <>
+        <div className={`relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 cursor-pointer ${className}`} onClick={() => showFullscreen && setIsFullscreen(true)}>
+          <Image
+            src={getImageUrl(images[0])}
+            alt={`${productName} - Imagen 1`}
+            fill
+            sizes="(max-width: 640px) 100vw, 50vw"
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            unoptimized={!shouldOptimizeImage(images[0])}
+          />
+        </div>
+
+        {/* Modal Fullscreen para imagen única */}
+        {isFullscreen && showFullscreen && typeof window !== 'undefined' && (() => {
+          console.log('🖼️ Renderizando modal fullscreen para imagen única');
+          return createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black bg-opacity-90 flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+              <div className="relative w-full h-full flex items-center justify-center">
+                {/* Imagen Fullscreen */}
+                <Image
+                  src={getImageUrl(images[0])}
+                  alt={`${productName} - Imagen 1 (Fullscreen)`}
+                  fill
+                  sizes="100vw"
+                  className="object-contain"
+                  unoptimized={!shouldOptimizeImage(images[0])}
+                />
+
+                {/* Botón Cerrar */}
+                <button
+                  onClick={() => setIsFullscreen(false)}
+                  className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+                  aria-label="Cerrar vista fullscreen"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                {/* Contador Fullscreen */}
+                <div className="absolute top-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                  1 de 1
+                </div>
+              </div>
+            </div>,
+            document.body
+          );
+        })()}
+      </>
     );
   }
 
@@ -98,6 +135,8 @@ export default function ImageCarousel({
     };
   }, [isFullscreen]);
 
+
+
   // Efecto para manejar teclas cuando el modal está abierto
   useEffect(() => {
     if (!isFullscreen) return;
@@ -105,7 +144,7 @@ export default function ImageCarousel({
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Escape':
-          closeFullscreen();
+          setIsFullscreen(false);
           break;
         case 'ArrowLeft':
           if (images.length > 1) prevImage();
@@ -121,7 +160,7 @@ export default function ImageCarousel({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullscreen, closeFullscreen, prevImage, nextImage, images.length]);
+  }, [isFullscreen, prevImage, nextImage, images.length]);
 
   return (
     <>
