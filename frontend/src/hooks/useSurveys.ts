@@ -317,7 +317,7 @@ export const useSurveys = (): UseSurveysReturn => {
       setLoading(true);
       setError(null);
       
-      const response = await apiCall('');
+      const response = await apiCall('/all');
       if (response.success) {
         setSurveys(response.data);
       } else {
@@ -351,7 +351,7 @@ export const useSurveys = (): UseSurveysReturn => {
     try {
       setError(null);
       
-      const response = await apiCall('', {
+      const response = await apiCall('/create', {
         method: 'POST',
         body: JSON.stringify({
           question,
