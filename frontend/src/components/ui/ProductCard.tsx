@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Heart, ShoppingCart, Eye, Zap } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useUnifiedCart } from '@/hooks/useUnifiedCart';
 import { getImageUrl } from '@/lib/config';
 import ImageCarousel from './ImageCarousel';
 import type { Product } from '@/types';
@@ -16,16 +16,40 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onQuickBuy, onOpenCart }: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { addToCart } = useStore();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { addToCart, error, clearError } = useUnifiedCart();
 
   const handleAddToCart = async () => {
+    if (isAddingToCart) return; // Prevenir clicks múltiples
+    
     try {
-      setError(null);
-      await addToCart(product, 1);
-      onOpenCart();
+      setIsAddingToCart(true);
+      clearError();
+      
+      console.log('🔄 [ProductCard] Intentando agregar producto:', {
+        productId: product.id,
+        productName: product.name,
+        currentStock: product.stock_total,
+        requestedQuantity: 1
+      });
+      
+      const success = await addToCart(product, 1);
+      console.log('🔄 [ProductCard] Resultado de addToCart:', success);
+      
+      if (success) {
+        // ✅ Mostrar indicador de éxito
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000); // Ocultar después de 2 segundos
+        console.log('✅ [ProductCard] Producto agregado al carrito exitosamente');
+      } else {
+        console.log('⚠️ [ProductCard] No se pudo agregar el producto');
+      }
+      // ❌ El carrito NO debe abrirse automáticamente
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al agregar al carrito');
+      console.error('❌ [ProductCard] Error al agregar al carrito:', err);
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -148,12 +172,14 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
           </span>
         </div>
 
-        {/* Mensaje de error */}
-        {error && (
-          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-xs text-red-600">{error}</p>
-          </div>
-        )}
+                 {/* Mensaje de error */}
+         {error && (
+           <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
+             <p className="text-xs text-red-600">
+               <span className="font-semibold">Error:</span> {error}
+             </p>
+           </div>
+         )}
 
         {/* Botones de acción */}
         <div className="flex gap-1.5 sm:gap-2">
@@ -176,24 +202,40 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
             <span className="text-xs sm:text-sm">Comprar</span>
           </button> */}
 
-          {/* Botón de agregar al carrito */}
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock_total === 0}
-            className="
-              bg-white border-2 border-purple-200 
-              hover:border-purple-300 hover:bg-purple-50
-              disabled:border-gray-200 disabled:bg-gray-50
-              text-purple-600 font-medium py-2 px-3 sm:px-4 rounded-xl
-              transition-all duration-300 transform hover:scale-105
-              disabled:cursor-not-allowed disabled:transform-none
-              flex items-center justify-center gap-2
-              shadow-md hover:shadow-lg
-            "
-          >
-            <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="text-xs sm:text-sm">Carrito</span>
-          </button>
+                     {/* Botón de agregar al carrito */}
+           <button
+             onClick={handleAddToCart}
+             disabled={product.stock_total === 0 || isAddingToCart}
+             className={`
+               ${showSuccess 
+                 ? 'bg-green-100 border-green-300 text-green-700' 
+                 : 'bg-white border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-600'
+               }
+               disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400
+               font-medium py-2 px-3 sm:px-4 rounded-xl
+               transition-all duration-300 transform hover:scale-105
+               disabled:cursor-not-allowed disabled:transform-none
+               flex items-center justify-center gap-2
+               shadow-md hover:shadow-lg
+               ${isAddingToCart ? 'animate-pulse' : ''}
+             `}
+           >
+             {showSuccess ? (
+               <>
+                 <span className="text-xs sm:text-sm">✅ Agregado</span>
+               </>
+             ) : isAddingToCart ? (
+               <>
+                 <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                 <span className="text-xs sm:text-sm">Agregando...</span>
+               </>
+             ) : (
+               <>
+                 <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
+                 <span className="text-xs sm:text-sm">Carrito</span>
+               </>
+             )}
+           </button>
         </div>
       </div>
     </div>
