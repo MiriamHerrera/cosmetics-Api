@@ -55,7 +55,7 @@ class UnifiedCartController {
             
             // Buscar carrito del usuario
             const userCarts = await query(
-              'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
+              'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND status = "active"',
               [userId]
             );
             
@@ -64,7 +64,7 @@ class UnifiedCartController {
             if (userCarts.length === 0) {
               // Crear carrito para el usuario
               const result = await query(
-                'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
+                'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
                 [userId]
               );
               targetCartId = result.insertId;
@@ -81,12 +81,12 @@ class UnifiedCartController {
             );
             console.log('🔄 [UnifiedCart] Items migrados al carrito del usuario');
             
-            // Marcar carrito de invitado como migrado
+            // Marcar carrito de invitado como cleaned
             await query(
-              'UPDATE carts_unified SET status = "migrated" WHERE id = ?',
+              'UPDATE carts_unified SET status = "cleaned" WHERE id = ?',
               [guestCarts[0].id]
             );
-            console.log('✅ [UnifiedCart] Carrito de invitado marcado como migrado');
+            console.log('✅ [UnifiedCart] Carrito de invitado marcado como cleaned');
           }
         } catch (migrationError) {
           console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
@@ -99,7 +99,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
         console.log('🔍 [UnifiedCart] Buscando carrito para usuario:', userId);
       } else {
@@ -135,7 +135,7 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
           createParams = [userId];
         } else {
           createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
@@ -167,7 +167,7 @@ class UnifiedCartController {
             id: cartId,
             userId: userId || null,
             sessionId: sessionId || null,
-            cartType: userId ? 'user' : 'guest',
+            cartType: userId ? 'registered' : 'guest',
             status: 'active',
             items: [],
             total: 0,
@@ -297,7 +297,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -337,7 +337,7 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
           createParams = [userId];
         } else {
           createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
@@ -531,9 +531,9 @@ class UnifiedCartController {
 
       const guestCart = guestCarts[0];
 
-      // Verificar si el usuario ya tiene un carrito activo
+      // Verificar si el usuario ya tiene un carrito activo o cleaned
       const userCarts = await query(
-        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
+        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1',
         [userId]
       );
 
@@ -542,7 +542,7 @@ class UnifiedCartController {
       if (userCarts.length === 0) {
         // Crear nuevo carrito para el usuario
         const result = await query(
-          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
+          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
           [userId]
         );
         targetCartId = result.insertId;
@@ -689,7 +689,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -847,7 +847,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -973,7 +973,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
