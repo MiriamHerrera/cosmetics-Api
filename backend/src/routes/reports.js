@@ -88,6 +88,38 @@ if (process.env.NODE_ENV === 'development') {
     }
   });
 
+  // Ruta para probar el reporte de márgenes sin autenticación (para debugging)
+  router.get('/test/profit-margin', async (req, res) => {
+    try {
+      const ReportService = require('../services/reportService');
+      
+      const { startDate = '2024-01-01', endDate = '2025-12-31', groupBy = 'month' } = req.query;
+      
+      console.log('🧪 Probando reporte de márgenes con parámetros:', { startDate, endDate, groupBy });
+      
+      const report = await ReportService.getProfitMarginReport(startDate, endDate, groupBy);
+      
+      res.json({
+        success: true,
+        message: 'Reporte de márgenes generado exitosamente',
+        data: report,
+        test_parameters: {
+          startDate,
+          endDate,
+          groupBy
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error en test de reporte de márgenes:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error en el reporte de márgenes',
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+
   // Ruta para probar múltiples reportes
   router.get('/test/multiple', async (req, res) => {
     try {

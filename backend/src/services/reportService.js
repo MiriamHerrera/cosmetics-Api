@@ -56,7 +56,7 @@ class ReportService {
         FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN products p ON oi.product_id = p.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
         GROUP BY ${groupClause}
         ORDER BY period_start DESC
@@ -80,7 +80,7 @@ class ReportService {
         FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN products p ON oi.product_id = p.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
       `, [startDate, endDate]);
 
@@ -137,7 +137,7 @@ class ReportService {
         FROM products p
         LEFT JOIN order_items oi ON p.id = oi.product_id
         LEFT JOIN orders o ON oi.order_id = o.id
-        WHERE (o.status = 'completed' OR o.status IS NULL)
+        WHERE (o.status IN ('delivered', 'confirmed', 'preparing', 'ready') OR o.status IS NULL)
           AND (o.created_at BETWEEN ? AND ? OR o.created_at IS NULL)
         GROUP BY p.id, p.name, p.description, p.price, p.cost_price, p.stock_total, p.image_url
         HAVING total_revenue > 0
@@ -180,7 +180,7 @@ class ReportService {
         LEFT JOIN orders o ON u.id = o.user_id
         LEFT JOIN order_items oi ON o.id = oi.order_id
         LEFT JOIN products p ON oi.product_id = p.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
           AND u.role = 'client'
         GROUP BY u.id, u.name, u.email, u.phone, u.created_at
@@ -228,7 +228,7 @@ class ReportService {
         FROM products p
         LEFT JOIN order_items oi ON p.id = oi.product_id
         LEFT JOIN orders o ON oi.order_id = o.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
         GROUP BY 1
         HAVING total_revenue > 0
@@ -286,7 +286,7 @@ class ReportService {
         FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN products p ON oi.product_id = p.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
         GROUP BY ${groupClause}
         ORDER BY period ASC
@@ -450,7 +450,7 @@ class ReportService {
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN products p ON oi.product_id = p.id
         INNER JOIN users u ON o.user_id = u.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN ? AND ?
       `, [startDate, endDate, startDate, endDate, startDate, endDate]);
 
@@ -463,7 +463,7 @@ class ReportService {
         FROM orders o
         INNER JOIN order_items oi ON o.id = oi.order_id
         INNER JOIN products p ON oi.product_id = p.id
-        WHERE o.status = 'completed'
+        WHERE o.status IN ('delivered', 'confirmed', 'preparing', 'ready')
           AND o.created_at BETWEEN DATE_SUB(?, INTERVAL DATEDIFF(?, ?) DAY) AND ?
       `, [startDate, endDate, startDate, startDate]);
 
