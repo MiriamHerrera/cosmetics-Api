@@ -3,6 +3,9 @@ const router = express.Router();
 const unifiedCartController = require('../controllers/unifiedCartController');
 const { authenticateToken } = require('../middleware/auth');
 
+// Ruta de prueba
+router.get('/test', unifiedCartController.test);
+
 // Rutas públicas (para invitados)
 router.post('/get', unifiedCartController.getCart);
 router.post('/add-item', unifiedCartController.addItem);

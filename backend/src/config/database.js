@@ -700,10 +700,17 @@ const testConnection = async () => {
 
 const query = async (sql, params = []) => {
   try {
+    // Verificar que el pool esté disponible
+    if (!pool) {
+      throw new Error('Pool de conexiones no disponible');
+    }
+    
     const [rows] = await pool.query(sql, params);
     return rows;
   } catch (error) {
     console.error('Error en consulta SQL:', error);
+    console.error('SQL:', sql);
+    console.error('Params:', params);
     throw error;
   }
 };
