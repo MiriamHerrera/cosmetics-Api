@@ -8,7 +8,6 @@ WORKDIR /app
 COPY package*.json ./
 COPY src/ ./src/
 COPY server.js ./
-COPY uploads/ ./uploads/
 
 # Instalar dependencias
 RUN npm ci --only=production
