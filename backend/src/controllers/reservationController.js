@@ -33,7 +33,7 @@ class ReservationController {
           END as expiration_status
         FROM reservations r
         INNER JOIN products p ON r.product_id = p.id
-        LEFT JOIN users u ON r.user_id = u.id
+        INNER JOIN users u ON r.user_id = u.id
         WHERE 1=1
       `;
 

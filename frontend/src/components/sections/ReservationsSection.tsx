@@ -449,7 +449,7 @@ const ReservationsSection: React.FC = () => {
               <div className="text-sm text-gray-600">Expiran Pronto</div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow border">
-              <div className="text-2xl font-bold text-purple-600">${cartStats.withProducts.total_cart_value?.toFixed(2) || '0.00'}</div>
+              <div className="text-2xl font-bold text-purple-600">${(cartStats.withProducts.total_cart_value || 0).toFixed(2)}</div>
               <div className="text-sm text-gray-600">Valor Total</div>
             </div>
           </div>
@@ -466,7 +466,7 @@ const ReservationsSection: React.FC = () => {
                         {cart.cart_type === 'guest' ? 'Invitado' : 'Registrado'}
                       </span>
                       <span className="text-sm text-gray-600 ml-2">
-                        {cart.items_count} productos - ${cart.total_value.toFixed(2)}
+                        {cart.items_count} productos - ${(cart.total_value || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="text-sm text-orange-600">
@@ -861,7 +861,7 @@ const ReservationsSection: React.FC = () => {
                       
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          ${cart.total_value.toFixed(2)}
+                          ${(cart.total_value || 0).toFixed(2)}
                         </div>
                       </td>
                       
