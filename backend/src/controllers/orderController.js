@@ -333,14 +333,14 @@ class OrderController {
         WHERE id = ?
       `, [whatsappMessage, orderId]);
 
-      // Marcar carrito unificado como procesado
+      // Marcar carrito unificado como completado
       let updateQuery, updateParams;
       
       if (customerType === 'guest') {
-        updateQuery = 'UPDATE carts_unified SET status = "cleaned", updated_at = NOW() WHERE session_id = ?';
+        updateQuery = 'UPDATE carts_unified SET status = "completed", updated_at = NOW() WHERE session_id = ?';
         updateParams = [sessionId];
       } else {
-        updateQuery = 'UPDATE carts_unified SET status = "cleaned", updated_at = NOW() WHERE user_id = ?';
+        updateQuery = 'UPDATE carts_unified SET status = "completed", updated_at = NOW() WHERE user_id = ?';
         updateParams = [userId];
       }
       
@@ -569,7 +569,7 @@ class OrderController {
       // Marcar carrito unificado como procesado
       await connection.execute(`
         UPDATE carts_unified 
-        SET status = 'cleaned', updated_at = NOW()
+        SET status = 'completed', updated_at = NOW()
         WHERE session_id = ?
       `, [sessionId]);
 

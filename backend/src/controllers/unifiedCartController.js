@@ -126,7 +126,7 @@ class UnifiedCartController {
         console.log('🔍 [UnifiedCart] Buscando carrito migrado por ID:', migratedCartId);
       } else if (userId) {
         // Buscar carrito por user_id O por session_id (para capturar carritos migrados)
-        cartQuery = 'SELECT * FROM carts_unified WHERE (user_id = ? OR session_id = ?) AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartQuery = 'SELECT * FROM carts_unified WHERE (user_id = ? OR session_id = ?) AND (status = "active" OR status = "completed") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId, sessionId];
         console.log('🔍 [UnifiedCart] Buscando carrito para usuario (incluyendo migrados):', userId);
         console.log('🔍 [UnifiedCart] Query para usuario:', cartQuery);
@@ -338,7 +338,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "completed") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -778,7 +778,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "completed") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -936,7 +936,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "completed") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -1062,7 +1062,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "completed") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';

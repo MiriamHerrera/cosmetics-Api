@@ -175,7 +175,7 @@ const createAllTables = async (connection) => {
         id bigint(20) NOT NULL AUTO_INCREMENT,
         user_id bigint(20) DEFAULT NULL,
         session_id varchar(255) DEFAULT NULL,
-        status enum('active','expired','cleaned') DEFAULT 'active',
+        status enum('active','expired','completed') DEFAULT 'active',
         cart_type enum('guest','registered') DEFAULT 'guest',
         created_at timestamp NOT NULL DEFAULT current_timestamp(),
         updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
