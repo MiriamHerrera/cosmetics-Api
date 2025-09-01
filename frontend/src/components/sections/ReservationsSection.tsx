@@ -55,11 +55,68 @@ interface ReservationStats {
   overdue_reservations: number;
 }
 
+interface CartStats {
+  general: {
+    total_carts: number;
+    active_carts: number;
+    expired_carts: number;
+    completed_carts: number;
+    guest_carts: number;
+    registered_carts: number;
+    overdue_carts: number;
+    expiring_soon_carts: number;
+  };
+  withProducts: {
+    carts_with_products: number;
+    total_items_in_carts: number;
+    total_cart_value: number;
+  };
+  expiringSoon: Array<{
+    id: number;
+    cart_type: string;
+    user_id: number | null;
+    session_id: string;
+    expires_at: string;
+    minutes_until_expiry: number;
+    items_count: number;
+    total_quantity: number;
+    total_value: number;
+  }>;
+  byType: Array<{
+    cart_type: string;
+    count: number;
+    earliest_expiration: string;
+    latest_expiration: string;
+    avg_hours_until_expiry: number;
+  }>;
+}
+
+interface Cart {
+  id: number;
+  cart_type: string;
+  user_id: number | null;
+  session_id: string;
+  expires_at: string;
+  created_at: string;
+  minutes_until_expiry: number;
+  expiration_status: 'expired' | 'critical' | 'warning' | 'safe';
+  user_name: string | null;
+  user_phone: string | null;
+  user_email: string | null;
+  items_count: number;
+  total_quantity: number;
+  total_value: number;
+  products_summary: string;
+}
+
 const ReservationsSection: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [stats, setStats] = useState<ReservationStats | null>(null);
+  const [cartStats, setCartStats] = useState<CartStats | null>(null);
+  const [carts, setCarts] = useState<Cart[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cartLoading, setCartLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Filtros
@@ -68,9 +125,23 @@ const ReservationsSection: React.FC = () => {
     user_type: '',
     search: ''
   });
+
+  // Filtros para carritos
+  const [cartFilters, setCartFilters] = useState({
+    cart_type: '',
+    search: ''
+  });
   
   // Paginación
   const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0
+  });
+
+  // Paginación para carritos
+  const [cartPagination, setCartPagination] = useState({
     page: 1,
     limit: 20,
     total: 0,
@@ -123,11 +194,52 @@ const ReservationsSection: React.FC = () => {
     }
   };
 
+  // Cargar estadísticas de carritos
+  const loadCartStats = async () => {
+    try {
+      const response = await api.get('/reservations/admin/cart-stats');
+      if (response.data.success) {
+        setCartStats(response.data.data);
+      }
+    } catch (err: any) {
+      console.error('Error cargando estadísticas de carritos:', err);
+    }
+  };
+
+  // Cargar carritos activos
+  const loadCarts = async () => {
+    try {
+      setCartLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        page: cartPagination.page.toString(),
+        limit: cartPagination.limit.toString(),
+        ...(cartFilters.cart_type && { cart_type: cartFilters.cart_type }),
+        ...(cartFilters.search && { search: cartFilters.search })
+      });
+
+      const response = await api.get(`/reservations/admin/carts?${params}`);
+      
+      if (response.data.success) {
+        setCarts(response.data.data.carts);
+        setCartPagination(response.data.data.pagination);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error cargando carritos');
+      console.error('Error cargando carritos:', err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
   // Cargar datos iniciales
   useEffect(() => {
     loadReservations();
     loadStats();
-  }, [pagination.page, filters]);
+    loadCartStats();
+    loadCarts();
+  }, [pagination.page, filters, cartPagination.page, cartFilters]);
 
   // Aplicar filtros
   const applyFilters = () => {
@@ -139,6 +251,18 @@ const ReservationsSection: React.FC = () => {
   const clearFilters = () => {
     setFilters({ status: '', user_type: '', search: '' });
     setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Aplicar filtros de carritos
+  const applyCartFilters = () => {
+    setCartPagination(prev => ({ ...prev, page: 1 }));
+    loadCarts();
+  };
+
+  // Limpiar filtros de carritos
+  const clearCartFilters = () => {
+    setCartFilters({ cart_type: '', search: '' });
+    setCartPagination(prev => ({ ...prev, page: 1 }));
   };
 
   // Extender reserva
@@ -265,7 +389,7 @@ const ReservationsSection: React.FC = () => {
             Limpiar Expiradas
           </button>
           <button
-            onClick={() => { loadReservations(); loadStats(); }}
+            onClick={() => { loadReservations(); loadStats(); loadCartStats(); loadCarts(); }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
@@ -274,33 +398,85 @@ const ReservationsSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas de Reservas */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-blue-600">{stats.total_reservations}</div>
-            <div className="text-sm text-gray-600">Total</div>
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Estadísticas de Reservas</h3>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-blue-600">{stats.total_reservations}</div>
+              <div className="text-sm text-gray-600">Total</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-green-600">{stats.active_reservations}</div>
+              <div className="text-sm text-gray-600">Activas</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-red-600">{stats.expired_reservations}</div>
+              <div className="text-sm text-gray-600">Expiradas</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-purple-600">{stats.guest_reservations}</div>
+              <div className="text-sm text-gray-600">Invitados</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-indigo-600">{stats.registered_reservations}</div>
+              <div className="text-sm text-gray-600">Registrados</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-orange-600">{stats.overdue_reservations}</div>
+              <div className="text-sm text-gray-600">Vencidas</div>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-green-600">{stats.active_reservations}</div>
-            <div className="text-sm text-gray-600">Activas</div>
+        </div>
+      )}
+
+      {/* Estadísticas de Carritos */}
+      {cartStats && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Estadísticas de Carritos</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-blue-600">{cartStats.general.active_carts}</div>
+              <div className="text-sm text-gray-600">Carritos Activos</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-green-600">{cartStats.withProducts.carts_with_products}</div>
+              <div className="text-sm text-gray-600">Con Productos</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-orange-600">{cartStats.general.expiring_soon_carts}</div>
+              <div className="text-sm text-gray-600">Expiran Pronto</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <div className="text-2xl font-bold text-purple-600">${cartStats.withProducts.total_cart_value?.toFixed(2) || '0.00'}</div>
+              <div className="text-sm text-gray-600">Valor Total</div>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-red-600">{stats.expired_reservations}</div>
-            <div className="text-sm text-gray-600">Expiradas</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-purple-600">{stats.guest_reservations}</div>
-            <div className="text-sm text-gray-600">Invitados</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-indigo-600">{stats.registered_reservations}</div>
-            <div className="text-sm text-gray-600">Registrados</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border">
-            <div className="text-2xl font-bold text-orange-600">{stats.overdue_reservations}</div>
-            <div className="text-sm text-gray-600">Vencidas</div>
-          </div>
+          
+          {/* Carritos próximos a expirar */}
+          {cartStats.expiringSoon.length > 0 && (
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <h4 className="text-md font-semibold text-gray-900 mb-3">Carritos Próximos a Expirar (24h)</h4>
+              <div className="space-y-2">
+                {cartStats.expiringSoon.slice(0, 5).map((cart) => (
+                  <div key={cart.id} className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                    <div>
+                      <span className="font-medium">
+                        {cart.cart_type === 'guest' ? 'Invitado' : 'Registrado'}
+                      </span>
+                      <span className="text-sm text-gray-600 ml-2">
+                        {cart.items_count} productos - ${cart.total_value.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-orange-600">
+                      {formatTimeRemaining(cart.minutes_until_expiry)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -546,6 +722,203 @@ const ReservationsSection: React.FC = () => {
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                       disabled={pagination.page === pagination.pages}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Filtros de Carritos */}
+      <div className="bg-white p-4 rounded-lg shadow border">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Carritos Activos con Productos</h3>
+        <div className="flex flex-wrap gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Carrito</label>
+            <select
+              value={cartFilters.cart_type}
+              onChange={(e) => setCartFilters(prev => ({ ...prev, cart_type: e.target.value }))}
+              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              <option value="guest">Invitados</option>
+              <option value="registered">Registrados</option>
+            </select>
+          </div>
+          
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Usuario, teléfono, producto..."
+                value={cartFilters.search}
+                onChange={(e) => setCartFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={applyCartFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Aplicar
+            </button>
+            <button
+              onClick={clearCartFilters}
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de Carritos */}
+      <div className="bg-white rounded-lg shadow border overflow-hidden">
+        {cartLoading ? (
+          <div className="p-8 text-center">
+            <RefreshCw className="w-8 h-8 mx-auto animate-spin text-blue-600" />
+            <p className="mt-2 text-gray-600">Cargando carritos...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center text-red-600">
+            <p>{error}</p>
+            <button
+              onClick={loadCarts}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Productos
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cantidad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Valor
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Expira
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {carts.map((cart) => (
+                    <tr key={cart.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <User className="w-4 h-4 text-gray-400 mr-2" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {cart.user_name || 'Invitado'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {cart.user_phone || cart.user_email || cart.session_id}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {cart.cart_type === 'guest' ? 'Invitado' : 'Registrado'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {cart.items_count} productos
+                        </div>
+                        <div className="text-xs text-gray-500 max-w-xs truncate">
+                          {cart.products_summary}
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{cart.total_quantity}</div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          ${cart.total_value.toFixed(2)}
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {getExpirationIcon(cart.expiration_status)}
+                          <span className={`ml-2 text-sm font-medium ${getExpirationColor(cart.expiration_status)}`}>
+                            {formatTimeRemaining(cart.minutes_until_expiry)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(cart.expires_at).toLocaleString()}
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          cart.expiration_status === 'expired' ? 'bg-red-100 text-red-800' :
+                          cart.expiration_status === 'critical' ? 'bg-orange-100 text-orange-800' :
+                          cart.expiration_status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {cart.expiration_status === 'expired' ? 'Expirado' :
+                           cart.expiration_status === 'critical' ? 'Crítico' :
+                           cart.expiration_status === 'warning' ? 'Advertencia' :
+                           'Seguro'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Paginación de Carritos */}
+            {cartPagination.pages > 1 && (
+              <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Mostrando {((cartPagination.page - 1) * cartPagination.limit) + 1} a{' '}
+                    {Math.min(cartPagination.page * cartPagination.limit, cartPagination.total)} de{' '}
+                    {cartPagination.total} resultados
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCartPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                      disabled={cartPagination.page === 1}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Anterior
+                    </button>
+                    <span className="px-3 py-2 text-sm text-gray-700">
+                      Página {cartPagination.page} de {cartPagination.pages}
+                    </span>
+                    <button
+                      onClick={() => setCartPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                      disabled={cartPagination.page === cartPagination.pages}
                       className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Siguiente

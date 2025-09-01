@@ -606,6 +606,194 @@ const getReservationsWithDetails = async (req, res) => {
   }
 };
 
+// Obtener estadísticas de carritos
+const getCartStats = async (req, res) => {
+  try {
+    console.log('🛒 Obteniendo estadísticas de carritos...');
+
+    // Estadísticas generales de carritos
+    const cartStats = await query(`
+      SELECT 
+        COUNT(*) as total_carts,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_carts,
+        SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) as expired_carts,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_carts,
+        SUM(CASE WHEN cart_type = 'guest' THEN 1 ELSE 0 END) as guest_carts,
+        SUM(CASE WHEN cart_type = 'registered' THEN 1 ELSE 0 END) as registered_carts,
+        SUM(CASE WHEN expires_at < NOW() AND status = 'active' THEN 1 ELSE 0 END) as overdue_carts,
+        SUM(CASE WHEN expires_at > NOW() AND expires_at < DATE_ADD(NOW(), INTERVAL 1 HOUR) AND status = 'active' THEN 1 ELSE 0 END) as expiring_soon_carts
+      FROM carts_unified
+    `);
+
+    // Carritos con productos (que tienen items)
+    const cartsWithProducts = await query(`
+      SELECT 
+        COUNT(DISTINCT c.id) as carts_with_products,
+        SUM(ci.quantity) as total_items_in_carts,
+        SUM(ci.quantity * p.price) as total_cart_value
+      FROM carts_unified c
+      INNER JOIN cart_items_unified ci ON c.id = ci.cart_id
+      INNER JOIN products p ON ci.product_id = p.id
+      WHERE c.status = 'active'
+    `);
+
+    // Carritos próximos a expirar (próximas 24 horas)
+    const expiringCarts = await query(`
+      SELECT 
+        c.id,
+        c.cart_type,
+        c.user_id,
+        c.session_id,
+        c.expires_at,
+        TIMESTAMPDIFF(MINUTE, NOW(), c.expires_at) as minutes_until_expiry,
+        COUNT(ci.id) as items_count,
+        SUM(ci.quantity) as total_quantity,
+        SUM(ci.quantity * p.price) as total_value
+      FROM carts_unified c
+      LEFT JOIN cart_items_unified ci ON c.id = ci.cart_id
+      LEFT JOIN products p ON ci.product_id = p.id
+      WHERE c.status = 'active' 
+        AND c.expires_at > NOW() 
+        AND c.expires_at < DATE_ADD(NOW(), INTERVAL 24 HOUR)
+      GROUP BY c.id
+      ORDER BY c.expires_at ASC
+      LIMIT 20
+    `);
+
+    // Carritos por tipo con fechas de expiración
+    const cartsByType = await query(`
+      SELECT 
+        cart_type,
+        COUNT(*) as count,
+        MIN(expires_at) as earliest_expiration,
+        MAX(expires_at) as latest_expiration,
+        AVG(TIMESTAMPDIFF(HOUR, NOW(), expires_at)) as avg_hours_until_expiry
+      FROM carts_unified 
+      WHERE status = 'active' AND expires_at IS NOT NULL
+      GROUP BY cart_type
+    `);
+
+    console.log('✅ Estadísticas de carritos obtenidas exitosamente');
+
+    res.json({
+      success: true,
+      data: {
+        general: cartStats[0],
+        withProducts: cartsWithProducts[0],
+        expiringSoon: expiringCarts,
+        byType: cartsByType
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas de carritos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
+// Obtener lista de carritos activos con productos
+const getActiveCartsWithProducts = async (req, res) => {
+  try {
+    console.log('🛒 Obteniendo carritos activos con productos...');
+
+    const { page = 1, limit = 20, cart_type = '', search = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE c.status = "active"';
+    const queryParams = [];
+
+    if (cart_type) {
+      whereClause += ' AND c.cart_type = ?';
+      queryParams.push(cart_type);
+    }
+
+    if (search) {
+      whereClause += ' AND (u.name LIKE ? OR u.phone LIKE ? OR p.name LIKE ?)';
+      const searchTerm = `%${search}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Obtener carritos con productos
+    const carts = await query(`
+      SELECT 
+        c.id,
+        c.cart_type,
+        c.user_id,
+        c.session_id,
+        c.expires_at,
+        c.created_at,
+        TIMESTAMPDIFF(MINUTE, NOW(), c.expires_at) as minutes_until_expiry,
+        CASE 
+          WHEN c.expires_at < NOW() THEN 'expired'
+          WHEN TIMESTAMPDIFF(HOUR, NOW(), c.expires_at) < 1 THEN 'critical'
+          WHEN TIMESTAMPDIFF(HOUR, NOW(), c.expires_at) < 24 THEN 'warning'
+          ELSE 'safe'
+        END as expiration_status,
+        u.name as user_name,
+        u.phone as user_phone,
+        u.email as user_email,
+        COUNT(ci.id) as items_count,
+        SUM(ci.quantity) as total_quantity,
+        SUM(ci.quantity * p.price) as total_value,
+        GROUP_CONCAT(
+          CONCAT(p.name, ' (', ci.quantity, ')') 
+          ORDER BY p.name 
+          SEPARATOR ', '
+        ) as products_summary
+      FROM carts_unified c
+      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN cart_items_unified ci ON c.id = ci.cart_id
+      LEFT JOIN products p ON ci.product_id = p.id
+      ${whereClause}
+      GROUP BY c.id
+      HAVING items_count > 0
+      ORDER BY c.expires_at ASC
+      LIMIT ? OFFSET ?
+    `, [...queryParams, parseInt(limit), offset]);
+
+    // Contar total para paginación
+    const countQuery = `
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM carts_unified c
+      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN cart_items_unified ci ON c.id = ci.cart_id
+      LEFT JOIN products p ON ci.product_id = p.id
+      ${whereClause}
+      HAVING COUNT(ci.id) > 0
+    `;
+    
+    const countResult = await query(countQuery, queryParams);
+    const total = countResult.length > 0 ? countResult[0].total : 0;
+
+    console.log(`✅ ${carts.length} carritos activos obtenidos de ${total} totales`);
+
+    res.json({
+      success: true,
+      data: {
+        carts,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo carritos activos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: error.message
+    });
+  }
+};
+
 // Gestión de encuestas
 const getSurveysWithStats = async (req, res) => {
   try {
@@ -681,5 +869,7 @@ module.exports = {
   getProductsWithStats,
   getCartsWithDetails,
   getReservationsWithDetails,
-  getSurveysWithStats
+  getSurveysWithStats,
+  getCartStats,
+  getActiveCartsWithProducts
 }; 

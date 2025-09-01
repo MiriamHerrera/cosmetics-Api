@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const reservationController = require('../controllers/reservationController');
+const adminController = require('../controllers/adminController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // ========================================
@@ -54,6 +55,16 @@ router.get('/admin/extensions/:reservationId', authenticateToken, requireAdmin, 
 
 // Enviar recordatorio de WhatsApp
 router.post('/admin/reminder/:reservationId', authenticateToken, requireAdmin, reservationController.sendWhatsAppReminder);
+
+// ========================================
+// RUTAS DE CARRITOS PARA ADMIN
+// ========================================
+
+// Obtener estadísticas de carritos
+router.get('/admin/cart-stats', authenticateToken, requireAdmin, adminController.getCartStats);
+
+// Obtener lista de carritos activos con productos
+router.get('/admin/carts', authenticateToken, requireAdmin, adminController.getActiveCartsWithProducts);
 
 // ========================================
 // RUTAS DE DESARROLLO/TESTING (opcional)
