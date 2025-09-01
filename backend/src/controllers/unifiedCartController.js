@@ -59,10 +59,24 @@ class UnifiedCartController {
         try {
           // Buscar carrito de invitado
           console.log('🔍 [UnifiedCart] Buscando carrito de invitado con sessionId:', sessionId);
-          const guestCarts = await query(
-            'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
-            [sessionId]
-          );
+          console.log('🔍 [UnifiedCart] Tipo de sessionId:', typeof sessionId);
+          console.log('🔍 [UnifiedCart] sessionId es null?', sessionId === null);
+          console.log('🔍 [UnifiedCart] sessionId es undefined?', sessionId === undefined);
+          console.log('🔍 [UnifiedCart] sessionId length:', sessionId ? sessionId.length : 'N/A');
+          
+          let guestCarts;
+          try {
+            guestCarts = await query(
+              'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+              [sessionId]
+            );
+            console.log('✅ [UnifiedCart] Consulta de carritos de invitado exitosa');
+          } catch (queryError) {
+            console.error('❌ [UnifiedCart] Error en consulta de carritos de invitado:', queryError);
+            console.error('❌ [UnifiedCart] SQL:', 'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"');
+            console.error('❌ [UnifiedCart] Params:', [sessionId]);
+            throw queryError;
+          }
           
           console.log('📊 [UnifiedCart] Carritos de invitado encontrados:', guestCarts.length);
           if (guestCarts.length > 0) {
