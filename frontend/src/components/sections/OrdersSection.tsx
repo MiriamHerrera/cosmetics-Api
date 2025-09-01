@@ -225,7 +225,13 @@ export default function OrdersSection() {
       return;
     }
 
-    const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(order.whatsapp_message)}`;
+    // Formatear número del cliente para WhatsApp
+    const cleanCustomerPhone = order.customer_phone.replace(/[\s\-\(\)]/g, '');
+    
+    // Agregar código de país si no lo tiene (asumiendo México +52)
+    const formattedCustomerPhone = cleanCustomerPhone.startsWith('52') ? cleanCustomerPhone : `52${cleanCustomerPhone}`;
+
+    const whatsappUrl = `https://wa.me/${formattedCustomerPhone}?text=${encodeURIComponent(order.whatsapp_message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
