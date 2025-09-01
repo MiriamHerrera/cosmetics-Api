@@ -144,7 +144,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
       <div className="p-3 sm:p-5">
         {/* Nombre del producto */}
         <h3 className="
-          font-semibold text-gray-900 mb-2
+          font-semibold text-gray-900 mb-1
           text-sm sm:text-base
           leading-tight group-hover:text-purple-800
           transition-colors duration-300
@@ -152,6 +152,17 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
         ">
           {product.name}
         </h3>
+
+        {/* Descripción del producto */}
+        {product.description && (
+          <p className="
+            text-xs text-gray-500 mb-2
+            leading-relaxed line-clamp-2
+            overflow-hidden
+          ">
+            {product.description}
+          </p>
+        )}
 
         {/* Tipo/Variante del producto */}
         <p className="
