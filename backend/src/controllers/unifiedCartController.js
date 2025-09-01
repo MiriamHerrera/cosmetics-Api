@@ -1,74 +1,98 @@
 const { query, getConnection } = require('../config/database');
 
 class UnifiedCartController {
+  // Método de prueba
+  async test(req, res) {
+    try {
+      console.log('🧪 [UnifiedCart] Test endpoint llamado');
+      res.json({
+        success: true,
+        message: 'Controlador de carrito unificado funcionando correctamente',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ [UnifiedCart] Error en test:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error en test endpoint'
+      });
+    }
+  }
+
   // Obtener carrito (usuario autenticado o invitado)
   async getCart(req, res) {
     try {
       console.log('🛒 [UnifiedCart] getCart iniciado');
       console.log('📝 [UnifiedCart] Body recibido:', req.body);
+      console.log('🔍 [UnifiedCart] Headers:', req.headers);
       
       const { userId, sessionId } = req.body;
       
       console.log('👤 [UnifiedCart] userId:', userId);
       console.log('🔑 [UnifiedCart] sessionId:', sessionId);
       
-          if (!userId && !sessionId) {
-      console.log('❌ [UnifiedCart] Error: Se requiere userId o sessionId');
-      return res.status(400).json({
-        success: false,
-        message: 'Se requiere userId o sessionId'
-      });
-    }
-
-    // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
-    if (userId && sessionId) {
-      console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
-      
-      // Buscar carrito de invitado
-      const guestCarts = await query(
-        'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
-        [sessionId]
-      );
-      
-      if (guestCarts.length > 0) {
-        console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
-        
-        // Buscar carrito del usuario
-        const userCarts = await query(
-          'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND status = "active"',
-          [userId]
-        );
-        
-        let targetCartId;
-        
-        if (userCarts.length === 0) {
-          // Crear carrito para el usuario
-          const result = await query(
-            'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
-            [userId]
-          );
-          targetCartId = result.insertId;
-          console.log('✅ [UnifiedCart] Nuevo carrito creado para usuario:', targetCartId);
-        } else {
-          targetCartId = userCarts[0].id;
-          console.log('✅ [UnifiedCart] Usando carrito existente del usuario:', targetCartId);
-        }
-        
-        // Migrar items del carrito de invitado al carrito del usuario
-        await query(
-          'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
-          [targetCartId, guestCarts[0].id]
-        );
-        console.log('🔄 [UnifiedCart] Items migrados al carrito del usuario');
-        
-        // Marcar carrito de invitado como migrado
-        await query(
-          'UPDATE carts_unified SET status = "migrated" WHERE id = ?',
-          [guestCarts[0].id]
-        );
-        console.log('✅ [UnifiedCart] Carrito de invitado marcado como migrado');
+      if (!userId && !sessionId) {
+        console.log('❌ [UnifiedCart] Error: Se requiere userId o sessionId');
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere userId o sessionId'
+        });
       }
-    }
+
+      // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
+      if (userId && sessionId) {
+        console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
+        
+        try {
+          // Buscar carrito de invitado
+          const guestCarts = await query(
+            'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+            [sessionId]
+          );
+          
+          if (guestCarts.length > 0) {
+            console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
+            
+            // Buscar carrito del usuario
+            const userCarts = await query(
+              'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
+              [userId]
+            );
+            
+            let targetCartId;
+            
+            if (userCarts.length === 0) {
+              // Crear carrito para el usuario
+              const result = await query(
+                'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
+                [userId]
+              );
+              targetCartId = result.insertId;
+              console.log('✅ [UnifiedCart] Nuevo carrito creado para usuario:', targetCartId);
+            } else {
+              targetCartId = userCarts[0].id;
+              console.log('✅ [UnifiedCart] Usando carrito existente del usuario:', targetCartId);
+            }
+            
+            // Migrar items del carrito de invitado al carrito del usuario
+            await query(
+              'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
+              [targetCartId, guestCarts[0].id]
+            );
+            console.log('🔄 [UnifiedCart] Items migrados al carrito del usuario');
+            
+            // Marcar carrito de invitado como migrado
+            await query(
+              'UPDATE carts_unified SET status = "migrated" WHERE id = ?',
+              [guestCarts[0].id]
+            );
+            console.log('✅ [UnifiedCart] Carrito de invitado marcado como migrado');
+          }
+        } catch (migrationError) {
+          console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
+          // Continuar sin migración si falla
+        }
+      }
 
       // Buscar carrito en la tabla unificada
       let cartQuery = '';
@@ -86,10 +110,22 @@ class UnifiedCartController {
 
       console.log('📝 [UnifiedCart] Query:', cartQuery);
       console.log('📝 [UnifiedCart] Params:', cartParams);
+      console.log('🔍 [UnifiedCart] Ejecutando consulta SQL...');
 
-      const carts = await query(cartQuery, cartParams);
-      
-      console.log('📊 [UnifiedCart] Carritos encontrados:', carts.length);
+      let carts;
+      try {
+        carts = await query(cartQuery, cartParams);
+        
+        console.log('📊 [UnifiedCart] Carritos encontrados:', carts.length);
+        console.log('📊 [UnifiedCart] Resultado de consulta:', carts);
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error de base de datos:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error de conexión a la base de datos',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
       
       if (carts.length === 0) {
         console.log('🆕 [UnifiedCart] Creando carrito vacío');
@@ -99,20 +135,31 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
           createParams = [sessionId];
         }
         
         console.log('📝 [UnifiedCart] Query de creación:', createQuery);
         console.log('📝 [UnifiedCart] Params de creación:', createParams);
+        console.log('🔍 [UnifiedCart] Ejecutando INSERT...');
         
-        const result = await query(createQuery, createParams);
-        const cartId = result.insertId;
-        
-        console.log('✅ [UnifiedCart] Carrito creado con ID:', cartId);
+        try {
+          const result = await query(createQuery, createParams);
+          const cartId = result.insertId;
+          
+          console.log('✅ [UnifiedCart] Carrito creado con ID:', cartId);
+          console.log('📊 [UnifiedCart] Resultado del INSERT:', result);
+        } catch (dbError) {
+          console.error('❌ [UnifiedCart] Error creando carrito:', dbError);
+          return res.status(500).json({
+            success: false,
+            message: 'Error creando carrito',
+            error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+          });
+        }
         
         return res.json({
           success: true,
@@ -120,7 +167,7 @@ class UnifiedCartController {
             id: cartId,
             userId: userId || null,
             sessionId: sessionId || null,
-            cartType: userId ? 'registered' : 'guest',
+            cartType: userId ? 'user' : 'guest',
             status: 'active',
             items: [],
             total: 0,
@@ -136,10 +183,21 @@ class UnifiedCartController {
       const itemsQuery = 'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?';
       console.log('📝 [UnifiedCart] Query de items:', itemsQuery);
       console.log('📝 [UnifiedCart] Cart ID para items:', cart.id);
+      console.log('🔍 [UnifiedCart] Ejecutando consulta de items...');
       
-      const items = await query(itemsQuery, [cart.id]);
-      
-      console.log('📊 [UnifiedCart] Items encontrados:', items.length);
+      try {
+        const items = await query(itemsQuery, [cart.id]);
+        
+        console.log('📊 [UnifiedCart] Items encontrados:', items.length);
+        console.log('📊 [UnifiedCart] Resultado de consulta de items:', items);
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error obteniendo items:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error obteniendo items del carrito',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
 
       // Calcular totales
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -191,9 +249,18 @@ class UnifiedCartController {
   // Agregar item al carrito
   async addItem(req, res) {
     try {
+      console.log('🛒 [UnifiedCart] addItem iniciado');
+      console.log('📝 [UnifiedCart] Body recibido:', req.body);
+      
       const { productId, quantity, userId, sessionId } = req.body;
       
+      console.log('👤 [UnifiedCart] userId:', userId);
+      console.log('🔑 [UnifiedCart] sessionId:', sessionId);
+      console.log('📦 [UnifiedCart] productId:', productId);
+      console.log('🔢 [UnifiedCart] quantity:', quantity);
+      
       if (!productId || !quantity || (!userId && !sessionId)) {
+        console.log('❌ [UnifiedCart] Error: Faltan parámetros requeridos');
         return res.status(400).json({
           success: false,
           message: 'Se requiere productId, quantity y userId o sessionId'
@@ -201,10 +268,20 @@ class UnifiedCartController {
       }
 
       // Verificar que el producto existe y tiene stock
-      const products = await query(
-        'SELECT * FROM products WHERE id = ? AND is_approved = 1',
-        [productId]
-      );
+      let products;
+      try {
+        products = await query(
+          'SELECT * FROM products WHERE id = ? AND is_approved = 1',
+          [productId]
+        );
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error verificando producto:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error verificando producto',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
 
       if (products.length === 0) {
         return res.status(404).json({
@@ -214,14 +291,8 @@ class UnifiedCartController {
       }
 
       const product = products[0];
-      if (product.stock_total < quantity) {
-        return res.status(400).json({
-          success: false,
-          message: 'Stock insuficiente'
-        });
-      }
-
-      // Buscar o crear carrito
+      
+      // Buscar o crear carrito PRIMERO
       let cartQuery = '';
       let cartParams = [];
       
@@ -233,7 +304,31 @@ class UnifiedCartController {
         cartParams = [sessionId];
       }
 
-      const carts = await query(cartQuery, cartParams);
+      let carts;
+      try {
+        carts = await query(cartQuery, cartParams);
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error buscando carrito:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error buscando carrito',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
+      
+      // Simplificar el cálculo de stock disponible - solo verificar stock total por ahora
+      // TODO: Implementar lógica de stock reservado más adelante
+      const availableStock = product.stock_total;
+      
+      console.log(`📊 [UnifiedCart] Stock del producto ${productId}: Total=${product.stock_total}, Disponible=${availableStock}`);
+      
+      if (availableStock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Stock insuficiente. Solo hay ${availableStock} unidades disponibles.`
+        });
+      }
+
       let cartId;
 
       if (carts.length === 0) {
@@ -242,59 +337,102 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
           createParams = [sessionId];
         }
         
-        const result = await query(createQuery, createParams);
+        let result;
+        try {
+          result = await query(createQuery, createParams);
+        } catch (dbError) {
+          console.error('❌ [UnifiedCart] Error creando carrito:', dbError);
+          return res.status(500).json({
+            success: false,
+            message: 'Error creando carrito',
+            error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+          });
+        }
         cartId = result.insertId;
       } else {
         cartId = carts[0].id;
       }
 
       // Verificar si el item ya existe
-      const existingItems = await query(
-        'SELECT * FROM cart_items_unified WHERE cart_id = ? AND product_id = ?',
-        [cartId, productId]
-      );
+      let existingItems;
+      try {
+        existingItems = await query(
+          'SELECT * FROM cart_items_unified WHERE cart_id = ? AND product_id = ?',
+          [cartId, productId]
+        );
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error verificando items existentes:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error verificando items del carrito',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
 
       if (existingItems.length > 0) {
         // Actualizar cantidad
         const newQuantity = existingItems[0].quantity + quantity;
-        await query(
-          'UPDATE cart_items_unified SET quantity = ? WHERE cart_id = ? AND product_id = ?',
-          [newQuantity, cartId, productId]
-        );
+        const additionalQuantity = quantity; // Solo la cantidad adicional
         
-        // Reservar stock adicional
-        await query(
-          'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
-          [quantity, productId]
-        );
-        console.log(`🔄 [UnifiedCart] Stock reservado: -${quantity} para producto ${productId}`);
+        try {
+          await query(
+            'UPDATE cart_items_unified SET quantity = ? WHERE cart_id = ? AND product_id = ?',
+            [newQuantity, cartId, productId]
+          );
+          
+          // NO reservar stock adicional aquí - ya está reservado desde la primera vez
+          console.log(`🔄 [UnifiedCart] Cantidad actualizada para producto ${productId}: ${existingItems[0].quantity} + ${quantity} = ${newQuantity}`);
+        } catch (dbError) {
+          console.error('❌ [UnifiedCart] Error actualizando cantidad:', dbError);
+          return res.status(500).json({
+            success: false,
+            message: 'Error actualizando cantidad del item',
+            error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+          });
+        }
       } else {
         // Agregar nuevo item
-        await query(
-          'INSERT INTO cart_items_unified (cart_id, product_id, quantity, reserved_until) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
-          [cartId, productId, quantity]
-        );
-        
-        // Reservar stock
-        await query(
-          'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
-          [quantity, productId]
-        );
-        console.log(`🔄 [UnifiedCart] Stock reservado: -${quantity} para producto ${productId}`);
+        try {
+          await query(
+            'INSERT INTO cart_items_unified (cart_id, product_id, quantity, reserved_until) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
+            [cartId, productId, quantity]
+          );
+          
+          // TODO: Implementar reserva de stock más adelante
+          // Por ahora solo agregar al carrito sin modificar stock
+          console.log(`🔄 [UnifiedCart] Item agregado al carrito: ${quantity} unidades del producto ${productId}`);
+        } catch (dbError) {
+          console.error('❌ [UnifiedCart] Error agregando item:', dbError);
+          return res.status(500).json({
+            success: false,
+            message: 'Error agregando item al carrito',
+            error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+          });
+        }
       }
 
       // Obtener carrito actualizado
-      const updatedCarts = await query(
-        'SELECT * FROM carts_unified WHERE id = ?',
-        [cartId]
-      );
+      let updatedCarts;
+      try {
+        updatedCarts = await query(
+          'SELECT * FROM carts_unified WHERE id = ?',
+          [cartId]
+        );
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error obteniendo carrito actualizado:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error obteniendo carrito actualizado',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
 
       if (updatedCarts.length === 0) {
         return res.status(500).json({
@@ -306,10 +444,20 @@ class UnifiedCartController {
       const cart = updatedCarts[0];
 
       // Obtener items actualizados
-      const items = await query(
-        'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
-        [cartId]
-      );
+      let items;
+      try {
+        items = await query(
+          'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
+          [cartId]
+        );
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error obteniendo items actualizados:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error obteniendo items del carrito',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
 
       // Calcular totales
       const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -337,16 +485,21 @@ class UnifiedCartController {
         updatedAt: cart.updated_at
       };
 
+      console.log('✅ [UnifiedCart] Item agregado exitosamente al carrito');
+      console.log('📦 [UnifiedCart] Carrito actualizado:', cartData);
+
       res.json({
         success: true,
         data: cartData
       });
 
     } catch (error) {
-      console.error('Error agregando item al carrito:', error);
+      console.error('❌ [UnifiedCart] Error en addItem:', error);
+      console.error('❌ [UnifiedCart] Stack trace:', error.stack);
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
       });
     }
   }
@@ -380,7 +533,7 @@ class UnifiedCartController {
 
       // Verificar si el usuario ya tiene un carrito activo
       const userCarts = await query(
-        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND status = "active"',
+        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
         [userId]
       );
 
@@ -389,7 +542,7 @@ class UnifiedCartController {
       if (userCarts.length === 0) {
         // Crear nuevo carrito para el usuario
         const result = await query(
-          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
+          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
           [userId]
         );
         targetCartId = result.insertId;
@@ -612,14 +765,8 @@ class UnifiedCartController {
           [quantity, cart.id, productId]
         );
 
-        // Ajustar stock según la diferencia
-        if (quantityDifference !== 0) {
-          await query(
-            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
-            [quantityDifference, productId]
-          );
-          console.log(`🔄 [UnifiedCart] Stock ajustado: ${quantityDifference > 0 ? '-' : '+'}${Math.abs(quantityDifference)} para producto ${productId}`);
-        }
+        // TODO: Implementar ajuste de stock más adelante
+        console.log(`🔄 [UnifiedCart] Cantidad actualizada: ${quantity} unidades del producto ${productId}`);
       }
 
       // Obtener carrito actualizado

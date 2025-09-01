@@ -233,126 +233,90 @@ app.get('/api/debug/routes', (req, res) => {
   });
 });
 
-// Endpoint de debug para probar middleware
+// Endpoint de debug para probar middleware 
 app.use('/api/debug/middleware', (req, res, next) => {
   console.log('🔍 DEBUG MIDDLEWARE:', {
     method: req.method,
     path: req.path,
     url: req.url,
-    originalUrl: req.originalUrl,
-    baseUrl: req.baseUrl
+    headers: req.headers
   });
-  
-  res.json({
-    success: true,
-    message: 'Middleware funcionando',
-    requestInfo: {
-      method: req.method,
-      path: req.path,
-      url: req.url,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl
-    }
-  });
+  next();
 });
 
-// Endpoint de diagnóstico de base de datos
+// Endpoint de debug para base de datos
 app.get('/api/debug/database', async (req, res) => {
   try {
-    console.log('🔍 DIAGNÓSTICO DE BASE DE DATOS SOLICITADO...');
-    
-    const { testConnection, query } = require('./config/database');
-    
-    // Probar conexión
-    console.log('🔍 Probando conexión...');
-    const isConnected = await testConnection();
-    
-    if (!isConnected) {
-      return res.status(500).json({
-        success: false,
-        message: 'No se pudo conectar a la base de datos',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Probar consulta simple
-    console.log('🔍 Probando consulta simple...');
-    const [result] = await query('SELECT 1 as test');
-    
-    // Verificar estructura de la tabla users
-    console.log('🔍 Verificando estructura de tabla users...');
-    const tableStructure = await query('DESCRIBE users');
-    
-    // Probar consulta de usuarios con columnas existentes
-    console.log('🔍 Probando consulta de usuarios...');
-    const users = await query('SELECT COUNT(*) as total FROM users');
-    
-    // Obtener todas las columnas disponibles
-    const availableColumns = tableStructure.map(col => col.Field);
-    console.log('🔍 Columnas disponibles en users:', availableColumns);
-    
-    // Construir consulta dinámica basada en columnas existentes
-    let userQuery = 'SELECT ';
-    if (availableColumns.includes('id')) userQuery += 'id, ';
-    if (availableColumns.includes('name')) userQuery += 'name, ';
-    if (availableColumns.includes('username')) userQuery += 'username, ';
-    if (availableColumns.includes('phone')) userQuery += 'phone, ';
-    if (availableColumns.includes('email')) userQuery += 'email, ';
-    if (availableColumns.includes('role')) userQuery += 'role, ';
-    if (availableColumns.includes('password')) userQuery += 'password, ';
-    
-    // Remover la última coma
-    userQuery = userQuery.replace(/,\s*$/, '');
-    userQuery += ' FROM users WHERE phone = ?';
-    
-    console.log('🔍 Query dinámica construida:', userQuery);
-    
-    // Probar consulta específica del usuario de login
-    console.log('🔍 Probando consulta de usuario específico...');
-    let testUser = [];
-    try {
-      testUser = await query(userQuery, ['8124307494']);
-    } catch (queryError) {
-      console.log('❌ Error en consulta específica:', queryError.message);
-    }
+    const { testConnection } = require('./config/database');
+    const dbConnected = await testConnection();
     
     res.json({
       success: true,
-      message: 'Diagnóstico de base de datos completado',
+      message: 'Debug de base de datos',
       timestamp: new Date().toISOString(),
       database: {
-        connected: isConnected,
-        testQuery: result,
-        totalUsers: users[0]?.total || 0,
-        tableStructure: tableStructure,
-        availableColumns: availableColumns,
-        dynamicQuery: userQuery,
-        testUser: testUser.length > 0 ? {
-          found: true,
-          data: testUser[0]
-        } : {
-          found: false,
-          phone: '8124307494',
-          reason: 'Usuario no encontrado o error en consulta'
-        }
+        connected: dbConnected,
+        host: process.env.DB_HOST || 'mysql.railway.internal',
+        user: process.env.DB_USER || 'root',
+        database: process.env.DB_NAME || 'railway',
+        port: process.env.DB_PORT || 3306,
+        hasPassword: !!process.env.DB_PASSWORD
       },
       environment: {
-        nodeEnv: process.env.NODE_ENV,
-        dbHost: process.env.DB_HOST,
-        dbName: process.env.DB_NAME,
-        dbUser: process.env.DB_USER,
-        hasPassword: !!process.env.DB_PASSWORD
+        NODE_ENV: process.env.NODE_ENV || 'development',
+        PORT: process.env.PORT || 8000
       }
     });
-    
   } catch (error) {
-    console.error('❌ ERROR EN DIAGNÓSTICO DE BD:', error);
     res.status(500).json({
       success: false,
-      message: 'Error en diagnóstico de base de datos',
+      message: 'Error en debug de base de datos',
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      timestamp: new Date().toISOString()
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Endpoint de prueba del controlador del carrito unificado
+app.get('/api/debug/unified-cart-test', async (req, res) => {
+  try {
+    const unifiedCartController = require('./controllers/unifiedCartController');
+    
+    // Crear request y response mock
+    const mockReq = { body: {}, headers: {} };
+    const mockRes = {
+      json: (data) => {
+        res.json({
+          success: true,
+          message: 'Controlador del carrito unificado funcionando',
+          timestamp: new Date().toISOString(),
+          controllerResponse: data
+        });
+      },
+      status: (code) => {
+        return {
+          json: (data) => {
+            res.status(code).json({
+              success: false,
+              message: 'Error en controlador del carrito unificado',
+              timestamp: new Date().toISOString(),
+              statusCode: code,
+              controllerResponse: data
+            });
+          }
+        };
+      }
+    };
+    
+    // Llamar al método test del controlador
+    await unifiedCartController.test(mockReq, mockRes);
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al probar controlador del carrito unificado',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

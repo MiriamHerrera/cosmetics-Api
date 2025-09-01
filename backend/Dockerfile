@@ -8,9 +8,13 @@ WORKDIR /app
 COPY package*.json ./
 COPY src/ ./src/
 COPY server.js ./
+COPY uploads/ ./uploads/
 
 # Instalar dependencias
 RUN npm ci --only=production
+
+# Crear directorio de uploads
+RUN mkdir -p /app/uploads/products
 
 # Exponer puerto (Railway lo maneja automáticamente)
 EXPOSE 8000

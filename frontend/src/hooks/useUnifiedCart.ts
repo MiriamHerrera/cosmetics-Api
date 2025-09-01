@@ -30,9 +30,11 @@ export const useUnifiedCart = () => {
    */
   const getCartData = useCallback(() => {
     if (isGuestMode) {
+      console.log('🔍 [getCartData] Modo invitado, sessionId:', sessionId);
       return { sessionId: sessionId || undefined };
     } else {
       const user = useStore.getState().user;
+      console.log('🔍 [getCartData] Usuario autenticado:', user);
       return { userId: user?.id };
     }
   }, [isGuestMode, sessionId]);
@@ -43,24 +45,30 @@ export const useUnifiedCart = () => {
   const loadCart = useCallback(async () => {
     try {
       const cartData = getCartData();
+      console.log('🔍 [loadCart] Datos del carrito obtenidos:', cartData);
+      
       if (!cartData.userId && !cartData.sessionId) {
-        console.log('No hay usuario ni sesión para cargar carrito');
+        console.log('⚠️ [loadCart] No hay usuario ni sesión para cargar carrito');
         return false;
       }
 
-      console.log('🔄 Cargando carrito unificado:', cartData);
+      console.log('🔄 [loadCart] Cargando carrito unificado:', cartData);
       const response = await unifiedCartApi.getCart(cartData);
       
       if (response.success && response.data) {
-        console.log('✅ Carrito unificado cargado:', response.data);
+        console.log('✅ [loadCart] Carrito unificado cargado:', response.data);
         syncServerCart(response.data);
         return true;
       } else {
-        console.log('⚠️ No se pudo cargar carrito:', response.message);
+        console.log('⚠️ [loadCart] No se pudo cargar carrito:', response.message);
         return false;
       }
     } catch (err) {
-      console.error('❌ Error cargando carrito unificado:', err);
+      console.error('❌ [loadCart] Error cargando carrito unificado:', err);
+      if (err instanceof Error) {
+        console.error('❌ [loadCart] Mensaje de error:', err.message);
+        console.error('❌ [loadCart] Stack trace:', err.stack);
+      }
       return false;
     }
   }, [getCartData, syncServerCart]);
@@ -73,9 +81,20 @@ export const useUnifiedCart = () => {
       setIsUpdatingStock(true);
       setError(null);
 
-      // Verificar stock disponible
-      if (product.stock_total < quantity) {
-        setError(`Stock insuficiente. Solo hay ${product.stock_total} unidades disponibles.`);
+      // Verificar stock disponible ANTES de hacer la llamada a la API
+      const currentStock = product.stock_total;
+      if (currentStock < quantity) {
+        setError(`Stock insuficiente. Solo hay ${currentStock} unidades disponibles.`);
+        return false;
+      }
+
+      // Verificar si ya existe en el carrito y calcular stock restante
+      const existingItem = cart?.items.find(item => item.productId === product.id);
+      const alreadyInCart = existingItem ? existingItem.quantity : 0;
+      const totalRequested = alreadyInCart + quantity;
+      
+      if (totalRequested > currentStock) {
+        setError(`Stock insuficiente. Ya tienes ${alreadyInCart} en el carrito y solo hay ${currentStock} disponibles.`);
         return false;
       }
 
@@ -85,7 +104,15 @@ export const useUnifiedCart = () => {
         return false;
       }
 
-      console.log('🔄 Agregando producto al carrito unificado:', { product: product.name, quantity, cartData });
+      console.log('🔄 Agregando producto al carrito unificado:', { 
+        product: product.name, 
+        quantity, 
+        currentStock,
+        alreadyInCart,
+        totalRequested,
+        cartData 
+      });
+      
       const response = await unifiedCartApi.addItem(product.id, quantity, cartData);
 
       if (response.success) {
@@ -93,12 +120,13 @@ export const useUnifiedCart = () => {
         addToStoreCart(product, quantity);
         
         // Actualizar el stock del producto en la lista en tiempo real
-        const newStock = product.stock_total - quantity;
+        const newStock = currentStock - quantity;
         updateProductStock(product.id, newStock);
         
-        console.log('✅ Producto agregado exitosamente');
+        console.log('✅ Producto agregado exitosamente. Stock actualizado:', newStock);
         return true;
       } else {
+        // Si la API falla, mostrar el mensaje de error del servidor
         setError(response.message || 'Error al agregar al carrito');
         return false;
       }
@@ -109,7 +137,7 @@ export const useUnifiedCart = () => {
     } finally {
       setIsUpdatingStock(false);
     }
-  }, [addToStoreCart, getCartData, updateProductStock]);
+  }, [addToStoreCart, getCartData, updateProductStock, cart?.items]);
 
   /**
    * Remover producto del carrito
@@ -165,23 +193,44 @@ export const useUnifiedCart = () => {
       const currentItem = cart?.items.find(item => item.productId === productId);
       if (!currentItem) return false;
 
+      // Verificar stock disponible ANTES de actualizar
+      const currentStock = currentItem.product.stock_total;
+      const currentQuantity = currentItem.quantity;
+      const quantityDiff = newQuantity - currentQuantity;
+      
+      if (quantityDiff > 0) {
+        // Si estamos aumentando la cantidad, verificar stock
+        if (newQuantity > currentStock) {
+          setError(`Stock insuficiente. Solo hay ${currentStock} unidades disponibles.`);
+          return false;
+        }
+      }
+
       const cartData = getCartData();
       if (!cartData.userId && !cartData.sessionId) {
         setError('No se pudo obtener datos del carrito');
         return false;
       }
 
-      console.log('🔄 Actualizando cantidad en carrito unificado:', { productId, newQuantity, cartData });
+      console.log('🔄 Actualizando cantidad en carrito unificado:', { 
+        productId, 
+        newQuantity, 
+        currentQuantity,
+        quantityDiff,
+        currentStock,
+        cartData 
+      });
+      
       const response = await unifiedCartApi.updateQuantity(productId, newQuantity, cartData);
 
       if (response.success) {
         updateStoreCartQuantity(productId, newQuantity);
         
         // Actualizar el stock del producto en la lista en tiempo real
-        const quantityDiff = newQuantity - currentItem.quantity;
         if (quantityDiff !== 0) {
-          const newStock = currentItem.product.stock_total - quantityDiff;
+          const newStock = currentStock - quantityDiff;
           updateProductStock(productId, newStock);
+          console.log(`📊 Stock actualizado: ${currentStock} → ${newStock} (diferencia: ${quantityDiff})`);
         }
         
         console.log('✅ Cantidad actualizada exitosamente');

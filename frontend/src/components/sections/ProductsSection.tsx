@@ -146,8 +146,8 @@ export default function ProductsSection() {
               </div>
             </div>
 
-            {/* Filtro de categorías */}
-            <div className="flex items-center gap-2">
+            {/* Filtro de categorías - COMENTADO TEMPORALMENTE */}
+            {/* <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
                 value={selectedCategory}
@@ -161,7 +161,7 @@ export default function ProductsSection() {
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
           </div>
         </div>
 
