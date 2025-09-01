@@ -316,46 +316,11 @@ class UnifiedCartController {
         });
       }
       
-      // AHORA calcular stock disponible considerando items ya en carritos
-      // Excluir la cantidad ya reservada en este carrito específico si existe
-      let reservedStockQuery = '';
-      let reservedStockParams = [];
+      // Simplificar el cálculo de stock disponible - solo verificar stock total por ahora
+      // TODO: Implementar lógica de stock reservado más adelante
+      const availableStock = product.stock_total;
       
-      if (carts.length > 0) {
-        // Si ya existe un carrito, excluir sus items del cálculo de stock reservado
-        reservedStockQuery = `
-          SELECT COALESCE(SUM(ci.quantity), 0) as reserved
-          FROM cart_items_unified ci
-          JOIN carts_unified c ON ci.cart_id = c.id
-          WHERE ci.product_id = ? AND c.status = "active" AND c.id != ?
-        `;
-        reservedStockParams = [productId, carts[0].id];
-      } else {
-        // Si no existe carrito, considerar todo el stock reservado
-        reservedStockQuery = `
-          SELECT COALESCE(SUM(ci.quantity), 0) as reserved
-          FROM cart_items_unified ci
-          JOIN carts_unified c ON ci.cart_id = c.id
-          WHERE ci.product_id = ? AND c.status = "active"
-        `;
-        reservedStockParams = [productId];
-      }
-      
-      let reservedStock;
-      try {
-        reservedStock = await query(reservedStockQuery, reservedStockParams);
-      } catch (dbError) {
-        console.error('❌ [UnifiedCart] Error calculando stock reservado:', dbError);
-        return res.status(500).json({
-          success: false,
-          message: 'Error calculando stock disponible',
-          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
-        });
-      }
-      const totalReserved = reservedStock[0].reserved;
-      const availableStock = product.stock_total - totalReserved;
-      
-      console.log(`📊 [UnifiedCart] Stock del producto ${productId}: Total=${product.stock_total}, Reservado=${totalReserved}, Disponible=${availableStock}`);
+      console.log(`📊 [UnifiedCart] Stock del producto ${productId}: Total=${product.stock_total}, Disponible=${availableStock}`);
       
       if (availableStock < quantity) {
         return res.status(400).json({
@@ -440,12 +405,9 @@ class UnifiedCartController {
             [cartId, productId, quantity]
           );
           
-          // Reservar stock solo para items nuevos
-          await query(
-            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
-            [quantity, productId]
-          );
-          console.log(`🔄 [UnifiedCart] Stock reservado: -${quantity} para producto ${productId}`);
+          // TODO: Implementar reserva de stock más adelante
+          // Por ahora solo agregar al carrito sin modificar stock
+          console.log(`🔄 [UnifiedCart] Item agregado al carrito: ${quantity} unidades del producto ${productId}`);
         } catch (dbError) {
           console.error('❌ [UnifiedCart] Error agregando item:', dbError);
           return res.status(500).json({
@@ -803,14 +765,8 @@ class UnifiedCartController {
           [quantity, cart.id, productId]
         );
 
-        // Ajustar stock según la diferencia
-        if (quantityDifference !== 0) {
-          await query(
-            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
-            [quantityDifference, productId]
-          );
-          console.log(`🔄 [UnifiedCart] Stock ajustado: ${quantityDifference > 0 ? '-' : '+'}${Math.abs(quantityDifference)} para producto ${productId}`);
-        }
+        // TODO: Implementar ajuste de stock más adelante
+        console.log(`🔄 [UnifiedCart] Cantidad actualizada: ${quantity} unidades del producto ${productId}`);
       }
 
       // Obtener carrito actualizado
