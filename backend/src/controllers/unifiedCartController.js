@@ -51,6 +51,8 @@ class UnifiedCartController {
       console.log('🔍 [UnifiedCart] sessionId existe?', !!sessionId);
       console.log('🔍 [UnifiedCart] userId && sessionId?', !!(userId && sessionId));
       
+      // Bandera para saber si migramos un carrito (evitar INSERT posterior)
+      let migratedCartId = null;
       if (userId && sessionId) {
         console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
         console.log('🔄 [UnifiedCart] userId para migración:', userId);
@@ -95,6 +97,7 @@ class UnifiedCartController {
             console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
             console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
             console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
+            migratedCartId = guestCarts[0].id;
           } else {
             console.log('ℹ️ [UnifiedCart] No se encontraron carritos de invitado para migrar');
           }
@@ -116,7 +119,12 @@ class UnifiedCartController {
       console.log('🔍 [UnifiedCart] userId para búsqueda:', userId);
       console.log('🔍 [UnifiedCart] sessionId para búsqueda:', sessionId);
       
-      if (userId) {
+      if (migratedCartId) {
+        // Si migramos, garantizamos leer ese mismo carrito por id
+        cartQuery = 'SELECT * FROM carts_unified WHERE id = ? LIMIT 1';
+        cartParams = [migratedCartId];
+        console.log('🔍 [UnifiedCart] Buscando carrito migrado por ID:', migratedCartId);
+      } else if (userId) {
         // Buscar carrito por user_id O por session_id (para capturar carritos migrados)
         cartQuery = 'SELECT * FROM carts_unified WHERE (user_id = ? OR session_id = ?) AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId, sessionId];
@@ -156,6 +164,7 @@ class UnifiedCartController {
         // Crear carrito vacío si no existe
         let createQuery = '';
         let createParams = [];
+        let createdCartId = null;
         
         if (userId) {
           // Usuario autenticado: carrito expira en 7 días
@@ -173,9 +182,9 @@ class UnifiedCartController {
         
         try {
           const result = await query(createQuery, createParams);
-          const cartId = result.insertId;
+          createdCartId = result.insertId;
           
-          console.log('✅ [UnifiedCart] Carrito creado con ID:', cartId);
+          console.log('✅ [UnifiedCart] Carrito creado con ID:', createdCartId);
           console.log('📊 [UnifiedCart] Resultado del INSERT:', result);
         } catch (dbError) {
           console.error('❌ [UnifiedCart] Error creando carrito:', dbError);
@@ -189,7 +198,7 @@ class UnifiedCartController {
         return res.json({
           success: true,
           data: {
-            id: cartId,
+            id: createdCartId,
             userId: userId || null,
             sessionId: sessionId || null,
             cartType: userId ? 'registered' : 'guest',
@@ -210,9 +219,9 @@ class UnifiedCartController {
       console.log('📝 [UnifiedCart] Cart ID para items:', cart.id);
       console.log('🔍 [UnifiedCart] Ejecutando consulta de items...');
       
+      let items;
       try {
-        const items = await query(itemsQuery, [cart.id]);
-        
+        items = await query(itemsQuery, [cart.id]);
         console.log('📊 [UnifiedCart] Items encontrados:', items.length);
         console.log('📊 [UnifiedCart] Resultado de consulta de items:', items);
       } catch (dbError) {
