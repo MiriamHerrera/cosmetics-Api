@@ -104,19 +104,54 @@ class OrderController {
       `, [locationId]);
       console.log('🔍 [DeliveryTimes] Todos los slots para location', locationId, ':', debugSlots);
       
+      // Verificar si es el día actual para filtrar horarios pasados
+      const today = new Date();
+      const isToday = localDateObj.toDateString() === today.toDateString();
+      const currentTime = today.toTimeString().slice(0, 5); // HH:MM format
+      
+      console.log('🕐 [DeliveryTimes] Validación de horarios:', {
+        isToday,
+        currentTime,
+        selectedDate: localDateObj.toDateString(),
+        todayDate: today.toDateString()
+      });
+
       // Obtener horarios específicos disponibles para ese lugar y día
       // Solo usamos delivery_time_slots, no rangos
-      const timeSlots = await query(`
-        SELECT 
-          time_slot,
-          TIME_FORMAT(time_slot, '%H:%i') as formatted_time,
-          TIME_FORMAT(time_slot, '%h:%i %p') as display_time
-        FROM delivery_time_slots
-        WHERE location_id = ? 
-          AND day_of_week = ?
-          AND is_active = TRUE
-        ORDER BY time_slot
-      `, [locationId, dayOfWeek]);
+      let timeSlots;
+      
+      if (isToday) {
+        // Si es hoy, solo mostrar horarios que aún no han pasado
+        timeSlots = await query(`
+          SELECT 
+            time_slot,
+            TIME_FORMAT(time_slot, '%H:%i') as formatted_time,
+            TIME_FORMAT(time_slot, '%h:%i %p') as display_time
+          FROM delivery_time_slots
+          WHERE location_id = ? 
+            AND day_of_week = ?
+            AND is_active = TRUE
+            AND time_slot > ?
+          ORDER BY time_slot
+        `, [locationId, dayOfWeek, currentTime]);
+        
+        console.log('🕐 [DeliveryTimes] Filtrando horarios pasados del día actual');
+      } else {
+        // Si no es hoy, mostrar todos los horarios disponibles
+        timeSlots = await query(`
+          SELECT 
+            time_slot,
+            TIME_FORMAT(time_slot, '%H:%i') as formatted_time,
+            TIME_FORMAT(time_slot, '%h:%i %p') as display_time
+          FROM delivery_time_slots
+          WHERE location_id = ? 
+            AND day_of_week = ?
+            AND is_active = TRUE
+          ORDER BY time_slot
+        `, [locationId, dayOfWeek]);
+        
+        console.log('🕐 [DeliveryTimes] Mostrando todos los horarios disponibles');
+      }
 
       console.log('🔍 [DeliveryTimes] Horarios específicos encontrados:', timeSlots.length);
 
@@ -134,19 +169,31 @@ class OrderController {
           data: formattedSlots,
           location: locationExists[0],
           requestInfo: { locationId, date, dayOfWeek },
-          count: formattedSlots.length
+          count: formattedSlots.length,
+          isToday: isToday,
+          currentTime: currentTime,
+          hasAvailableSlots: true
         });
       }
 
       // No hay horarios disponibles para este día
       console.log('❌ [DeliveryTimes] No hay horarios disponibles para este día');
+      
+      let message = 'No hay horarios de entrega disponibles para este día';
+      if (isToday) {
+        message = 'Ya no hay horarios de entrega disponibles para hoy. Por favor, selecciona otro día.';
+      }
+      
       res.json({
         success: true,
         data: [],
         location: locationExists[0],
         requestInfo: { locationId, date, dayOfWeek },
-        message: 'No hay horarios de entrega disponibles para este día',
-        count: 0
+        message: message,
+        count: 0,
+        isToday: isToday,
+        currentTime: currentTime,
+        hasAvailableSlots: false
       });
       
     } catch (error) {

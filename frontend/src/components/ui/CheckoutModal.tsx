@@ -81,8 +81,23 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
   // Determinar tipo de usuario y restricciones de fecha
   const isGuest = !user;
   const maxDaysAhead = isGuest ? 3 : 7;
-  const minDate = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const minDate = today.toISOString().split('T')[0];
   const maxDate = new Date(Date.now() + maxDaysAhead * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
+  // Función para verificar si una fecha está disponible
+  const isDateAvailable = (dateString: string) => {
+    const date = new Date(dateString);
+    const isToday = date.toDateString() === today.toDateString();
+    
+    // Si es hoy, verificar si hay horarios disponibles
+    if (isToday && selectedLocation) {
+      // Esta validación se hará cuando se carguen los horarios
+      return true; // Permitir selección, la validación real se hace en loadAvailableTimes
+    }
+    
+    return true; // Otros días siempre están disponibles
+  };
 
   // Cargar lugares de entrega al abrir el modal
   useEffect(() => {
@@ -130,6 +145,14 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
       if (response.ok) {
         const data = await response.json();
         setAvailableTimes(data.data);
+        
+        // Si no hay horarios disponibles para hoy, mostrar mensaje de error
+        if (data.isToday && !data.hasAvailableSlots) {
+          setError(data.message || 'Ya no hay horarios de entrega disponibles para hoy. Por favor, selecciona otro día.');
+        } else if (error && data.hasAvailableSlots) {
+          // Limpiar error si ahora hay horarios disponibles
+          setError(null);
+        }
       }
     } catch (error) {
       console.error('Error cargando horarios:', error);
@@ -603,9 +626,18 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">
-                        No hay horarios disponibles para la fecha seleccionada
-                      </p>
+                      <div className="text-center py-4">
+                        <div className="text-gray-500 mb-2">
+                          <Clock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                          <p className="font-medium">No hay horarios disponibles</p>
+                        </div>
+                        <p className="text-sm text-gray-400">
+                          {selectedDate === minDate 
+                            ? 'Ya no hay horarios de entrega disponibles para hoy. Por favor, selecciona otro día.'
+                            : 'No hay horarios de entrega disponibles para esta fecha.'
+                          }
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
