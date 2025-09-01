@@ -117,9 +117,10 @@ class UnifiedCartController {
       console.log('🔍 [UnifiedCart] sessionId para búsqueda:', sessionId);
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
-        cartParams = [userId];
-        console.log('🔍 [UnifiedCart] Buscando carrito para usuario:', userId);
+        // Buscar carrito por user_id O por session_id (para capturar carritos migrados)
+        cartQuery = 'SELECT * FROM carts_unified WHERE (user_id = ? OR session_id = ?) AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartParams = [userId, sessionId];
+        console.log('🔍 [UnifiedCart] Buscando carrito para usuario (incluyendo migrados):', userId);
         console.log('🔍 [UnifiedCart] Query para usuario:', cartQuery);
         console.log('🔍 [UnifiedCart] Params para usuario:', cartParams);
       } else {
