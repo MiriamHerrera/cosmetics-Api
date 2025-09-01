@@ -58,8 +58,8 @@ class ReservationController {
 
       // Contar total de registros
       const countQuery = baseQuery.replace(/SELECT.*FROM/, 'SELECT COUNT(*) as total FROM');
-      const [countResult] = await query(countQuery, queryParams);
-      const total = countResult.total;
+      const countResult = await query(countQuery, queryParams);
+      const total = countResult[0]?.total || 0;
 
       // Aplicar paginación y ordenamiento
       baseQuery += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';

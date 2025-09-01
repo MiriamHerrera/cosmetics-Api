@@ -49,7 +49,7 @@ const getDashboardSimple = async (req, res) => {
     
     try {
       // Contar carritos activos
-      const activeCarts = await query('SELECT COUNT(*) as total FROM carts WHERE status = "active"');
+      const activeCarts = await query('SELECT COUNT(*) as total FROM carts_unified WHERE status = "active"');
       dashboardData.active_carts = activeCarts[0]?.total || 0;
       console.log('✅ Carritos activos:', dashboardData.active_carts);
     } catch (error) {
