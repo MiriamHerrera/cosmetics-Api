@@ -233,7 +233,7 @@ app.get('/api/debug/routes', (req, res) => {
   });
 });
 
-// Endpoint de debug para probar middleware
+// Endpoint de debug para probar middleware 
 app.use('/api/debug/middleware', (req, res, next) => {
   console.log('🔍 DEBUG MIDDLEWARE:', {
     method: req.method,
