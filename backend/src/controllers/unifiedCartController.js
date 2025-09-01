@@ -430,8 +430,14 @@ class UnifiedCartController {
             [newQuantity, cartId, productId]
           );
           
-          // NO reservar stock adicional aquí - ya está reservado desde la primera vez
+          // Actualizar stock del producto (solo la cantidad adicional)
+          await query(
+            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
+            [additionalQuantity, productId]
+          );
+          
           console.log(`🔄 [UnifiedCart] Cantidad actualizada para producto ${productId}: ${existingItems[0].quantity} + ${quantity} = ${newQuantity}`);
+          console.log(`📦 [UnifiedCart] Stock actualizado: -${additionalQuantity} unidades adicionales para producto ${productId}`);
         } catch (dbError) {
           console.error('❌ [UnifiedCart] Error actualizando cantidad:', dbError);
           return res.status(500).json({
@@ -448,9 +454,14 @@ class UnifiedCartController {
             [cartId, productId, quantity]
           );
           
-          // TODO: Implementar reserva de stock más adelante
-          // Por ahora solo agregar al carrito sin modificar stock
+          // Actualizar stock del producto
+          await query(
+            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
+            [quantity, productId]
+          );
+          
           console.log(`🔄 [UnifiedCart] Item agregado al carrito: ${quantity} unidades del producto ${productId}`);
+          console.log(`📦 [UnifiedCart] Stock actualizado: -${quantity} unidades para producto ${productId}`);
         } catch (dbError) {
           console.error('❌ [UnifiedCart] Error agregando item:', dbError);
           return res.status(500).json({
@@ -854,7 +865,23 @@ class UnifiedCartController {
           [quantity, cart.id, productId]
         );
 
-        // TODO: Implementar ajuste de stock más adelante
+        // Ajustar stock según la diferencia de cantidad
+        if (quantityDifference > 0) {
+          // Aumentando cantidad: reducir stock
+          await query(
+            'UPDATE products SET stock_total = stock_total - ? WHERE id = ?',
+            [quantityDifference, productId]
+          );
+          console.log(`📦 [UnifiedCart] Stock reducido: -${quantityDifference} unidades para producto ${productId}`);
+        } else if (quantityDifference < 0) {
+          // Disminuyendo cantidad: restaurar stock
+          await query(
+            'UPDATE products SET stock_total = stock_total + ? WHERE id = ?',
+            [Math.abs(quantityDifference), productId]
+          );
+          console.log(`📦 [UnifiedCart] Stock restaurado: +${Math.abs(quantityDifference)} unidades para producto ${productId}`);
+        }
+        
         console.log(`🔄 [UnifiedCart] Cantidad actualizada: ${quantity} unidades del producto ${productId}`);
       }
 
