@@ -18,5 +18,6 @@ router.delete('/clear', unifiedCartController.clearCart);
 // Rutas especiales
 router.post('/migrate-guest-to-user', authenticateToken, unifiedCartController.migrateGuestToUser);
 router.post('/cleanup-expired', authenticateToken, unifiedCartController.cleanupExpired);
+router.get('/expiration-info', unifiedCartController.getExpirationInfo);
 
 module.exports = router; 

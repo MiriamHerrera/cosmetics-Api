@@ -39,60 +39,34 @@ class UnifiedCartController {
         });
       }
 
-      // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
-      if (userId && sessionId) {
-        console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
-        
-        try {
-          // Buscar carrito de invitado
-          const guestCarts = await query(
-            'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
-            [sessionId]
-          );
-          
-          if (guestCarts.length > 0) {
-            console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
-            
-            // Buscar carrito del usuario
-            const userCarts = await query(
-              'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND status = "active"',
-              [userId]
-            );
-            
-            let targetCartId;
-            
-            if (userCarts.length === 0) {
-              // Crear carrito para el usuario
-              const result = await query(
-                'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
-                [userId]
-              );
-              targetCartId = result.insertId;
-              console.log('✅ [UnifiedCart] Nuevo carrito creado para usuario:', targetCartId);
-            } else {
-              targetCartId = userCarts[0].id;
-              console.log('✅ [UnifiedCart] Usando carrito existente del usuario:', targetCartId);
-            }
-            
-            // Migrar items del carrito de invitado al carrito del usuario
-            await query(
-              'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
-              [targetCartId, guestCarts[0].id]
-            );
-            console.log('🔄 [UnifiedCart] Items migrados al carrito del usuario');
-            
-            // Marcar carrito de invitado como cleaned
-            await query(
-              'UPDATE carts_unified SET status = "cleaned" WHERE id = ?',
-              [guestCarts[0].id]
-            );
-            console.log('✅ [UnifiedCart] Carrito de invitado marcado como cleaned');
-          }
-        } catch (migrationError) {
-          console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
-          // Continuar sin migración si falla
-        }
-      }
+             // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
+       if (userId && sessionId) {
+         console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
+         
+         try {
+           // Buscar carrito de invitado
+           const guestCarts = await query(
+             'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+             [sessionId]
+           );
+           
+           if (guestCarts.length > 0) {
+             console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
+             
+             // En lugar de crear un carrito nuevo, actualizar el carrito existente
+             await query(
+               'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
+               [userId, guestCarts[0].id]
+             );
+             
+             console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
+             console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
+           }
+         } catch (migrationError) {
+           console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
+           // Continuar sin migración si falla
+         }
+       }
 
       // Buscar carrito en la tabla unificada
       let cartQuery = '';
@@ -135,10 +109,12 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
+          // Usuario autenticado: carrito expira en 7 días
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status, expires_at) VALUES (?, "registered", "active", DATE_ADD(NOW(), INTERVAL 7 DAY))';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
+          // Usuario invitado: carrito expira en 1 hora
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
           createParams = [sessionId];
         }
         
@@ -337,10 +313,12 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")';
+          // Usuario autenticado: carrito expira en 7 días
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status, expires_at) VALUES (?, "registered", "active", DATE_ADD(NOW(), INTERVAL 7 DAY))';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
+          // Usuario invitado: carrito expira en 1 hora
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
           createParams = [sessionId];
         }
         
@@ -531,41 +509,16 @@ class UnifiedCartController {
 
       const guestCart = guestCarts[0];
 
-      // Verificar si el usuario ya tiene un carrito activo o cleaned
-      const userCarts = await query(
-        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "registered" AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1',
-        [userId]
-      );
-
-      let targetCartId;
-
-      if (userCarts.length === 0) {
-        // Crear nuevo carrito para el usuario
-        const result = await query(
-          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "registered", "active")',
-          [userId]
-        );
-        targetCartId = result.insertId;
-      } else {
-        targetCartId = userCarts[0].id;
-      }
-
-      // Migrar items del carrito de invitado al carrito del usuario
+      // En lugar de crear un carrito nuevo, actualizar el carrito existente
       await query(
-        'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
-        [targetCartId, guestCart.id]
-      );
-
-      // Marcar carrito de invitado como migrado
-      await query(
-        'UPDATE carts_unified SET status = "cleaned" WHERE id = ?',
-        [guestCart.id]
+        'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
+        [userId, guestCart.id]
       );
 
       // Obtener carrito migrado
       const migratedCarts = await query(
         'SELECT * FROM carts_unified WHERE id = ?',
-        [targetCartId]
+        [guestCart.id]
       );
 
       if (migratedCarts.length === 0) {
@@ -577,10 +530,10 @@ class UnifiedCartController {
 
       const cart = migratedCarts[0];
 
-      // Obtener items migrados
+      // Obtener items del carrito migrado
       const items = await query(
         'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
-        [targetCartId]
+        [guestCart.id]
       );
 
       // Calcular totales
@@ -665,6 +618,77 @@ class UnifiedCartController {
 
     } catch (error) {
       console.error('Error limpiando carritos expirados:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+  }
+
+  // Obtener información de expiración y hora del servidor
+  async getExpirationInfo(req, res) {
+    try {
+      // Hora actual del servidor
+      const serverTime = new Date();
+      
+      // Hora local del usuario (aproximada)
+      const userTime = new Date(serverTime.getTime() + (parseInt(process.env.TIMEZONE_OFFSET || '0') * 60 * 1000));
+      
+      // Estadísticas de carritos
+      const cartStats = await query(`
+        SELECT 
+          cart_type,
+          COUNT(*) as total_carts,
+          SUM(CASE WHEN expires_at < NOW() THEN 1 ELSE 0 END) as expired_carts,
+          SUM(CASE WHEN expires_at > NOW() AND expires_at < DATE_ADD(NOW(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) as expiring_soon,
+          MIN(expires_at) as next_expiration,
+          MAX(expires_at) as last_expiration
+        FROM carts_unified 
+        WHERE status = 'active'
+        GROUP BY cart_type
+      `);
+
+      // Carritos próximos a expirar
+      const expiringSoon = await query(`
+        SELECT 
+          id, cart_type, user_id, session_id, expires_at,
+          TIMESTAMPDIFF(MINUTE, NOW(), expires_at) as minutes_until_expiry
+        FROM carts_unified 
+        WHERE status = 'active' 
+        AND expires_at > NOW() 
+        AND expires_at < DATE_ADD(NOW(), INTERVAL 1 HOUR)
+        ORDER BY expires_at ASC
+        LIMIT 10
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          serverTime: {
+            utc: serverTime.toISOString(),
+            local: serverTime.toString(),
+            timestamp: serverTime.getTime()
+          },
+          userTime: {
+            utc: userTime.toISOString(),
+            local: userTime.toString(),
+            timestamp: userTime.getTime()
+          },
+          timezone: {
+            offset: process.env.TIMEZONE_OFFSET || '0',
+            description: 'Offset en minutos desde UTC'
+          },
+          cartStats,
+          expiringSoon,
+          expirationRules: {
+            guest: '1 hora',
+            registered: '7 días'
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo información de expiración:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor'
