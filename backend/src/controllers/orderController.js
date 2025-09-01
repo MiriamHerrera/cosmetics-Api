@@ -35,76 +35,108 @@ class OrderController {
     try {
       const { locationId, date } = req.query;
       
+      console.log('🕐 [DeliveryTimes] Request recibido:', { locationId, date });
+      
       if (!locationId || !date) {
+        console.log('❌ [DeliveryTimes] Faltan parámetros requeridos');
         return res.status(400).json({
           success: false,
-          message: 'Se requiere locationId y date'
+          message: 'Se requiere locationId y date',
+          received: { locationId, date }
+        });
+      }
+
+      // Validar que la fecha sea válida
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+        console.log('❌ [DeliveryTimes] Fecha inválida:', date);
+        return res.status(400).json({
+          success: false,
+          message: 'Formato de fecha inválido. Use YYYY-MM-DD',
+          received: { date }
         });
       }
 
       // Obtener el día de la semana (0=Domingo, 1=Lunes, etc.)
-      const dayOfWeek = new Date(date).getDay();
+      const dayOfWeek = dateObj.getDay();
+      console.log('📅 [DeliveryTimes] Procesando:', { locationId, date, dayOfWeek });
       
-      // Obtener horarios disponibles para ese lugar y día
-      const timeSlots = await query(`
-        SELECT 
-          dts.time_slot,
-          ds.start_time,
-          ds.end_time
-        FROM delivery_time_slots dts
-        INNER JOIN delivery_schedules ds ON dts.location_id = ds.location_id 
-          AND dts.day_of_week = ds.day_of_week
-        WHERE dts.location_id = ? 
-          AND dts.day_of_week = ?
-          AND dts.is_active = TRUE
-          AND ds.is_active = TRUE
-        ORDER BY dts.time_slot
-      `, [locationId, dayOfWeek]);
-
-      // Si no hay horarios específicos, usar el rango general
-      if (timeSlots.length === 0) {
-        const generalSchedule = await query(`
-          SELECT start_time, end_time
-          FROM delivery_schedules
-          WHERE location_id = ? 
-            AND day_of_week = ?
-            AND is_active = TRUE
-        `, [locationId, dayOfWeek]);
-
-        if (generalSchedule.length > 0) {
-          const { start_time, end_time } = generalSchedule[0];
-          // Generar horarios cada 30 minutos
-          const times = [];
-          let currentTime = new Date(`2000-01-01 ${start_time}`);
-          const endTime = new Date(`2000-01-01 ${end_time}`);
-          
-          while (currentTime <= endTime) {
-            times.push({
-              time_slot: currentTime.toTimeString().slice(0, 5),
-              start_time: start_time,
-              end_time: end_time
-            });
-            currentTime.setMinutes(currentTime.getMinutes() + 30);
-          }
-          
-          return res.json({
-            success: true,
-            data: times,
-            flexible: true
-          });
-        }
+      // Verificar que la ubicación existe
+      const locationExists = await query(`
+        SELECT id, name, is_active FROM delivery_locations WHERE id = ?
+      `, [locationId]);
+      
+      if (locationExists.length === 0) {
+        console.log('❌ [DeliveryTimes] Ubicación no encontrada:', locationId);
+        return res.status(404).json({
+          success: false,
+          message: 'Ubicación de entrega no encontrada',
+          locationId: locationId
+        });
       }
 
+      if (!locationExists[0].is_active) {
+        console.log('❌ [DeliveryTimes] Ubicación inactiva:', locationId);
+        return res.status(400).json({
+          success: false,
+          message: 'Ubicación de entrega no disponible',
+          locationId: locationId
+        });
+      }
+
+      console.log('✅ [DeliveryTimes] Ubicación válida:', locationExists[0]);
+      
+      // Obtener horarios específicos disponibles para ese lugar y día
+      // Solo usamos delivery_time_slots, no rangos
+      const timeSlots = await query(`
+        SELECT 
+          time_slot,
+          TIME_FORMAT(time_slot, '%H:%i') as formatted_time,
+          TIME_FORMAT(time_slot, '%h:%i %p') as display_time
+        FROM delivery_time_slots
+        WHERE location_id = ? 
+          AND day_of_week = ?
+          AND is_active = TRUE
+        ORDER BY time_slot
+      `, [locationId, dayOfWeek]);
+
+      console.log('🔍 [DeliveryTimes] Horarios específicos encontrados:', timeSlots.length);
+
+      if (timeSlots.length > 0) {
+        console.log('✅ [DeliveryTimes] Devolviendo horarios específicos');
+        // Formatear los datos para el frontend
+        const formattedSlots = timeSlots.map(slot => ({
+          time_slot: slot.formatted_time, // HH:MM format
+          display_time: slot.display_time, // 12-hour format with AM/PM
+          value: slot.formatted_time // Para usar como value en el frontend
+        }));
+        
+        return res.json({
+          success: true,
+          data: formattedSlots,
+          location: locationExists[0],
+          requestInfo: { locationId, date, dayOfWeek },
+          count: formattedSlots.length
+        });
+      }
+
+      // No hay horarios disponibles para este día
+      console.log('❌ [DeliveryTimes] No hay horarios disponibles para este día');
       res.json({
         success: true,
-        data: timeSlots,
-        flexible: false
+        data: [],
+        location: locationExists[0],
+        requestInfo: { locationId, date, dayOfWeek },
+        message: 'No hay horarios de entrega disponibles para este día',
+        count: 0
       });
+      
     } catch (error) {
-      console.error('Error obteniendo horarios disponibles:', error);
+      console.error('❌ [DeliveryTimes] Error obteniendo horarios disponibles:', error);
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error de base de datos'
       });
     }
   };
