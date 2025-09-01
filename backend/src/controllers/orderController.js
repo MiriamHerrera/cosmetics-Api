@@ -346,6 +346,19 @@ class OrderController {
       
       await query(updateQuery, updateParams);
 
+      // Limpiar los items del carrito después de crear la orden
+      let clearItemsQuery, clearItemsParams;
+      
+      if (customerType === 'guest') {
+        clearItemsQuery = 'DELETE FROM cart_items_unified WHERE cart_id IN (SELECT id FROM carts_unified WHERE session_id = ?)';
+        clearItemsParams = [sessionId];
+      } else {
+        clearItemsQuery = 'DELETE FROM cart_items_unified WHERE cart_id IN (SELECT id FROM carts_unified WHERE user_id = ?)';
+        clearItemsParams = [userId];
+      }
+      
+      await query(clearItemsQuery, clearItemsParams);
+
       // Obtener la orden creada con detalles
       const orderDetails = await query(`
         SELECT * FROM orders_with_details WHERE id = ?
@@ -571,6 +584,12 @@ class OrderController {
         UPDATE carts_unified 
         SET status = 'completed', updated_at = NOW()
         WHERE session_id = ?
+      `, [sessionId]);
+
+      // Limpiar los items del carrito después de crear la orden
+      await connection.execute(`
+        DELETE FROM cart_items_unified 
+        WHERE cart_id IN (SELECT id FROM carts_unified WHERE session_id = ?)
       `, [sessionId]);
 
       await connection.commit();
