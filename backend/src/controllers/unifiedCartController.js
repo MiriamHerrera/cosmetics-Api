@@ -25,11 +25,17 @@ class UnifiedCartController {
       console.log('🛒 [UnifiedCart] getCart iniciado');
       console.log('📝 [UnifiedCart] Body recibido:', req.body);
       console.log('🔍 [UnifiedCart] Headers:', req.headers);
+      console.log('🔍 [UnifiedCart] Authorization header:', req.headers.authorization);
+      console.log('🔍 [UnifiedCart] Content-Type:', req.headers['content-type']);
       
       const { userId, sessionId } = req.body;
       
-      console.log('👤 [UnifiedCart] userId:', userId);
-      console.log('🔑 [UnifiedCart] sessionId:', sessionId);
+      console.log('👤 [UnifiedCart] userId extraído:', userId);
+      console.log('👤 [UnifiedCart] userId tipo:', typeof userId);
+      console.log('👤 [UnifiedCart] userId es null?', userId === null);
+      console.log('👤 [UnifiedCart] userId es undefined?', userId === undefined);
+      console.log('🔑 [UnifiedCart] sessionId extraído:', sessionId);
+      console.log('🔑 [UnifiedCart] sessionId tipo:', typeof sessionId);
       
       if (!userId && !sessionId) {
         console.log('❌ [UnifiedCart] Error: Se requiere userId o sessionId');
@@ -40,72 +46,97 @@ class UnifiedCartController {
       }
 
       // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
+      console.log('🔍 [UnifiedCart] Verificando condiciones para migración...');
+      console.log('🔍 [UnifiedCart] userId existe?', !!userId);
+      console.log('🔍 [UnifiedCart] sessionId existe?', !!sessionId);
+      console.log('🔍 [UnifiedCart] userId && sessionId?', !!(userId && sessionId));
+      
+      // Bandera para saber si migramos un carrito (evitar INSERT posterior)
+      let migratedCartId = null;
       if (userId && sessionId) {
         console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
+        console.log('🔄 [UnifiedCart] userId para migración:', userId);
+        console.log('🔄 [UnifiedCart] sessionId para migración:', sessionId);
         
         try {
           // Buscar carrito de invitado
-          const guestCarts = await query(
-            'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
-            [sessionId]
-          );
+          console.log('🔍 [UnifiedCart] Buscando carrito de invitado con sessionId:', sessionId);
+          console.log('🔍 [UnifiedCart] Tipo de sessionId:', typeof sessionId);
+          console.log('🔍 [UnifiedCart] sessionId es null?', sessionId === null);
+          console.log('🔍 [UnifiedCart] sessionId es undefined?', sessionId === undefined);
+          console.log('🔍 [UnifiedCart] sessionId length:', sessionId ? sessionId.length : 'N/A');
           
+          let guestCarts;
+          try {
+            guestCarts = await query(
+              'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+              [sessionId]
+            );
+            console.log('✅ [UnifiedCart] Consulta de carritos de invitado exitosa');
+          } catch (queryError) {
+            console.error('❌ [UnifiedCart] Error en consulta de carritos de invitado:', queryError);
+            console.error('❌ [UnifiedCart] SQL:', 'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"');
+            console.error('❌ [UnifiedCart] Params:', [sessionId]);
+            throw queryError;
+          }
+          
+          console.log('📊 [UnifiedCart] Carritos de invitado encontrados:', guestCarts.length);
           if (guestCarts.length > 0) {
             console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
+            console.log('📦 [UnifiedCart] Carrito ID a migrar:', guestCarts[0].id);
+            console.log('📦 [UnifiedCart] Carrito actual - user_id:', guestCarts[0].user_id);
+            console.log('📦 [UnifiedCart] Carrito actual - cart_type:', guestCarts[0].cart_type);
             
-            // Buscar carrito del usuario
-            const userCarts = await query(
-              'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
-              [userId]
+            // En lugar de crear un carrito nuevo, actualizar el carrito existente
+            console.log('🔄 [UnifiedCart] Ejecutando UPDATE...');
+            const updateResult = await query(
+              'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+              [userId, sessionId]
             );
             
-            let targetCartId;
-            
-            if (userCarts.length === 0) {
-              // Crear carrito para el usuario
-              const result = await query(
-                'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
-                [userId]
-              );
-              targetCartId = result.insertId;
-              console.log('✅ [UnifiedCart] Nuevo carrito creado para usuario:', targetCartId);
-            } else {
-              targetCartId = userCarts[0].id;
-              console.log('✅ [UnifiedCart] Usando carrito existente del usuario:', targetCartId);
-            }
-            
-            // Migrar items del carrito de invitado al carrito del usuario
-            await query(
-              'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
-              [targetCartId, guestCarts[0].id]
-            );
-            console.log('🔄 [UnifiedCart] Items migrados al carrito del usuario');
-            
-            // Marcar carrito de invitado como migrado
-            await query(
-              'UPDATE carts_unified SET status = "migrated" WHERE id = ?',
-              [guestCarts[0].id]
-            );
-            console.log('✅ [UnifiedCart] Carrito de invitado marcado como migrado');
+            console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
+            console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
+            console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
+            migratedCartId = guestCarts[0].id;
+          } else {
+            console.log('ℹ️ [UnifiedCart] No se encontraron carritos de invitado para migrar');
           }
         } catch (migrationError) {
           console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
           // Continuar sin migración si falla
         }
+      } else {
+        console.log('ℹ️ [UnifiedCart] No se cumple condición para migración');
+        console.log('ℹ️ [UnifiedCart] userId presente?', !!userId);
+        console.log('ℹ️ [UnifiedCart] sessionId presente?', !!sessionId);
       }
 
       // Buscar carrito en la tabla unificada
       let cartQuery = '';
       let cartParams = [];
       
-      if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
-        cartParams = [userId];
-        console.log('🔍 [UnifiedCart] Buscando carrito para usuario:', userId);
+      console.log('🔍 [UnifiedCart] Iniciando búsqueda de carrito...');
+      console.log('🔍 [UnifiedCart] userId para búsqueda:', userId);
+      console.log('🔍 [UnifiedCart] sessionId para búsqueda:', sessionId);
+      
+      if (migratedCartId) {
+        // Si migramos, garantizamos leer ese mismo carrito por id
+        cartQuery = 'SELECT * FROM carts_unified WHERE id = ? LIMIT 1';
+        cartParams = [migratedCartId];
+        console.log('🔍 [UnifiedCart] Buscando carrito migrado por ID:', migratedCartId);
+      } else if (userId) {
+        // Buscar carrito por user_id O por session_id (para capturar carritos migrados)
+        cartQuery = 'SELECT * FROM carts_unified WHERE (user_id = ? OR session_id = ?) AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
+        cartParams = [userId, sessionId];
+        console.log('🔍 [UnifiedCart] Buscando carrito para usuario (incluyendo migrados):', userId);
+        console.log('🔍 [UnifiedCart] Query para usuario:', cartQuery);
+        console.log('🔍 [UnifiedCart] Params para usuario:', cartParams);
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
         cartParams = [sessionId];
         console.log('🔍 [UnifiedCart] Buscando carrito para sesión:', sessionId);
+        console.log('🔍 [UnifiedCart] Query para sesión:', cartQuery);
+        console.log('🔍 [UnifiedCart] Params para sesión:', cartParams);
       }
 
       console.log('📝 [UnifiedCart] Query:', cartQuery);
@@ -133,12 +164,15 @@ class UnifiedCartController {
         // Crear carrito vacío si no existe
         let createQuery = '';
         let createParams = [];
+        let createdCartId = null;
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
+          // Usuario autenticado: carrito expira en 7 días
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status, expires_at) VALUES (?, "registered", "active", DATE_ADD(NOW(), INTERVAL 7 DAY))';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
+          // Usuario invitado: carrito expira en 1 hora
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
           createParams = [sessionId];
         }
         
@@ -148,9 +182,9 @@ class UnifiedCartController {
         
         try {
           const result = await query(createQuery, createParams);
-          const cartId = result.insertId;
+          createdCartId = result.insertId;
           
-          console.log('✅ [UnifiedCart] Carrito creado con ID:', cartId);
+          console.log('✅ [UnifiedCart] Carrito creado con ID:', createdCartId);
           console.log('📊 [UnifiedCart] Resultado del INSERT:', result);
         } catch (dbError) {
           console.error('❌ [UnifiedCart] Error creando carrito:', dbError);
@@ -164,10 +198,10 @@ class UnifiedCartController {
         return res.json({
           success: true,
           data: {
-            id: cartId,
+            id: createdCartId,
             userId: userId || null,
             sessionId: sessionId || null,
-            cartType: userId ? 'user' : 'guest',
+            cartType: userId ? 'registered' : 'guest',
             status: 'active',
             items: [],
             total: 0,
@@ -185,9 +219,9 @@ class UnifiedCartController {
       console.log('📝 [UnifiedCart] Cart ID para items:', cart.id);
       console.log('🔍 [UnifiedCart] Ejecutando consulta de items...');
       
+      let items;
       try {
-        const items = await query(itemsQuery, [cart.id]);
-        
+        items = await query(itemsQuery, [cart.id]);
         console.log('📊 [UnifiedCart] Items encontrados:', items.length);
         console.log('📊 [UnifiedCart] Resultado de consulta de items:', items);
       } catch (dbError) {
@@ -228,7 +262,14 @@ class UnifiedCartController {
         updatedAt: cart.updated_at
       };
 
-      console.log('✅ [UnifiedCart] Carrito preparado para respuesta:', cartData);
+      console.log('✅ [UnifiedCart] Carrito preparado para respuesta:');
+      console.log('✅ [UnifiedCart] - ID:', cartData.id);
+      console.log('✅ [UnifiedCart] - userId:', cartData.userId);
+      console.log('✅ [UnifiedCart] - sessionId:', cartData.sessionId);
+      console.log('✅ [UnifiedCart] - cartType:', cartData.cartType);
+      console.log('✅ [UnifiedCart] - status:', cartData.status);
+      console.log('✅ [UnifiedCart] - total:', cartData.total);
+      console.log('✅ [UnifiedCart] - itemCount:', cartData.itemCount);
 
       res.json({
         success: true,
@@ -297,7 +338,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -337,10 +378,12 @@ class UnifiedCartController {
         let createParams = [];
         
         if (userId) {
-          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")';
+          // Usuario autenticado: carrito expira en 7 días
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status, expires_at) VALUES (?, "registered", "active", DATE_ADD(NOW(), INTERVAL 7 DAY))';
           createParams = [userId];
         } else {
-          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status) VALUES (?, "guest", "active")';
+          // Usuario invitado: carrito expira en 1 hora
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
           createParams = [sessionId];
         }
         
@@ -531,41 +574,16 @@ class UnifiedCartController {
 
       const guestCart = guestCarts[0];
 
-      // Verificar si el usuario ya tiene un carrito activo
-      const userCarts = await query(
-        'SELECT * FROM carts_unified WHERE user_id = ? AND cart_type = "user" AND status = "active"',
-        [userId]
-      );
-
-      let targetCartId;
-
-      if (userCarts.length === 0) {
-        // Crear nuevo carrito para el usuario
-        const result = await query(
-          'INSERT INTO carts_unified (user_id, cart_type, status) VALUES (?, "user", "active")',
-          [userId]
-        );
-        targetCartId = result.insertId;
-      } else {
-        targetCartId = userCarts[0].id;
-      }
-
-      // Migrar items del carrito de invitado al carrito del usuario
+      // En lugar de crear un carrito nuevo, actualizar el carrito existente
       await query(
-        'UPDATE cart_items_unified SET cart_id = ? WHERE cart_id = ?',
-        [targetCartId, guestCart.id]
-      );
-
-      // Marcar carrito de invitado como migrado
-      await query(
-        'UPDATE carts_unified SET status = "cleaned" WHERE id = ?',
-        [guestCart.id]
+        'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
+        [userId, guestCart.id]
       );
 
       // Obtener carrito migrado
       const migratedCarts = await query(
         'SELECT * FROM carts_unified WHERE id = ?',
-        [targetCartId]
+        [guestCart.id]
       );
 
       if (migratedCarts.length === 0) {
@@ -577,10 +595,10 @@ class UnifiedCartController {
 
       const cart = migratedCarts[0];
 
-      // Obtener items migrados
+      // Obtener items del carrito migrado
       const items = await query(
         'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
-        [targetCartId]
+        [guestCart.id]
       );
 
       // Calcular totales
@@ -672,6 +690,77 @@ class UnifiedCartController {
     }
   }
 
+  // Obtener información de expiración y hora del servidor
+  async getExpirationInfo(req, res) {
+    try {
+      // Hora actual del servidor
+      const serverTime = new Date();
+      
+      // Hora local del usuario (aproximada)
+      const userTime = new Date(serverTime.getTime() + (parseInt(process.env.TIMEZONE_OFFSET || '0') * 60 * 1000));
+      
+      // Estadísticas de carritos
+      const cartStats = await query(`
+        SELECT 
+          cart_type,
+          COUNT(*) as total_carts,
+          SUM(CASE WHEN expires_at < NOW() THEN 1 ELSE 0 END) as expired_carts,
+          SUM(CASE WHEN expires_at > NOW() AND expires_at < DATE_ADD(NOW(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) as expiring_soon,
+          MIN(expires_at) as next_expiration,
+          MAX(expires_at) as last_expiration
+        FROM carts_unified 
+        WHERE status = 'active'
+        GROUP BY cart_type
+      `);
+
+      // Carritos próximos a expirar
+      const expiringSoon = await query(`
+        SELECT 
+          id, cart_type, user_id, session_id, expires_at,
+          TIMESTAMPDIFF(MINUTE, NOW(), expires_at) as minutes_until_expiry
+        FROM carts_unified 
+        WHERE status = 'active' 
+        AND expires_at > NOW() 
+        AND expires_at < DATE_ADD(NOW(), INTERVAL 1 HOUR)
+        ORDER BY expires_at ASC
+        LIMIT 10
+      `);
+
+      res.json({
+        success: true,
+        data: {
+          serverTime: {
+            utc: serverTime.toISOString(),
+            local: serverTime.toString(),
+            timestamp: serverTime.getTime()
+          },
+          userTime: {
+            utc: userTime.toISOString(),
+            local: userTime.toString(),
+            timestamp: userTime.getTime()
+          },
+          timezone: {
+            offset: process.env.TIMEZONE_OFFSET || '0',
+            description: 'Offset en minutos desde UTC'
+          },
+          cartStats,
+          expiringSoon,
+          expirationRules: {
+            guest: '1 hora',
+            registered: '7 días'
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo información de expiración:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+  }
+
   // Actualizar cantidad de item
   async updateQuantity(req, res) {
     try {
@@ -689,7 +778,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -847,7 +936,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
@@ -973,7 +1062,7 @@ class UnifiedCartController {
       let cartParams = [];
       
       if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
