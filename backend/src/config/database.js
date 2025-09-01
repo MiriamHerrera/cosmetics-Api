@@ -8,6 +8,7 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'railway',
   port: process.env.DB_PORT || 3306,
+  timezone: '-06:00', // Zona horaria de México
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
