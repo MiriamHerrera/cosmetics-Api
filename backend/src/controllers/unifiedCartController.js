@@ -45,54 +45,54 @@ class UnifiedCartController {
         });
       }
 
-             // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
-       console.log('🔍 [UnifiedCart] Verificando condiciones para migración...');
-       console.log('🔍 [UnifiedCart] userId existe?', !!userId);
-       console.log('🔍 [UnifiedCart] sessionId existe?', !!sessionId);
-       console.log('🔍 [UnifiedCart] userId && sessionId?', !!(userId && sessionId));
-       
-       if (userId && sessionId) {
-         console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
-         console.log('🔄 [UnifiedCart] userId para migración:', userId);
-         console.log('🔄 [UnifiedCart] sessionId para migración:', sessionId);
-         
-         try {
-           // Buscar carrito de invitado
-           console.log('🔍 [UnifiedCart] Buscando carrito de invitado con sessionId:', sessionId);
-           const guestCarts = await query(
-             'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
-             [sessionId]
-           );
-           
-           console.log('📊 [UnifiedCart] Carritos de invitado encontrados:', guestCarts.length);
-           if (guestCarts.length > 0) {
-             console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
-             console.log('📦 [UnifiedCart] Carrito ID a migrar:', guestCarts[0].id);
-             console.log('📦 [UnifiedCart] Carrito actual - user_id:', guestCarts[0].user_id);
-             console.log('📦 [UnifiedCart] Carrito actual - cart_type:', guestCarts[0].cart_type);
-             
-             // En lugar de crear un carrito nuevo, actualizar el carrito existente
-             console.log('🔄 [UnifiedCart] Ejecutando UPDATE...');
-             const updateResult = await query(
-               'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
-               [userId, guestCarts[0].id]
-             );
-             
-             console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
-             console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
-             console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
-           } else {
-             console.log('ℹ️ [UnifiedCart] No se encontraron carritos de invitado para migrar');
-           }
-         } catch (migrationError) {
-           console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
-           // Continuar sin migración si falla
-         }
-       } else {
-         console.log('ℹ️ [UnifiedCart] No se cumple condición para migración');
-         console.log('ℹ️ [UnifiedCart] userId presente?', !!userId);
-         console.log('ℹ️ [UnifiedCart] sessionId presente?', !!sessionId);
-       }
+      // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
+      console.log('🔍 [UnifiedCart] Verificando condiciones para migración...');
+      console.log('🔍 [UnifiedCart] userId existe?', !!userId);
+      console.log('🔍 [UnifiedCart] sessionId existe?', !!sessionId);
+      console.log('🔍 [UnifiedCart] userId && sessionId?', !!(userId && sessionId));
+      
+      if (userId && sessionId) {
+        console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
+        console.log('🔄 [UnifiedCart] userId para migración:', userId);
+        console.log('🔄 [UnifiedCart] sessionId para migración:', sessionId);
+        
+        try {
+          // Buscar carrito de invitado
+          console.log('🔍 [UnifiedCart] Buscando carrito de invitado con sessionId:', sessionId);
+          const guestCarts = await query(
+            'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+            [sessionId]
+          );
+          
+          console.log('📊 [UnifiedCart] Carritos de invitado encontrados:', guestCarts.length);
+          if (guestCarts.length > 0) {
+            console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
+            console.log('📦 [UnifiedCart] Carrito ID a migrar:', guestCarts[0].id);
+            console.log('📦 [UnifiedCart] Carrito actual - user_id:', guestCarts[0].user_id);
+            console.log('📦 [UnifiedCart] Carrito actual - cart_type:', guestCarts[0].cart_type);
+            
+            // En lugar de crear un carrito nuevo, actualizar el carrito existente
+            console.log('🔄 [UnifiedCart] Ejecutando UPDATE...');
+            const updateResult = await query(
+              'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
+              [userId, guestCarts[0].id]
+            );
+            
+            console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
+            console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
+            console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
+          } else {
+            console.log('ℹ️ [UnifiedCart] No se encontraron carritos de invitado para migrar');
+          }
+        } catch (migrationError) {
+          console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
+          // Continuar sin migración si falla
+        }
+      } else {
+        console.log('ℹ️ [UnifiedCart] No se cumple condición para migración');
+        console.log('ℹ️ [UnifiedCart] userId presente?', !!userId);
+        console.log('ℹ️ [UnifiedCart] sessionId presente?', !!sessionId);
+      }
 
       // Buscar carrito en la tabla unificada
       let cartQuery = '';
