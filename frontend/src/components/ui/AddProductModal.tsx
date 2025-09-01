@@ -107,48 +107,75 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     setError('');
   };
 
-// En AddProductModal.tsx, modificar handleSubmit:
-
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setLoading(true);
   setError('');
 
   try {
-    // ... validaciones existentes ...
+    // Validaciones básicas
+    if (!formData.name.trim()) {
+      setError('El nombre del producto es requerido');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setError('El precio debe ser mayor a 0');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.product_type_id) {
+      setError('Debe seleccionar un tipo de producto');
+      setLoading(false);
+      return;
+    }
 
     // 1. PRIMERO subir las imágenes si existen
     let imageUrls: string[] = [];
     if (selectedImages.length > 0) {
-      const formData = new FormData();
+      const formDataImages = new FormData();
       selectedImages.forEach((image, index) => {
-        formData.append('images', image.file);
+        formDataImages.append('images', image.file);
       });
 
+      console.log('Subiendo imágenes al servidor...');
       const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: formData
+        body: formDataImages
       });
 
       if (uploadResponse.ok) {
         const uploadResult = await uploadResponse.json();
+        console.log('Imágenes subidas exitosamente:', uploadResult);
         imageUrls = uploadResult.data.map((file: any) => file.path);
       } else {
-        throw new Error('Error subiendo imágenes');
+        const errorData = await uploadResponse.json();
+        console.error('Error subiendo imágenes:', errorData);
+        setError(`Error subiendo imágenes: ${errorData.message || 'Error desconocido'}`);
+        setLoading(false);
+        return;
       }
     }
 
     // 2. LUEGO crear el producto con las URLs de las imágenes
+    const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url || null;
+
     const productData = {
       ...formData,
       price: parseFloat(formData.price),
-      cost_price: parseFloat(formData.cost_price),
+      cost_price: parseFloat(formData.cost_price) || 0,
       stock_total: parseInt(formData.stock_total) || 0,
-      image_url: imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url || null
+      product_type_id: parseInt(formData.product_type_id),
+      // Solo incluir image_url si se proporcionó una URL válida o hay imágenes subidas
+      ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() })
     };
+
+    console.log('Datos a enviar al backend:', productData);
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products`, {
       method: 'POST',
@@ -159,9 +186,35 @@ const handleSubmit = async (e: React.FormEvent) => {
       body: JSON.stringify(productData)
     });
 
-    // ... resto del código existente ...
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Producto creado exitosamente:', result);
+      
+      if (imageUrls.length > 0) {
+        console.log('✅ Imágenes subidas y producto creado exitosamente');
+        console.log('📁 URLs de las imágenes:', imageUrls);
+      }
+      
+      // Limpiar formulario
+      clearForm();
+      
+      // Cerrar modal y notificar
+      onProductAdded();
+      onClose();
+      
+      // Mostrar mensaje de éxito (opcional)
+      alert('✅ Producto creado exitosamente');
+      
+    } else {
+      const errorData = await response.json();
+      console.error('Error del backend:', errorData);
+      setError(errorData.message || `Error ${response.status}: ${response.statusText}`);
+    }
   } catch (error) {
-    // ... manejo de errores ...
+    console.error('Error creando producto:', error);
+    setError('Error de conexión');
+  } finally {
+    setLoading(false);
   }
 };
 
