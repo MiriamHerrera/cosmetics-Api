@@ -36,6 +36,7 @@ class OrderController {
       const { locationId, date } = req.query;
       
       console.log('🕐 [DeliveryTimes] Request recibido:', { locationId, date });
+      console.log('🚀 [DeliveryTimes] USING UPDATED VERSION - FORCE COMMIT!');
       
       if (!locationId || !date) {
         console.log('❌ [DeliveryTimes] Faltan parámetros requeridos');
