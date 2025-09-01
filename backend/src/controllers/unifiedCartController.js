@@ -25,11 +25,17 @@ class UnifiedCartController {
       console.log('🛒 [UnifiedCart] getCart iniciado');
       console.log('📝 [UnifiedCart] Body recibido:', req.body);
       console.log('🔍 [UnifiedCart] Headers:', req.headers);
+      console.log('🔍 [UnifiedCart] Authorization header:', req.headers.authorization);
+      console.log('🔍 [UnifiedCart] Content-Type:', req.headers['content-type']);
       
       const { userId, sessionId } = req.body;
       
-      console.log('👤 [UnifiedCart] userId:', userId);
-      console.log('🔑 [UnifiedCart] sessionId:', sessionId);
+      console.log('👤 [UnifiedCart] userId extraído:', userId);
+      console.log('👤 [UnifiedCart] userId tipo:', typeof userId);
+      console.log('👤 [UnifiedCart] userId es null?', userId === null);
+      console.log('👤 [UnifiedCart] userId es undefined?', userId === undefined);
+      console.log('🔑 [UnifiedCart] sessionId extraído:', sessionId);
+      console.log('🔑 [UnifiedCart] sessionId tipo:', typeof sessionId);
       
       if (!userId && !sessionId) {
         console.log('❌ [UnifiedCart] Error: Se requiere userId o sessionId');
@@ -40,46 +46,74 @@ class UnifiedCartController {
       }
 
              // Si es usuario autenticado, verificar si hay carrito de invitado para migrar
+       console.log('🔍 [UnifiedCart] Verificando condiciones para migración...');
+       console.log('🔍 [UnifiedCart] userId existe?', !!userId);
+       console.log('🔍 [UnifiedCart] sessionId existe?', !!sessionId);
+       console.log('🔍 [UnifiedCart] userId && sessionId?', !!(userId && sessionId));
+       
        if (userId && sessionId) {
          console.log('🔄 [UnifiedCart] Usuario autenticado con sessionId, verificando migración...');
+         console.log('🔄 [UnifiedCart] userId para migración:', userId);
+         console.log('🔄 [UnifiedCart] sessionId para migración:', sessionId);
          
          try {
            // Buscar carrito de invitado
+           console.log('🔍 [UnifiedCart] Buscando carrito de invitado con sessionId:', sessionId);
            const guestCarts = await query(
              'SELECT * FROM carts_unified WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
              [sessionId]
            );
            
+           console.log('📊 [UnifiedCart] Carritos de invitado encontrados:', guestCarts.length);
            if (guestCarts.length > 0) {
              console.log('📦 [UnifiedCart] Carrito de invitado encontrado, iniciando migración...');
+             console.log('📦 [UnifiedCart] Carrito ID a migrar:', guestCarts[0].id);
+             console.log('📦 [UnifiedCart] Carrito actual - user_id:', guestCarts[0].user_id);
+             console.log('📦 [UnifiedCart] Carrito actual - cart_type:', guestCarts[0].cart_type);
              
              // En lugar de crear un carrito nuevo, actualizar el carrito existente
-             await query(
+             console.log('🔄 [UnifiedCart] Ejecutando UPDATE...');
+             const updateResult = await query(
                'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
                [userId, guestCarts[0].id]
              );
              
+             console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
              console.log('✅ [UnifiedCart] Carrito de invitado migrado a usuario registrado');
              console.log('🔄 [UnifiedCart] Tiempo de expiración actualizado a 7 días');
+           } else {
+             console.log('ℹ️ [UnifiedCart] No se encontraron carritos de invitado para migrar');
            }
          } catch (migrationError) {
            console.error('❌ [UnifiedCart] Error durante migración:', migrationError);
            // Continuar sin migración si falla
          }
+       } else {
+         console.log('ℹ️ [UnifiedCart] No se cumple condición para migración');
+         console.log('ℹ️ [UnifiedCart] userId presente?', !!userId);
+         console.log('ℹ️ [UnifiedCart] sessionId presente?', !!sessionId);
        }
 
       // Buscar carrito en la tabla unificada
       let cartQuery = '';
       let cartParams = [];
       
+      console.log('🔍 [UnifiedCart] Iniciando búsqueda de carrito...');
+      console.log('🔍 [UnifiedCart] userId para búsqueda:', userId);
+      console.log('🔍 [UnifiedCart] sessionId para búsqueda:', sessionId);
+      
       if (userId) {
         cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND (status = "active" OR status = "cleaned") ORDER BY created_at DESC LIMIT 1';
         cartParams = [userId];
         console.log('🔍 [UnifiedCart] Buscando carrito para usuario:', userId);
+        console.log('🔍 [UnifiedCart] Query para usuario:', cartQuery);
+        console.log('🔍 [UnifiedCart] Params para usuario:', cartParams);
       } else {
         cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
         cartParams = [sessionId];
         console.log('🔍 [UnifiedCart] Buscando carrito para sesión:', sessionId);
+        console.log('🔍 [UnifiedCart] Query para sesión:', cartQuery);
+        console.log('🔍 [UnifiedCart] Params para sesión:', cartParams);
       }
 
       console.log('📝 [UnifiedCart] Query:', cartQuery);
@@ -204,7 +238,14 @@ class UnifiedCartController {
         updatedAt: cart.updated_at
       };
 
-      console.log('✅ [UnifiedCart] Carrito preparado para respuesta:', cartData);
+      console.log('✅ [UnifiedCart] Carrito preparado para respuesta:');
+      console.log('✅ [UnifiedCart] - ID:', cartData.id);
+      console.log('✅ [UnifiedCart] - userId:', cartData.userId);
+      console.log('✅ [UnifiedCart] - sessionId:', cartData.sessionId);
+      console.log('✅ [UnifiedCart] - cartType:', cartData.cartType);
+      console.log('✅ [UnifiedCart] - status:', cartData.status);
+      console.log('✅ [UnifiedCart] - total:', cartData.total);
+      console.log('✅ [UnifiedCart] - itemCount:', cartData.itemCount);
 
       res.json({
         success: true,
