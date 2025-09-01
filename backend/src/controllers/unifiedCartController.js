@@ -292,7 +292,31 @@ class UnifiedCartController {
 
       const product = products[0];
       
-      // Calcular stock disponible considerando items ya en carritos
+      // Buscar o crear carrito PRIMERO
+      let cartQuery = '';
+      let cartParams = [];
+      
+      if (userId) {
+        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
+        cartParams = [userId];
+      } else {
+        cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
+        cartParams = [sessionId];
+      }
+
+      let carts;
+      try {
+        carts = await query(cartQuery, cartParams);
+      } catch (dbError) {
+        console.error('❌ [UnifiedCart] Error buscando carrito:', dbError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error buscando carrito',
+          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+        });
+      }
+      
+      // AHORA calcular stock disponible considerando items ya en carritos
       // Excluir la cantidad ya reservada en este carrito específico si existe
       let reservedStockQuery = '';
       let reservedStockParams = [];
@@ -340,29 +364,6 @@ class UnifiedCartController {
         });
       }
 
-      // Buscar o crear carrito
-      let cartQuery = '';
-      let cartParams = [];
-      
-      if (userId) {
-        cartQuery = 'SELECT * FROM carts_unified WHERE user_id = ? AND status = "active"';
-        cartParams = [userId];
-      } else {
-        cartQuery = 'SELECT * FROM carts_unified WHERE session_id = ? AND status = "active"';
-        cartParams = [sessionId];
-      }
-
-      let carts;
-      try {
-        carts = await query(cartQuery, cartParams);
-      } catch (dbError) {
-        console.error('❌ [UnifiedCart] Error buscando carrito:', dbError);
-        return res.status(500).json({
-          success: false,
-          message: 'Error buscando carrito',
-          error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
-        });
-      }
       let cartId;
 
       if (carts.length === 0) {
