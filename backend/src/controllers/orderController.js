@@ -58,8 +58,16 @@ class OrderController {
         });
       }
 
-      // Obtener el día de la semana (0=Domingo, 1=Lunes, etc.)
-      const dayOfWeek = dateObj.getDay();
+      // Parsear fecha evitando problemas de timezone UTC
+      const [year, month, day] = date.split('-').map(Number);
+      const localDateObj = new Date(year, month - 1, day); // <- siempre local
+      const dayOfWeek = localDateObj.getDay();
+      
+      // Debug detallado
+      console.log('🛠️ [DeliveryTimes] Fecha original:', date);
+      console.log('🛠️ [DeliveryTimes] Date object UTC:', dateObj.toISOString());
+      console.log('🛠️ [DeliveryTimes] Date object LOCAL:', localDateObj.toString());
+      console.log('🛠️ [DeliveryTimes] Día calculado (getDay):', dayOfWeek);
       console.log('📅 [DeliveryTimes] Procesando:', { locationId, date, dayOfWeek });
       
       // Verificar que la ubicación existe
@@ -86,6 +94,15 @@ class OrderController {
       }
 
       console.log('✅ [DeliveryTimes] Ubicación válida:', locationExists[0]);
+      
+      // Debug: Verificar qué datos tenemos en la tabla para esta ubicación
+      const debugSlots = await query(`
+        SELECT location_id, day_of_week, time_slot, is_active 
+        FROM delivery_time_slots 
+        WHERE location_id = ? 
+        ORDER BY day_of_week, time_slot
+      `, [locationId]);
+      console.log('🔍 [DeliveryTimes] Todos los slots para location', locationId, ':', debugSlots);
       
       // Obtener horarios específicos disponibles para ese lugar y día
       // Solo usamos delivery_time_slots, no rangos
