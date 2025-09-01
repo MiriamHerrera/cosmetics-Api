@@ -88,8 +88,8 @@ class UnifiedCartController {
             // En lugar de crear un carrito nuevo, actualizar el carrito existente
             console.log('🔄 [UnifiedCart] Ejecutando UPDATE...');
             const updateResult = await query(
-              'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?',
-              [userId, guestCarts[0].id]
+              'UPDATE carts_unified SET user_id = ?, cart_type = "registered", expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE session_id = ? AND cart_type = "guest" AND status = "active"',
+              [userId, sessionId]
             );
             
             console.log('📊 [UnifiedCart] Resultado del UPDATE:', updateResult);
