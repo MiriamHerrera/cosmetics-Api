@@ -87,28 +87,28 @@ const useReports = (): UseReportsReturn => {
 
       switch (reportType) {
         case 'profit-margin':
-          endpoint = `/api/reports/profit-margin?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/profit-margin?${queryParams}`;
           break;
         case 'top-products':
-          endpoint = `/api/reports/top-products?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/top-products?${queryParams}`;
           break;
         case 'top-customers':
-          endpoint = `/api/reports/top-customers?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/top-customers?${queryParams}`;
           break;
         case 'category-sales':
-          endpoint = `/api/reports/category-sales?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/category-sales?${queryParams}`;
           break;
         case 'sales-trends':
-          endpoint = `/api/reports/sales-trends?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/sales-trends?${queryParams}`;
           break;
         case 'inventory-value':
-          endpoint = `/api/reports/inventory-value`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/inventory-value`;
           break;
         case 'reservations-conversion':
-          endpoint = `/api/reports/reservations-conversion?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/reservations-conversion?${queryParams}`;
           break;
         case 'executive-summary':
-          endpoint = `/api/reports/executive-summary?${queryParams}`;
+          endpoint = `${API_CONFIG.ENDPOINTS.REPORTS}/executive-summary?${queryParams}`;
           break;
         default:
           throw new Error(`Tipo de reporte no válido: ${reportType}`);
@@ -136,7 +136,7 @@ const useReports = (): UseReportsReturn => {
     setError(null);
 
     try {
-      const data = await fetchReportData('/api/reports/custom', {
+      const data = await fetchReportData(`${API_CONFIG.ENDPOINTS.REPORTS}/custom`, {
         startDate: params.startDate,
         endDate: params.endDate,
         reportTypes,
