@@ -1,24 +1,10 @@
 // backend/src/controllers/imageController.js
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs').promises;
+const { uploadToCloudinary } = require('../config/cloudinary');
 
-// Configuración de multer para almacenar imágenes
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = 'uploads/products';
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configuración de multer para memoria (no guardar en disco)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -39,7 +25,7 @@ const upload = multer({
   }
 });
 
-// Subir múltiples imágenes
+// Subir múltiples imágenes a Cloudinary
 const uploadImages = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -49,31 +35,50 @@ const uploadImages = async (req, res) => {
       });
     }
 
-    // Obtener la URL base del servidor
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    console.log(`📤 Subiendo ${req.files.length} imágenes a Cloudinary...`);
 
-    const uploadedFiles = req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      // Generar URL absoluta completa para Railway (con prefijo /api)
-      path: `${baseUrl}/api/uploads/products/${file.filename}`,
-      size: file.size,
-      mimetype: file.mimetype
-    }));
+    // Subir cada imagen a Cloudinary
+    const uploadPromises = req.files.map(async (file) => {
+      try {
+        const result = await uploadToCloudinary(file.buffer, {
+          public_id: `product_${Date.now()}_${Math.round(Math.random() * 1E9)}`
+        });
+
+        if (result.success) {
+          return {
+            filename: result.data.public_id,
+            originalName: file.originalname,
+            path: result.data.secure_url, // URL de Cloudinary
+            size: result.data.bytes,
+            mimetype: file.mimetype,
+            cloudinaryData: result.data
+          };
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error(`Error subiendo ${file.originalname}:`, error);
+        throw error;
+      }
+    });
+
+    // Esperar a que todas las imágenes se suban
+    const uploadedFiles = await Promise.all(uploadPromises);
+
+    console.log(`✅ ${uploadedFiles.length} imágenes subidas exitosamente a Cloudinary`);
 
     res.json({
       success: true,
-      message: 'Imágenes subidas exitosamente',
+      message: 'Imágenes subidas exitosamente a Cloudinary',
       data: uploadedFiles
     });
 
   } catch (error) {
-    console.error('Error subiendo imágenes:', error);
+    console.error('Error subiendo imágenes a Cloudinary:', error);
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor'
+      message: 'Error interno del servidor al subir imágenes',
+      error: error.message
     });
   }
 };
