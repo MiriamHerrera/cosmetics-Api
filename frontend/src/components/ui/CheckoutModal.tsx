@@ -82,7 +82,10 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
   const isGuest = !user;
   const maxDaysAhead = isGuest ? 3 : 7;
   const today = new Date();
-  const minDate = today.toISOString().split('T')[0];
+  // Fecha mínima: mañana (no se puede seleccionar el día actual)
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
   const maxDate = new Date(Date.now() + maxDaysAhead * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   
   // Función para verificar si una fecha está disponible
@@ -90,10 +93,9 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
     const date = new Date(dateString);
     const isToday = date.toDateString() === today.toDateString();
     
-    // Si es hoy, verificar si hay horarios disponibles
-    if (isToday && selectedLocation) {
-      // Esta validación se hará cuando se carguen los horarios
-      return true; // Permitir selección, la validación real se hace en loadAvailableTimes
+    // No permitir seleccionar el día actual
+    if (isToday) {
+      return false;
     }
     
     return true; // Otros días siempre están disponibles
@@ -597,8 +599,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
                   </div>
                   <p className="mt-1 text-sm text-gray-600">
                     {isGuest 
-                      ? 'Usuarios invitados: reserva de máximo 3 días posteriores'
-                      : 'Usuarios registrados: reserva de hasta 7 días posteriores'
+                      ? 'Usuarios invitados: reserva desde mañana hasta 3 días posteriores'
+                      : 'Usuarios registrados: reserva desde mañana hasta 7 días posteriores'
                     }
                   </p>
                 </div>

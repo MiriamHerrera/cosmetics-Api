@@ -239,17 +239,25 @@ class OrderController {
       const deliveryDateObj = new Date(deliveryDate);
       const daysDiff = Math.ceil((deliveryDateObj - today) / (1000 * 60 * 60 * 24));
       
-      if (customerType === 'guest' && (daysDiff < 0 || daysDiff > 3)) {
+      // No se puede seleccionar el día actual (daysDiff debe ser >= 1)
+      if (daysDiff < 1) {
         return res.status(400).json({
           success: false,
-          message: 'Los usuarios invitados solo pueden elegir fechas de hoy hasta 3 días posteriores'
+          message: 'No se puede seleccionar el día actual. La fecha de entrega debe ser desde mañana en adelante'
         });
       }
       
-      if (customerType === 'registered' && (daysDiff < 0 || daysDiff > 7)) {
+      if (customerType === 'guest' && daysDiff > 3) {
         return res.status(400).json({
           success: false,
-          message: 'Los usuarios registrados pueden elegir fechas de hoy hasta 7 días posteriores'
+          message: 'Los usuarios invitados solo pueden elegir fechas desde mañana hasta 3 días posteriores'
+        });
+      }
+      
+      if (customerType === 'registered' && daysDiff > 7) {
+        return res.status(400).json({
+          success: false,
+          message: 'Los usuarios registrados pueden elegir fechas desde mañana hasta 7 días posteriores'
         });
       }
 
@@ -472,16 +480,25 @@ class OrderController {
 
 
 
-      // Validar fecha de entrega para invitados (hoy hasta 3 días posteriores)
+      // Validar fecha de entrega para invitados (desde mañana hasta 3 días posteriores)
       const today = new Date();
       const deliveryDateObj = new Date(deliveryDate);
       const daysDiff = Math.ceil((deliveryDateObj - today) / (1000 * 60 * 60 * 24));
       
-            if (daysDiff < 0 || daysDiff > 3) {
+      // No se puede seleccionar el día actual
+      if (daysDiff < 1) {
         await connection.rollback();
         return res.status(400).json({
           success: false,
-          message: 'Los usuarios invitados solo pueden elegir fechas de hoy hasta 3 días posteriores'
+          message: 'No se puede seleccionar el día actual. La fecha de entrega debe ser desde mañana en adelante'
+        });
+      }
+      
+      if (daysDiff > 3) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Los usuarios invitados solo pueden elegir fechas desde mañana hasta 3 días posteriores'
         });
       }
 
