@@ -515,6 +515,204 @@ const searchProducts = async (req, res) => {
   }
 };
 
+// Obtener productos pendientes de aprobación (admin)
+const getPendingProducts = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      q = '',
+      category_id,
+      product_type_id,
+      min_price,
+      max_price,
+      sort_by = 'created_at',
+      sort_order = 'desc'
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 20));
+    const offset = (pageNum - 1) * limitNum;
+    
+    // Construir WHERE clause dinámicamente - SOLO PRODUCTOS PENDIENTES
+    let whereClause = 'WHERE p.status = "active" AND p.is_approved = 0';
+    const whereParams = [];
+    
+    if (q) {
+      whereClause += ' AND (p.name LIKE ? OR p.description LIKE ?)';
+      whereParams.push(`%${q}%`, `%${q}%`);
+    }
+    
+    if (category_id) {
+      whereClause += ' AND pt.category_id = ?';
+      whereParams.push(category_id);
+    }
+    
+    if (product_type_id) {
+      whereClause += ' AND p.product_type_id = ?';
+      whereParams.push(product_type_id);
+    }
+    
+    if (min_price) {
+      whereClause += ' AND p.price >= ?';
+      whereParams.push(min_price);
+    }
+    
+    if (max_price) {
+      whereClause += ' AND p.price <= ?';
+      whereParams.push(max_price);
+    }
+
+    // Validar ordenamiento
+    const allowedSortFields = ['name', 'price', 'stock_total', 'created_at'];
+    const allowedSortOrders = ['asc', 'desc'];
+    
+    if (!allowedSortFields.includes(sort_by)) sort_by = 'created_at';
+    if (!allowedSortOrders.includes(sort_order)) sort_order = 'desc';
+
+    // Query principal
+    const sql = `
+      SELECT 
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p.cost_price,
+        p.image_url,
+        p.stock_total,
+        p.status,
+        p.is_approved,
+        p.created_at,
+        p.updated_at,
+        pt.id as product_type_id,
+        pt.name as product_type_name,
+        c.id as category_id,
+        c.name as category_name
+      FROM products p
+      INNER JOIN product_types pt ON p.product_type_id = pt.id
+      INNER JOIN categories c ON pt.category_id = c.id
+      ${whereClause}
+      ORDER BY p.${sort_by} ${sort_order}
+      LIMIT ? OFFSET ?
+    `;
+
+    const products = await query(sql, [...whereParams, parseInt(limitNum), offset]);
+
+    // Contar total de productos para paginación
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM products p
+      INNER JOIN product_types pt ON p.product_type_id = pt.id
+      INNER JOIN categories c ON pt.category_id = c.id
+      ${whereClause}
+    `;
+    
+    const countResult = await query(countSql, whereParams);
+    const total = countResult[0].total;
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: parseInt(pageNum),
+        limit: parseInt(limitNum),
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo productos pendientes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Aprobar producto (admin)
+const approveProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el producto existe y está pendiente
+    const existingProducts = await query(
+      'SELECT id, is_approved FROM products WHERE id = ? AND status = "active"',
+      [id]
+    );
+
+    if (existingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    if (existingProducts[0].is_approved === 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'El producto ya está aprobado'
+      });
+    }
+
+    // Aprobar el producto
+    await query(
+      'UPDATE products SET is_approved = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Producto aprobado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error aprobando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
+// Rechazar producto (admin) - soft delete
+const rejectProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el producto existe
+    const existingProducts = await query(
+      'SELECT id FROM products WHERE id = ? AND status = "active"',
+      [id]
+    );
+
+    if (existingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Rechazar el producto - cambiar status a inactive
+    await query(
+      'UPDATE products SET status = "inactive", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Producto rechazado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error rechazando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
@@ -525,5 +723,8 @@ module.exports = {
   getAllProductTypes,
   getProductTypesByCategory,
   getProductsByCategory,
-  searchProducts
+  searchProducts,
+  getPendingProducts,
+  approveProduct,
+  rejectProduct
 }; 

@@ -20,4 +20,9 @@ router.post('/', authenticateToken, requireAdmin, validate(productSchema), produ
 router.put('/:id', authenticateToken, requireAdmin, validate(productSchema), productController.updateProduct);
 router.delete('/:id', authenticateToken, requireAdmin, productController.deleteProduct);
 
+// Rutas de aprobación (solo admin)
+router.get('/pending', authenticateToken, requireAdmin, productController.getPendingProducts);
+router.patch('/:id/approve', authenticateToken, requireAdmin, productController.approveProduct);
+router.patch('/:id/reject', authenticateToken, requireAdmin, productController.rejectProduct);
+
 module.exports = router; 
