@@ -28,6 +28,7 @@ import { getImageUrl } from '@/lib/config';
 import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
+import MigrationButton from './MigrationButton';
 import { OrdersSection, ReservationsSection, ReportsSection, SurveysManagementSection } from '@/components/sections';
 
 interface AdminPanelProps {
@@ -846,8 +847,18 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         return (
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Configuración del Sistema</h3>
+            
+            {/* Herramientas de Migración */}
+            <MigrationButton 
+              onMigrationComplete={(result) => {
+                console.log('Migración completada:', result);
+                // Recargar productos después de la migración
+                loadProducts();
+              }}
+            />
+            
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <p className="text-gray-600">Funcionalidad de configuración en desarrollo...</p>
+              <p className="text-gray-600">Otras configuraciones del sistema...</p>
             </div>
           </div>
         );

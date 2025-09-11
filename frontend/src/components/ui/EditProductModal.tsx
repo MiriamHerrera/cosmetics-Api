@@ -179,8 +179,8 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
           formDataImages.append('images', image.file);
         });
 
-        console.log('Subiendo imágenes FORZADAMENTE a Cloudinary...');
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/force-cloudinary`, {
+        console.log('Subiendo imágenes a Cloudinary...');
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`

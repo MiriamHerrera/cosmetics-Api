@@ -1,4 +1,6 @@
 // Configuración de la aplicación
+import { cleanImageUrl } from '../utils/urlCleaner';
+
 export const config = {
   // Número de WhatsApp (formato internacional sin +)
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8124307494',
@@ -23,13 +25,17 @@ export const config = {
 
 // Función helper para manejar URLs de imágenes de manera consistente
 export const getImageUrl = (imagePath: string | null | undefined): string => {
+  // Primero limpiar la URL para eliminar URLs corruptas
+  const cleanedPath = cleanImageUrl(imagePath);
+  
   // Debug logging (solo en desarrollo)
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 [getImageUrl] Input:', imagePath);
+    console.log('🔍 [getImageUrl] Cleaned:', cleanedPath);
   }
   
   // Si no hay imagen, retornar imagen por defecto
-  if (!imagePath || imagePath.trim() === '') {
+  if (!cleanedPath || cleanedPath.trim() === '') {
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 [getImageUrl] No image, returning default');
     }
@@ -38,24 +44,24 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   
   // Si ya es una URL absoluta (http/https), retornarla tal como está
   // Esto incluye URLs de Cloudinary que empiezan con https://res.cloudinary.com
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+  if (cleanedPath.startsWith('http://') || cleanedPath.startsWith('https://')) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Absolute URL (Cloudinary/local), returning as-is:', imagePath);
+      console.log('🔍 [getImageUrl] Absolute URL (Cloudinary/local), returning as-is:', cleanedPath);
     }
-    return imagePath;
+    return cleanedPath;
   }
   
   // Si es una ruta relativa que empieza con /uploads, construir URL completa para Railway
   // Solo para URLs locales del servidor, NO para Cloudinary
-  if (imagePath.startsWith('/uploads')) {
+  if (cleanedPath.startsWith('/uploads')) {
     // Para Railway, usar la URL base de la API directamente
     const baseUrl = config.apiUrl;
-    const fullUrl = `${baseUrl}${imagePath}`;
+    const fullUrl = `${baseUrl}${cleanedPath}`;
     
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 [getImageUrl] Building Railway URL for local uploads:');
       console.log('  - Base URL:', baseUrl);
-      console.log('  - Image path:', imagePath);
+      console.log('  - Image path:', cleanedPath);
       console.log('  - Full URL:', fullUrl);
     }
     
@@ -63,15 +69,15 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   }
   
   // Si es cualquier otra ruta relativa, asumir que es relativa al dominio actual
-  if (imagePath.startsWith('/')) {
+  if (cleanedPath.startsWith('/')) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Relative path, returning as-is:', imagePath);
+      console.log('🔍 [getImageUrl] Relative path, returning as-is:', cleanedPath);
     }
-    return imagePath;
+    return cleanedPath;
   }
   
   // Si no empieza con /, agregar / al inicio
-  const result = `/${imagePath}`;
+  const result = `/${cleanedPath}`;
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 [getImageUrl] Adding slash, returning:', result);
   }
