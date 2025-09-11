@@ -132,7 +132,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       return;
     }
 
-    // 1. PRIMERO subir las imágenes si existen
+    // 1. PRIMERO subir las imágenes a Cloudinary
     let imageUrls: string[] = [];
     if (selectedImages.length > 0) {
       const formDataImages = new FormData();
