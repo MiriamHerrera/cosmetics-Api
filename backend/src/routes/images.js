@@ -249,7 +249,7 @@ router.post('/upload-cloudinary', authenticateToken, requireAdmin, upload.array(
   }
 });
 
-// Subir múltiples imágenes (admin) - CONTROLADOR ORIGINAL CON CLOUDINARY FORZADO
+// Subir múltiples imágenes (admin) - CONTROLADOR PRINCIPAL CON CLOUDINARY OBLIGATORIO
 router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -259,17 +259,17 @@ router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 1
       });
     }
 
-    console.log(`📤 [ORIGINAL] Subiendo ${req.files.length} imágenes a Cloudinary...`);
+    console.log(`🚀 [MAIN] FORZANDO subida a Cloudinary - ${req.files.length} imágenes...`);
 
     // Subir cada imagen a Cloudinary
     const uploadPromises = req.files.map(async (file) => {
       try {
         const result = await uploadToCloudinary(file.buffer, {
-          public_id: `product_original_${Date.now()}_${Math.round(Math.random() * 1E9)}`
+          public_id: `product_main_${Date.now()}_${Math.round(Math.random() * 1E9)}`
         });
 
         if (result.success) {
-          console.log(`✅ [ORIGINAL] Imagen subida a Cloudinary: ${result.data.secure_url}`);
+          console.log(`✅ [MAIN] Imagen subida a Cloudinary: ${result.data.secure_url}`);
           return {
             filename: result.data.public_id,
             originalName: file.originalname,
@@ -279,7 +279,7 @@ router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 1
             cloudinaryData: result.data
           };
         } else {
-          console.error(`❌ [ORIGINAL] Error subiendo ${file.originalname}:`, result.error);
+          console.error(`❌ [MAIN] Error subiendo ${file.originalname}:`, result.error);
           throw new Error(result.error);
         }
       } catch (error) {
@@ -291,19 +291,19 @@ router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 1
     // Esperar a que todas las imágenes se suban
     const uploadedFiles = await Promise.all(uploadPromises);
 
-    console.log(`✅ [ORIGINAL] ${uploadedFiles.length} imágenes subidas exitosamente a Cloudinary`);
+    console.log(`✅ [MAIN] ${uploadedFiles.length} imágenes subidas exitosamente a Cloudinary`);
 
     res.json({
       success: true,
-      message: 'Imágenes subidas exitosamente a Cloudinary (ORIGINAL)',
+      message: 'Imágenes subidas exitosamente a Cloudinary',
       data: uploadedFiles
     });
 
   } catch (error) {
-    console.error('❌ [ORIGINAL] Error subiendo imágenes a Cloudinary:', error);
+    console.error('❌ [MAIN] Error subiendo imágenes a Cloudinary:', error);
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor al subir imágenes (ORIGINAL)',
+      message: 'Error interno del servidor al subir imágenes',
       error: error.message
     });
   }
