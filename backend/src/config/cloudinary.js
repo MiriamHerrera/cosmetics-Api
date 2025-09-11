@@ -12,6 +12,12 @@ cloudinary.config({
 // Función para subir imagen a Cloudinary
 const uploadToCloudinary = async (fileBuffer, options = {}) => {
   try {
+    console.log('🔧 [Cloudinary] Iniciando subida...', {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY ? '***' : 'undefined',
+      api_secret: process.env.CLOUDINARY_API_SECRET ? '***' : 'undefined'
+    });
+
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
@@ -22,8 +28,13 @@ const uploadToCloudinary = async (fileBuffer, options = {}) => {
           ...options
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('❌ [Cloudinary] Error en upload_stream:', error);
+            reject(error);
+          } else {
+            console.log('✅ [Cloudinary] Subida exitosa:', result.secure_url);
+            resolve(result);
+          }
         }
       ).end(fileBuffer);
     });
@@ -41,7 +52,7 @@ const uploadToCloudinary = async (fileBuffer, options = {}) => {
       }
     };
   } catch (error) {
-    console.error('Error subiendo a Cloudinary:', error);
+    console.error('❌ [Cloudinary] Error subiendo a Cloudinary:', error);
     return {
       success: false,
       error: error.message
