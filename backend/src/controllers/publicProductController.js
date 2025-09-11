@@ -18,7 +18,7 @@ const getPublicProducts = async (req, res) => {
 
     const offset = (page - 1) * limit;
     
-    // Construir WHERE clause dinámicamente - SOLO PRODUCTOS APROBADOS
+    // Construir WHERE clause dinámicamente - SOLO PRODUCTOS APROBADOS Y ACTIVOS
     let whereClause = 'WHERE p.status = "active" AND p.is_approved = 1';
     const whereParams = [];
     

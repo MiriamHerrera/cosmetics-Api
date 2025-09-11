@@ -37,21 +37,23 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   }
   
   // Si ya es una URL absoluta (http/https), retornarla tal como está
+  // Esto incluye URLs de Cloudinary que empiezan con https://res.cloudinary.com
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Absolute URL, returning as-is:', imagePath);
+      console.log('🔍 [getImageUrl] Absolute URL (Cloudinary/local), returning as-is:', imagePath);
     }
     return imagePath;
   }
   
   // Si es una ruta relativa que empieza con /uploads, construir URL completa para Railway
+  // Solo para URLs locales del servidor, NO para Cloudinary
   if (imagePath.startsWith('/uploads')) {
     // Para Railway, usar la URL base de la API directamente
     const baseUrl = config.apiUrl;
     const fullUrl = `${baseUrl}${imagePath}`;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [getImageUrl] Building Railway URL:');
+      console.log('🔍 [getImageUrl] Building Railway URL for local uploads:');
       console.log('  - Base URL:', baseUrl);
       console.log('  - Image path:', imagePath);
       console.log('  - Full URL:', fullUrl);

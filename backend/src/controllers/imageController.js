@@ -45,6 +45,7 @@ const uploadImages = async (req, res) => {
         });
 
         if (result.success) {
+          console.log(`✅ Imagen subida a Cloudinary: ${result.data.secure_url}`);
           return {
             filename: result.data.public_id,
             originalName: file.originalname,
@@ -54,6 +55,7 @@ const uploadImages = async (req, res) => {
             cloudinaryData: result.data
           };
         } else {
+          console.error(`❌ Error subiendo ${file.originalname}:`, result.error);
           throw new Error(result.error);
         }
       } catch (error) {

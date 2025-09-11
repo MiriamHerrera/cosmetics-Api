@@ -179,7 +179,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
           formDataImages.append('images', image.file);
         });
 
-        console.log('Subiendo imágenes al servidor...');
+        console.log('Subiendo imágenes a Cloudinary...');
         const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
           method: 'POST',
           headers: {
@@ -202,7 +202,8 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
       }
 
       // 2. LUEGO actualizar el producto con las URLs de las imágenes
-      const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url;
+      // Para múltiples imágenes, usar solo la primera o manejar como array
+      const finalImageUrl = imageUrls.length > 0 ? imageUrls[0] : formData.image_url;
 
       // Preparar datos del producto para actualizar
       const productData = {
