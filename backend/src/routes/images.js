@@ -102,7 +102,64 @@ router.post('/upload-cloudinary', authenticateToken, requireAdmin, upload.array(
   }
 });
 
-// Subir múltiples imágenes (admin) - CONTROLADOR ORIGINAL
-router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 10), uploadImages);
+// Subir múltiples imágenes (admin) - CONTROLADOR ORIGINAL CON CLOUDINARY FORZADO
+router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se han subido archivos'
+      });
+    }
+
+    console.log(`📤 [ORIGINAL] Subiendo ${req.files.length} imágenes a Cloudinary...`);
+
+    // Subir cada imagen a Cloudinary
+    const uploadPromises = req.files.map(async (file) => {
+      try {
+        const result = await uploadToCloudinary(file.buffer, {
+          public_id: `product_original_${Date.now()}_${Math.round(Math.random() * 1E9)}`
+        });
+
+        if (result.success) {
+          console.log(`✅ [ORIGINAL] Imagen subida a Cloudinary: ${result.data.secure_url}`);
+          return {
+            filename: result.data.public_id,
+            originalName: file.originalname,
+            path: result.data.secure_url, // URL de Cloudinary
+            size: result.data.bytes,
+            mimetype: file.mimetype,
+            cloudinaryData: result.data
+          };
+        } else {
+          console.error(`❌ [ORIGINAL] Error subiendo ${file.originalname}:`, result.error);
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error(`Error subiendo ${file.originalname}:`, error);
+        throw error;
+      }
+    });
+
+    // Esperar a que todas las imágenes se suban
+    const uploadedFiles = await Promise.all(uploadPromises);
+
+    console.log(`✅ [ORIGINAL] ${uploadedFiles.length} imágenes subidas exitosamente a Cloudinary`);
+
+    res.json({
+      success: true,
+      message: 'Imágenes subidas exitosamente a Cloudinary (ORIGINAL)',
+      data: uploadedFiles
+    });
+
+  } catch (error) {
+    console.error('❌ [ORIGINAL] Error subiendo imágenes a Cloudinary:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al subir imágenes (ORIGINAL)',
+      error: error.message
+    });
+  }
+});
 
 module.exports = router;
