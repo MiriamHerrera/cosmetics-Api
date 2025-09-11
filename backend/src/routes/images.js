@@ -113,6 +113,21 @@ router.post('/diagnose', authenticateToken, requireAdmin, upload.array('images',
   }
 });
 
+// Endpoint simple para verificar qué controlador se está usando
+router.get('/check-controller', authenticateToken, requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Controlador verificado',
+    data: {
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      controller: 'NUEVO - Cloudinary',
+      cloudinary_configured: !!process.env.CLOUDINARY_CLOUD_NAME,
+      message: 'Si ves este mensaje, el controlador NUEVO está activo'
+    }
+  });
+});
+
 // Endpoint de migración para limpiar URLs corruptas
 router.post('/migrate-to-cloudinary', authenticateToken, requireAdmin, async (req, res) => {
   try {

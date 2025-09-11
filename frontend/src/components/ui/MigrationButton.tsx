@@ -112,6 +112,37 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
     }
   };
 
+  const handleCheckController = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      console.log('🔍 Verificando controlador...');
+      
+      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/check-controller`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        console.log('✅ Controlador verificado:', checkData);
+        setTestResult({ success: true, controller: checkData.data });
+      } else {
+        console.error('❌ Error verificando controlador:', checkResponse.status);
+        setTestResult({ success: false, error: `Error ${checkResponse.status}` });
+      }
+    } catch (error) {
+      console.error('❌ Error verificando controlador:', error);
+      setTestResult({ success: false, error: 'Error de conexión' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className="p-4 border rounded-lg bg-yellow-50 border-yellow-200">
       <h3 className="text-lg font-semibold text-yellow-800 mb-2">
@@ -129,6 +160,18 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
           }`}
         >
           {testing ? '🧪 Probando...' : '🧪 Verificar Estado'}
+        </button>
+        
+        <button
+          onClick={handleCheckController}
+          disabled={testing}
+          className={`px-4 py-2 rounded-md font-medium ${
+            testing
+              ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+          }`}
+        >
+          {testing ? '🔍 Verificando...' : '🔍 Verificar Controlador'}
         </button>
         
         <button
@@ -163,6 +206,15 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
           <h4 className="font-semibold">
             {testResult.success ? '✅ Diagnóstico Completado' : '❌ Error en Diagnóstico'}
           </h4>
+          {testResult.controller && (
+            <div className="mt-2 text-sm">
+              <p><strong>Versión:</strong> {testResult.controller.version}</p>
+              <p><strong>Controlador:</strong> {testResult.controller.controller}</p>
+              <p><strong>Cloudinary configurado:</strong> {testResult.controller.cloudinary_configured ? 'Sí' : 'No'}</p>
+              <p><strong>Mensaje:</strong> {testResult.controller.message}</p>
+              <p><strong>Timestamp:</strong> {new Date(testResult.controller.timestamp).toLocaleString()}</p>
+            </div>
+          )}
           {testResult.diagnosis && (
             <div className="mt-2 text-sm">
               <p><strong>Versión:</strong> {testResult.diagnosis.version}</p>
