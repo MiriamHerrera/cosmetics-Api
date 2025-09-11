@@ -140,8 +140,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         formDataImages.append('images', image.file);
       });
 
-      console.log('Subiendo imágenes a Cloudinary...');
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/upload`, {
+      console.log('Subiendo imágenes FORZADAMENTE a Cloudinary...');
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/force-cloudinary`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
