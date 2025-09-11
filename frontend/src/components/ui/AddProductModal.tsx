@@ -193,7 +193,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         }
       } catch (error) {
         console.error('Error en subida de imágenes:', error);
-        setError(`Error subiendo imágenes: ${error.message || 'Error desconocido'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        setError(`Error subiendo imágenes: ${errorMessage}`);
         setLoading(false);
         return;
       }
