@@ -59,6 +59,60 @@ router.get('/status', authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
+// Endpoint de diagnóstico que muestra qué controlador se está usando
+router.post('/diagnose', authenticateToken, requireAdmin, upload.array('images', 1), async (req, res) => {
+  try {
+    console.log('🔍 [DIAGNOSE] Endpoint de diagnóstico llamado');
+    
+    const diagnosis = {
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      cloudinary_configured: !!process.env.CLOUDINARY_CLOUD_NAME,
+      files_received: req.files?.length || 0,
+      using_cloudinary: true,
+      message: 'Este es el controlador NUEVO que usa Cloudinary'
+    };
+    
+    if (req.files && req.files.length > 0) {
+      console.log('🔍 [DIAGNOSE] Probando subida a Cloudinary...');
+      
+      try {
+        const result = await uploadToCloudinary(req.files[0].buffer, {
+          public_id: `diagnose_${Date.now()}`
+        });
+        
+        if (result.success) {
+          diagnosis.cloudinary_test = 'SUCCESS';
+          diagnosis.cloudinary_url = result.data.secure_url;
+          console.log('✅ [DIAGNOSE] Cloudinary funciona correctamente');
+        } else {
+          diagnosis.cloudinary_test = 'FAILED';
+          diagnosis.cloudinary_error = result.error;
+          console.log('❌ [DIAGNOSE] Cloudinary falló:', result.error);
+        }
+      } catch (error) {
+        diagnosis.cloudinary_test = 'ERROR';
+        diagnosis.cloudinary_error = error.message;
+        console.log('❌ [DIAGNOSE] Error en Cloudinary:', error.message);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Diagnóstico completado',
+      data: diagnosis
+    });
+    
+  } catch (error) {
+    console.error('❌ [DIAGNOSE] Error en diagnóstico:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en diagnóstico',
+      error: error.message
+    });
+  }
+});
+
 // Endpoint de migración para limpiar URLs corruptas
 router.post('/migrate-to-cloudinary', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -252,6 +306,10 @@ router.post('/upload-cloudinary', authenticateToken, requireAdmin, upload.array(
 // Subir múltiples imágenes (admin) - CONTROLADOR PRINCIPAL CON CLOUDINARY OBLIGATORIO
 router.post('/upload', authenticateToken, requireAdmin, upload.array('images', 10), async (req, res) => {
   try {
+    console.log('🔍 [DEBUG] Endpoint /upload llamado - Versión 2.0.0');
+    console.log('🔍 [DEBUG] Archivos recibidos:', req.files?.length || 0);
+    console.log('🔍 [DEBUG] Cloudinary configurado:', !!process.env.CLOUDINARY_CLOUD_NAME);
+    
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,

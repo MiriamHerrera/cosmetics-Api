@@ -76,6 +76,42 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
     }
   };
 
+  const handleDiagnose = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      console.log('🔍 Ejecutando diagnóstico completo...');
+      
+      // Test de diagnóstico con imagen
+      const formData = new FormData();
+      const testFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+      formData.append('images', testFile);
+      
+      const diagnoseResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/diagnose`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: formData
+      });
+
+      if (diagnoseResponse.ok) {
+        const diagnoseData = await diagnoseResponse.json();
+        console.log('✅ Diagnóstico completado:', diagnoseData);
+        setTestResult({ success: true, diagnosis: diagnoseData.data });
+      } else {
+        console.error('❌ Error en diagnóstico:', diagnoseResponse.status);
+        setTestResult({ success: false, error: `Error ${diagnoseResponse.status}` });
+      }
+    } catch (error) {
+      console.error('❌ Error en diagnóstico:', error);
+      setTestResult({ success: false, error: 'Error de conexión' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className="p-4 border rounded-lg bg-yellow-50 border-yellow-200">
       <h3 className="text-lg font-semibold text-yellow-800 mb-2">
@@ -96,6 +132,18 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
         </button>
         
         <button
+          onClick={handleDiagnose}
+          disabled={testing}
+          className={`px-4 py-2 rounded-md font-medium ${
+            testing
+              ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+              : 'bg-purple-600 hover:bg-purple-700 text-white'
+          }`}
+        >
+          {testing ? '🔍 Diagnosticando...' : '🔍 Diagnóstico Completo'}
+        </button>
+        
+        <button
           onClick={handleMigration}
           disabled={loading}
           className={`px-4 py-2 rounded-md font-medium ${
@@ -113,8 +161,26 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
           testResult.success ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
         }`}>
           <h4 className="font-semibold">
-            {testResult.success ? '✅ Estado del Servidor' : '❌ Error en Test'}
+            {testResult.success ? '✅ Diagnóstico Completado' : '❌ Error en Diagnóstico'}
           </h4>
+          {testResult.diagnosis && (
+            <div className="mt-2 text-sm">
+              <p><strong>Versión:</strong> {testResult.diagnosis.version}</p>
+              <p><strong>Cloudinary configurado:</strong> {testResult.diagnosis.cloudinary_configured ? 'Sí' : 'No'}</p>
+              <p><strong>Usando Cloudinary:</strong> {testResult.diagnosis.using_cloudinary ? 'Sí' : 'No'}</p>
+              <p><strong>Archivos recibidos:</strong> {testResult.diagnosis.files_received}</p>
+              {testResult.diagnosis.cloudinary_test && (
+                <p><strong>Test Cloudinary:</strong> {testResult.diagnosis.cloudinary_test}</p>
+              )}
+              {testResult.diagnosis.cloudinary_url && (
+                <p><strong>URL Cloudinary:</strong> <a href={testResult.diagnosis.cloudinary_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ver imagen</a></p>
+              )}
+              {testResult.diagnosis.cloudinary_error && (
+                <p><strong>Error Cloudinary:</strong> {testResult.diagnosis.cloudinary_error}</p>
+              )}
+              <p><strong>Mensaje:</strong> {testResult.diagnosis.message}</p>
+            </div>
+          )}
           {testResult.status && (
             <div className="mt-2 text-sm">
               <p>Versión: {testResult.status.version}</p>
