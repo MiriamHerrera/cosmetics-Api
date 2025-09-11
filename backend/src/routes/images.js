@@ -42,6 +42,23 @@ router.post('/test-cloudinary', authenticateToken, requireAdmin, async (req, res
   }
 });
 
+// Endpoint para verificar qué controlador se está usando
+router.get('/status', authenticateToken, requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Endpoint de imágenes funcionando',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    cloudinary_configured: !!process.env.CLOUDINARY_CLOUD_NAME,
+    endpoints: {
+      upload: '/api/images/upload',
+      force_cloudinary: '/api/images/force-cloudinary',
+      test_cloudinary: '/api/images/test-cloudinary',
+      migrate: '/api/images/migrate-to-cloudinary'
+    }
+  });
+});
+
 // Endpoint de migración para limpiar URLs corruptas
 router.post('/migrate-to-cloudinary', authenticateToken, requireAdmin, async (req, res) => {
   try {
