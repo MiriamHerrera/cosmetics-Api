@@ -143,6 +143,37 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
     }
   };
 
+  const handleDebugProducts = async () => {
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      console.log('🔍 Verificando productos en la base de datos...');
+      
+      const debugResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/images/debug-products`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (debugResponse.ok) {
+        const debugData = await debugResponse.json();
+        console.log('✅ Productos obtenidos:', debugData);
+        setTestResult({ success: true, products: debugData.data });
+      } else {
+        console.error('❌ Error obteniendo productos:', debugResponse.status);
+        setTestResult({ success: false, error: `Error ${debugResponse.status}` });
+      }
+    } catch (error) {
+      console.error('❌ Error obteniendo productos:', error);
+      setTestResult({ success: false, error: 'Error de conexión' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className="p-4 border rounded-lg bg-yellow-50 border-yellow-200">
       <h3 className="text-lg font-semibold text-yellow-800 mb-2">
@@ -172,6 +203,18 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
           }`}
         >
           {testing ? '🔍 Verificando...' : '🔍 Verificar Controlador'}
+        </button>
+        
+        <button
+          onClick={handleDebugProducts}
+          disabled={testing}
+          className={`px-4 py-2 rounded-md font-medium ${
+            testing
+              ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+              : 'bg-orange-600 hover:bg-orange-700 text-white'
+          }`}
+        >
+          {testing ? '🔍 Verificando...' : '🔍 Verificar Productos'}
         </button>
         
         <button
@@ -213,6 +256,25 @@ const MigrationButton: React.FC<MigrationButtonProps> = ({ onMigrationComplete }
               <p><strong>Cloudinary configurado:</strong> {testResult.controller.cloudinary_configured ? 'Sí' : 'No'}</p>
               <p><strong>Mensaje:</strong> {testResult.controller.message}</p>
               <p><strong>Timestamp:</strong> {new Date(testResult.controller.timestamp).toLocaleString()}</p>
+            </div>
+          )}
+          {testResult.products && (
+            <div className="mt-2 text-sm">
+              <p><strong>Total productos:</strong> {testResult.products.total}</p>
+              <div className="mt-2 space-y-2">
+                {testResult.products.products.map((product: any, index: number) => (
+                  <div key={index} className="p-2 border rounded bg-gray-50">
+                    <p><strong>ID:</strong> {product.id}</p>
+                    <p><strong>Nombre:</strong> {product.name}</p>
+                    <p><strong>URL:</strong> {product.image_url || 'Sin imagen'}</p>
+                    <p><strong>Es Cloudinary:</strong> {product.is_cloudinary ? '✅ Sí' : '❌ No'}</p>
+                    <p><strong>Creado:</strong> {new Date(product.created_at).toLocaleString()}</p>
+                    {product.image_url && product.is_cloudinary && (
+                      <a href={product.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ver imagen</a>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {testResult.diagnosis && (

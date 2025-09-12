@@ -128,6 +128,44 @@ router.get('/check-controller', authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
+// Endpoint temporal para verificar URLs en la base de datos
+router.get('/debug-products', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+    
+    // Obtener los últimos 10 productos con sus URLs
+    const products = await query(`
+      SELECT id, name, image_url, created_at 
+      FROM products 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Productos obtenidos',
+      data: {
+        total: products.length,
+        products: products.map(p => ({
+          id: p.id,
+          name: p.name,
+          image_url: p.image_url,
+          created_at: p.created_at,
+          is_cloudinary: p.image_url ? p.image_url.includes('res.cloudinary.com') : false
+        }))
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo productos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error obteniendo productos',
+      error: error.message
+    });
+  }
+});
+
 // Endpoint de migración para limpiar URLs corruptas
 router.post('/migrate-to-cloudinary', authenticateToken, requireAdmin, async (req, res) => {
   try {
