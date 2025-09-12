@@ -163,8 +163,8 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 
     // 2. LUEGO crear el producto con las URLs de las imágenes
-    // Para múltiples imágenes, usar solo la primera o manejar como array
-    const finalImageUrl = imageUrls.length > 0 ? imageUrls[0] : formData.image_url || null;
+    // Guardar TODAS las URLs de las imágenes separadas por comas
+    const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url || null;
 
     const productData = {
       ...formData,

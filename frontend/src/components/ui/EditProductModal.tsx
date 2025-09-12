@@ -202,8 +202,8 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
       }
 
       // 2. LUEGO actualizar el producto con las URLs de las imágenes
-      // Para múltiples imágenes, usar solo la primera o manejar como array
-      const finalImageUrl = imageUrls.length > 0 ? imageUrls[0] : formData.image_url;
+      // Guardar TODAS las URLs de las imágenes separadas por comas
+      const finalImageUrl = imageUrls.length > 0 ? imageUrls.join(',') : formData.image_url;
 
       // Preparar datos del producto para actualizar
       const productData = {
