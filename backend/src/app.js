@@ -21,6 +21,7 @@ const orderRoutes = require('./routes/orders');
 const reportRoutes = require('./routes/reports');
 const unifiedCartRoutes = require('./routes/unifiedCart');
 const imageRoutes = require('./routes/images');
+const availabilityRoutes = require('./routes/availability');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -166,6 +167,9 @@ app.use('/api/reports', reportRoutes);
 
 console.log('📡 Registrando /api/images...');
 app.use('/api/images', imageRoutes);
+
+console.log('📡 Registrando /api/admin/availability...');
+app.use('/api/admin', availabilityRoutes);
 
 console.log('✅ TODAS LAS RUTAS REGISTRADAS');
 

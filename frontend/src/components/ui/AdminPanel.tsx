@@ -19,7 +19,9 @@ import {
   CheckCircle,
   XCircle,
   MessageCircle,
-  MessageSquare
+  MessageSquare,
+  Clock,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
@@ -29,6 +31,7 @@ import AddUserModal from './AddUserModal';
 import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
 import MigrationButton from './MigrationButton';
+import AvailabilityManagement from './AvailabilityManagement';
 import { OrdersSection, ReservationsSection, ReportsSection, SurveysManagementSection } from '@/components/sections';
 
 interface AdminPanelProps {
@@ -257,6 +260,12 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       label: 'Encuestas',
       icon: MessageSquare,
       description: 'Gestión de encuestas y votaciones'
+    },
+    {
+      id: 'availability',
+      label: 'Disponibilidad',
+      icon: Clock,
+      description: 'Horarios y lugares de entrega'
     },
     {
       id: 'settings',
@@ -840,6 +849,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         return (
           <div className="space-y-4 sm:space-y-6">
             <SurveysManagementSection />
+          </div>
+        );
+
+      case 'availability':
+        return (
+          <div className="space-y-4 sm:space-y-6">
+            <AvailabilityManagement />
           </div>
         );
 
