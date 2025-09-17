@@ -159,6 +159,9 @@ app.use('/api/stats', statsRoutes);
 console.log('📡 Registrando /api/admin...');
 app.use('/api/admin', adminRoutes);
 
+console.log('📡 Registrando /api/admin/availability...');
+app.use('/api/admin', availabilityRoutes);
+
 console.log('📡 Registrando /api/orders...');
 app.use('/api/orders', orderRoutes);
 
@@ -167,9 +170,6 @@ app.use('/api/reports', reportRoutes);
 
 console.log('📡 Registrando /api/images...');
 app.use('/api/images', imageRoutes);
-
-console.log('📡 Registrando /api/admin/availability...');
-app.use('/api/admin', availabilityRoutes);
 
 console.log('✅ TODAS LAS RUTAS REGISTRADAS');
 
