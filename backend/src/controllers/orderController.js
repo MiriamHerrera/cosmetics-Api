@@ -488,18 +488,6 @@ class OrderController {
         });
       }
 
-              // Validar número de WhatsApp
-        const whatsappNumber = whatsappConfig.getNumberForLocation(locationWhatsappType);
-        if (!whatsappConfig.validateNumber(whatsappNumber)) {
-        await connection.rollback();
-        return res.status(500).json({
-          success: false,
-          message: 'Error de configuración: Número de WhatsApp inválido'
-        });
-      }
-
-
-
       // Validar fecha de entrega para invitados (desde mañana hasta 3 días posteriores)
       const today = new Date();
       const deliveryDateObj = new Date(deliveryDate);

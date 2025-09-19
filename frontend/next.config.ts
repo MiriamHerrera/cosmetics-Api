@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'jeniricosmetics.com' },
       { protocol: 'https', hostname: 'www.jeniricosmetics.com' },
       { protocol: 'https', hostname: 'api.jeniricosmetics.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'vercel.app' },
       { protocol: 'https', hostname: '*.vercel.app' }
     ],
