@@ -458,11 +458,13 @@ class OrderController {
 
   // Crear orden para invitados (sin autenticación)
   createGuestOrder = async (req, res) => {
+    console.log('🛒 [GuestOrder] Iniciando creación de orden de invitado');
     const connection = await getConnection();
     let orderNumber; // Declarar la variable aquí para que esté disponible en todo el método
     
     try {
       await connection.beginTransaction();
+      console.log('🛒 [GuestOrder] Transacción iniciada');
       
       const {
         sessionId,
@@ -478,15 +480,29 @@ class OrderController {
         notes
       } = req.body;
 
+      console.log('🛒 [GuestOrder] Datos recibidos:', {
+        sessionId,
+        customerName,
+        customerPhone,
+        deliveryLocationId,
+        deliveryDate,
+        deliveryTime,
+        totalAmount,
+        cartItemsCount: cartItems?.length || 0
+      });
+
       // Validar datos requeridos
       if (!sessionId || !customerName || !customerPhone || !deliveryLocationId || 
           !deliveryDate || !deliveryTime || !totalAmount || !cartItems || cartItems.length === 0) {
+        console.log('❌ [GuestOrder] Datos requeridos faltantes');
         await connection.rollback();
         return res.status(400).json({
           success: false,
           message: 'Faltan datos requeridos'
         });
       }
+
+      console.log('✅ [GuestOrder] Validación de datos exitosa');
 
       // Validar fecha de entrega para invitados (desde mañana hasta 3 días posteriores)
       const today = new Date();
@@ -510,12 +526,14 @@ class OrderController {
         });
       }
 
-            // Verificar que el carrito unificado existe y tiene items
+      // Verificar que el carrito unificado existe y tiene items
+      console.log('🔍 [GuestOrder] Verificando carrito unificado para sessionId:', sessionId);
       const [unifiedCart] = await connection.execute(`
         SELECT id FROM carts_unified WHERE session_id = ? AND status = 'active'
       `, [sessionId]);
 
       if (!unifiedCart) {
+        console.log('❌ [GuestOrder] Carrito no encontrado o expirado');
         await connection.rollback();
         return res.status(400).json({
           success: false,
@@ -523,21 +541,20 @@ class OrderController {
         });
       }
 
+      console.log('✅ [GuestOrder] Carrito encontrado:', unifiedCart);
+
       // Generar número de orden único
       try {
-        // Llamar al procedimiento almacenado
-        await connection.execute('CALL GenerateOrderNumber(@orderNumber)');
+        console.log('🔢 [GuestOrder] Generando número de orden único');
         
-        // Obtener el resultado de la variable de salida usando query
-        const orderNumberResult = await connection.query('SELECT @orderNumber as orderNumber');
+        // Generar número de orden basado en timestamp y random
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        orderNumber = `ORD-${timestamp}-${random}`;
         
-        // Extraer el número de orden del resultado
-        orderNumber = orderNumberResult[0][0].orderNumber;
-        
-        if (!orderNumber) {
-          throw new Error('No se pudo generar el número de orden');
-        }
+        console.log('✅ [GuestOrder] Número de orden generado:', orderNumber);
       } catch (error) {
+        console.error('❌ [GuestOrder] Error generando número de orden:', error);
         await connection.rollback();
         return res.status(500).json({
           success: false,
@@ -707,10 +724,13 @@ class OrderController {
       });
 
     } catch (error) {
+      console.error('❌ [GuestOrder] Error creando orden:', error);
+      console.error('❌ [GuestOrder] Stack trace:', error.stack);
       await connection.rollback();
       res.status(500).json({
         success: false,
-        message: 'Error interno del servidor'
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
       });
     } finally {
       connection.release();

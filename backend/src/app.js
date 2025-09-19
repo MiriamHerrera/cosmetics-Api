@@ -26,6 +26,9 @@ const availabilityRoutes = require('./routes/availability');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Configurar trust proxy para Railway y otros proxies
+app.set('trust proxy', 1);
+
 // Configuración de CORS
 const corsOrigins = [
   process.env.CORS_ORIGIN || 'https://jeniricosmetics.com',
