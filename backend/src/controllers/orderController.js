@@ -378,8 +378,27 @@ class OrderController {
         ]);
       }
 
+      // Obtener información del punto de entrega para determinar el número de WhatsApp
+      const deliveryLocation = await query(`
+        SELECT name, whatsapp_number 
+        FROM delivery_locations 
+        WHERE id = ?
+      `, [deliveryLocationId]);
+
+      const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
+      const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
+
       // Generar mensaje de WhatsApp
-      const whatsappMessage = this.generateWhatsAppMessage(orderNumber, customerName, productsForWhatsApp, totalAmount, deliveryDate, deliveryTime);
+      const whatsappMessage = this.generateWhatsAppMessage(
+        orderNumber, 
+        customerName, 
+        productsForWhatsApp, 
+        totalAmount, 
+        deliveryDate, 
+        deliveryTime,
+        locationName,
+        locationWhatsappType
+      );
 
       // Actualizar orden con mensaje de WhatsApp
       await query(`
@@ -633,8 +652,27 @@ class OrderController {
         ]);
       }
 
+      // Obtener información del punto de entrega para determinar el número de WhatsApp
+      const [deliveryLocation] = await connection.execute(`
+        SELECT name, whatsapp_number 
+        FROM delivery_locations 
+        WHERE id = ?
+      `, [deliveryLocationId]);
+
+      const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
+      const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
+
       // Generar mensaje de WhatsApp
-      const whatsappMessage = this.generateWhatsAppMessage(orderNumber, customerName, productsForWhatsApp, totalAmount, deliveryDate, deliveryTime);
+      const whatsappMessage = this.generateWhatsAppMessage(
+        orderNumber, 
+        customerName, 
+        productsForWhatsApp, 
+        totalAmount, 
+        deliveryDate, 
+        deliveryTime,
+        locationName,
+        locationWhatsappType
+      );
 
       // Actualizar orden con mensaje de WhatsApp
       await connection.execute(`
@@ -924,7 +962,7 @@ class OrderController {
   };
 
   // Generar mensaje de WhatsApp
-  generateWhatsAppMessage = (orderNumber, customerName, cartItems, totalAmount, deliveryDate, deliveryTime) => {
+  generateWhatsAppMessage = (orderNumber, customerName, cartItems, totalAmount, deliveryDate, deliveryTime, locationName, locationWhatsappType) => {
     const itemsList = cartItems.map(item => 
       `• ${item.product.name} - Cantidad: ${item.quantity} - $${item.product.price}`
     ).join('\n');
@@ -936,9 +974,14 @@ class OrderController {
       day: 'numeric'
     });
 
+    // Obtener el número de WhatsApp correcto según el punto de entrega
+    const whatsappNumber = whatsappConfig.getNumberForLocation(locationWhatsappType);
+    const whatsappNumberFormatted = whatsappNumber.replace(/(\d{2})(\d{3})(\d{3})(\d{4})/, '+$1 $2 $3 $4');
+
     return `🛍️ *NUEVO PEDIDO #${orderNumber}*
 
 👤 *Cliente:* ${customerName}
+📍 *Punto de entrega:* ${locationName}
 📅 *Fecha de entrega:* ${deliveryDateFormatted}
 ⏰ *Hora de entrega:* ${deliveryTime}
 
@@ -947,7 +990,8 @@ ${itemsList}
 
 💰 *Total:* $${totalAmount.toFixed(2)}
 
-📱 *Confirmar pedido respondiendo:* CONFIRMAR ${orderNumber}`;
+📱 *Confirmar pedido respondiendo:* CONFIRMAR ${orderNumber}
+📞 *WhatsApp:* ${whatsappNumberFormatted}`;
   };
 }
 

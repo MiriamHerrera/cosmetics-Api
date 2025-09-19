@@ -12,7 +12,8 @@ import {
   Save,
   X,
   Calendar,
-  Settings
+  Settings,
+  MessageSquare
 } from 'lucide-react';
 
 interface DeliveryLocation {
@@ -20,6 +21,7 @@ interface DeliveryLocation {
   name: string;
   address: string;
   description?: string;
+  whatsapp_number?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -43,12 +45,25 @@ const COMMON_TIME_SLOTS = [
   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
 ];
 
+interface WhatsAppConfig {
+  primaryNumber: string;
+  secondaryNumber: string;
+  businessName: string;
+  whatsappTypes: Array<{
+    value: string;
+    label: string;
+    number: string;
+    description: string;
+  }>;
+}
+
 export default function AvailabilityManagement() {
   const [locations, setLocations] = useState<DeliveryLocation[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'locations' | 'schedules'>('locations');
+  const [activeTab, setActiveTab] = useState<'locations' | 'schedules' | 'whatsapp'>('locations');
   
   // Estados para modales
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -61,6 +76,7 @@ export default function AvailabilityManagement() {
     name: '',
     address: '',
     description: '',
+    whatsapp_number: 'DEFAULT',
     is_active: true
   });
   
@@ -118,10 +134,34 @@ export default function AvailabilityManagement() {
     }
   }, []);
 
+  const loadWhatsAppConfig = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/whatsapp-config`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setWhatsappConfig(data.data);
+      } else {
+        throw new Error('Error cargando configuración de WhatsApp');
+      }
+    } catch (error) {
+      console.error('Error cargando configuración de WhatsApp:', error);
+      setError('Error cargando configuración de WhatsApp');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadLocations();
     loadTimeSlots();
-  }, [loadLocations, loadTimeSlots]);
+    loadWhatsAppConfig();
+  }, [loadLocations, loadTimeSlots, loadWhatsAppConfig]);
 
   // Funciones para lugares de entrega
   const handleCreateLocation = async () => {
@@ -326,6 +366,7 @@ export default function AvailabilityManagement() {
       name: '',
       address: '',
       description: '',
+      whatsapp_number: 'DEFAULT',
       is_active: true
     });
   };
@@ -346,6 +387,7 @@ export default function AvailabilityManagement() {
         name: location.name,
         address: location.address,
         description: location.description || '',
+        whatsapp_number: location.whatsapp_number || 'DEFAULT',
         is_active: location.is_active
       });
     } else {
@@ -443,6 +485,17 @@ export default function AvailabilityManagement() {
             <Clock className="w-4 h-4 inline mr-2" />
             Horarios
           </button>
+          <button
+            onClick={() => setActiveTab('whatsapp')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'whatsapp'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 inline mr-2" />
+            WhatsApp
+          </button>
         </nav>
       </div>
 
@@ -483,6 +536,15 @@ export default function AvailabilityManagement() {
                         {location.description && (
                           <p className="text-sm text-gray-500">{location.description}</p>
                         )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            location.whatsapp_number === 'SECONDARY'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {location.whatsapp_number === 'SECONDARY' ? 'WhatsApp Secundario' : 'WhatsApp Principal'}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                           <span>Horarios: {getTimeSlotsByLocation(location.id).length}</span>
                           <span>Creado: {new Date(location.created_at).toLocaleDateString()}</span>
@@ -657,6 +719,24 @@ export default function AvailabilityManagement() {
                     />
                   </div>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Número de WhatsApp</label>
+                    <select
+                      value={locationForm.whatsapp_number}
+                      onChange={(e) => setLocationForm({...locationForm, whatsapp_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="DEFAULT">Número Principal</option>
+                      <option value="SECONDARY">Número Secundario</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {locationForm.whatsapp_number === 'DEFAULT' 
+                        ? `Usar número principal: ${whatsappConfig?.primaryNumber || 'No configurado'}`
+                        : `Usar número secundario: ${whatsappConfig?.secondaryNumber || 'No configurado'}`
+                      }
+                    </p>
+                  </div>
+                  
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -783,6 +863,96 @@ export default function AvailabilityManagement() {
                   Cancelar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'whatsapp' && (
+        <div className="space-y-4">
+          {/* WhatsApp Header */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="text-md font-medium text-gray-900">Configuración de WhatsApp</h4>
+              <p className="text-sm text-gray-600">Gestiona los números de WhatsApp para diferentes puntos de entrega</p>
+            </div>
+          </div>
+
+          {/* WhatsApp Configuration */}
+          {whatsappConfig ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Número Principal */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <h5 className="font-medium text-gray-900">Número Principal</h5>
+                  </div>
+                  <p className="text-2xl font-mono text-gray-800 mb-2">{whatsappConfig.primaryNumber}</p>
+                  <p className="text-sm text-gray-600">Usado para UANL y Soriana San Roque</p>
+                </div>
+
+                {/* Número Secundario */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                    <h5 className="font-medium text-gray-900">Número Secundario</h5>
+                  </div>
+                  <p className="text-2xl font-mono text-gray-800 mb-2">{whatsappConfig.secondaryNumber}</p>
+                  <p className="text-sm text-gray-600">Usado para Santa María y Mall Pablo Livas</p>
+                </div>
+              </div>
+
+              {/* Información adicional */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h6 className="font-medium text-blue-900 mb-2">¿Cómo funciona?</h6>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Los pedidos se envían automáticamente al número correcto según el punto de entrega seleccionado</li>
+                  <li>• Los clientes ven el número correspondiente en el mensaje de WhatsApp</li>
+                  <li>• Puedes cambiar qué número usa cada punto de entrega en la pestaña "Lugares de Entrega"</li>
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando configuración de WhatsApp...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de lugares con sus números asignados */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h5 className="font-medium text-gray-900">Asignación de Números por Punto de Entrega</h5>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {locations.map((location) => {
+                const whatsappType = whatsappConfig?.whatsappTypes.find(t => t.value === location.whatsapp_number);
+                return (
+                  <div key={location.id} className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h6 className="font-medium text-gray-900">{location.name}</h6>
+                        <p className="text-sm text-gray-600">{location.address}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${
+                          location.whatsapp_number === 'SECONDARY'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {whatsappType?.label || 'Número Principal'}
+                        </span>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {whatsappType?.number || whatsappConfig?.primaryNumber}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

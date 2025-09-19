@@ -29,6 +29,7 @@ interface DeliveryLocation {
   name: string;
   address: string;
   description: string;
+  whatsapp_number?: string;
 }
 
 interface DeliveryTimeSlot {
@@ -260,13 +261,28 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
         console.log('📝 [DEBUG] whatsappMessage codificado:', whatsappMessage);
         
-        // Usar el número de WhatsApp del negocio desde las variables de entorno
-        const businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-        console.log('📱 [DEBUG] businessWhatsAppNumber desde .env:', businessWhatsAppNumber);
-        console.log('📱 [DEBUG] process.env:', process.env);
+        // Obtener el número de WhatsApp correcto según el punto de entrega
+        const selectedLocationData = deliveryLocations.find(loc => loc.id === selectedLocation);
+        const whatsappType = selectedLocationData?.whatsapp_number || 'DEFAULT';
+        
+        // Determinar qué número usar según el tipo
+        let businessWhatsAppNumber;
+        if (whatsappType === 'SECONDARY') {
+          businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2;
+        } else {
+          businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+        }
+        
+        console.log('📱 [DEBUG] WhatsApp config:', {
+          whatsappType,
+          selectedLocation: selectedLocationData?.name,
+          primaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
+          secondaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2,
+          selectedNumber: businessWhatsAppNumber
+        });
         
         if (!businessWhatsAppNumber) {
-          console.error('❌ [ERROR] NEXT_PUBLIC_WHATSAPP_NUMBER no está definido en .env');
+          console.error('❌ [ERROR] Número de WhatsApp no disponible para el tipo:', whatsappType);
           setError('Error de configuración: número de WhatsApp no disponible');
           return;
         }

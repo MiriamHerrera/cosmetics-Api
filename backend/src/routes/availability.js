@@ -44,4 +44,9 @@ router.patch('/time-slots/:id/toggle-status', availabilityController.toggleTimeS
 // GET /api/admin/time-slots/available/:locationId - Obtener horarios disponibles para un lugar
 router.get('/time-slots/available/:locationId', availabilityController.getAvailableTimeSlots);
 
+// ===== RUTAS PARA CONFIGURACIÓN DE WHATSAPP =====
+
+// GET /api/admin/whatsapp-config - Obtener configuración de WhatsApp
+router.get('/whatsapp-config', availabilityController.getWhatsAppConfig);
+
 module.exports = router;

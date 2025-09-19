@@ -1,4 +1,5 @@
 const { query } = require('../config/database');
+const whatsappConfig = require('../config/whatsapp');
 
 class AvailabilityController {
   
@@ -15,6 +16,7 @@ class AvailabilityController {
           name,
           address,
           description,
+          whatsapp_number,
           is_active,
           created_at,
           updated_at
@@ -42,9 +44,9 @@ class AvailabilityController {
   // Crear nuevo lugar de entrega
   createDeliveryLocation = async (req, res) => {
     try {
-      const { name, address, description, is_active = true } = req.body;
+      const { name, address, description, whatsapp_number = 'DEFAULT', is_active = true } = req.body;
 
-      console.log('🔧 Creando lugar de entrega:', { name, address, description, is_active });
+      console.log('🔧 Creando lugar de entrega:', { name, address, description, whatsapp_number, is_active });
 
       // Validar datos requeridos
       if (!name || !address) {
@@ -54,10 +56,18 @@ class AvailabilityController {
         });
       }
 
+      // Validar tipo de WhatsApp
+      if (!['DEFAULT', 'SECONDARY'].includes(whatsapp_number)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tipo de WhatsApp debe ser DEFAULT o SECONDARY'
+        });
+      }
+
       const result = await query(`
-        INSERT INTO delivery_locations (name, address, description, is_active)
-        VALUES (?, ?, ?, ?)
-      `, [name, address, description || null, is_active ? 1 : 0]);
+        INSERT INTO delivery_locations (name, address, description, whatsapp_number, is_active)
+        VALUES (?, ?, ?, ?, ?)
+      `, [name, address, description || null, whatsapp_number, is_active ? 1 : 0]);
 
       console.log('✅ Lugar de entrega creado con ID:', result.insertId);
 
@@ -69,6 +79,7 @@ class AvailabilityController {
           name,
           address,
           description,
+          whatsapp_number,
           is_active: !!is_active
         }
       });
@@ -96,9 +107,9 @@ class AvailabilityController {
   updateDeliveryLocation = async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, address, description, is_active } = req.body;
+      const { name, address, description, whatsapp_number, is_active } = req.body;
 
-      console.log('🔧 Actualizando lugar de entrega:', { id, name, address, description, is_active });
+      console.log('🔧 Actualizando lugar de entrega:', { id, name, address, description, whatsapp_number, is_active });
 
       // Validar datos requeridos
       if (!name || !address) {
@@ -108,11 +119,19 @@ class AvailabilityController {
         });
       }
 
+      // Validar tipo de WhatsApp si se proporciona
+      if (whatsapp_number && !['DEFAULT', 'SECONDARY'].includes(whatsapp_number)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tipo de WhatsApp debe ser DEFAULT o SECONDARY'
+        });
+      }
+
       const result = await query(`
         UPDATE delivery_locations 
-        SET name = ?, address = ?, description = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+        SET name = ?, address = ?, description = ?, whatsapp_number = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `, [name, address, description || null, is_active ? 1 : 0, id]);
+      `, [name, address, description || null, whatsapp_number || 'DEFAULT', is_active ? 1 : 0, id]);
 
       if (result.affectedRows === 0) {
         return res.status(404).json({
@@ -531,6 +550,50 @@ class AvailabilityController {
 
     } catch (error) {
       console.error('❌ Error obteniendo horarios disponibles:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error.message
+      });
+    }
+  };
+
+  // ===== CONFIGURACIÓN DE WHATSAPP =====
+
+  // Obtener configuración de WhatsApp
+  getWhatsAppConfig = async (req, res) => {
+    try {
+      console.log('🔍 Obteniendo configuración de WhatsApp...');
+      
+      const config = {
+        primaryNumber: whatsappConfig.primaryNumber,
+        secondaryNumber: whatsappConfig.secondaryNumber,
+        businessName: whatsappConfig.businessName,
+        whatsappTypes: [
+          {
+            value: 'DEFAULT',
+            label: 'Número Principal',
+            number: whatsappConfig.primaryNumber,
+            description: 'Usado para UANL y Soriana San Roque'
+          },
+          {
+            value: 'SECONDARY',
+            label: 'Número Secundario',
+            number: whatsappConfig.secondaryNumber,
+            description: 'Usado para Santa María y Mall Pablo Livas'
+          }
+        ]
+      };
+
+      console.log('✅ Configuración de WhatsApp obtenida');
+
+      res.json({
+        success: true,
+        data: config
+      });
+
+    } catch (error) {
+      console.error('❌ Error obteniendo configuración de WhatsApp:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
