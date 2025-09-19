@@ -272,7 +272,20 @@ class OrderController {
         cartParams = [userId];
       }
       
-      const unifiedCart = await query(cartQuery, cartParams);
+      let unifiedCart = await query(cartQuery, cartParams);
+
+      // Si no hay carrito activo para usuario registrado, crear uno nuevo
+      if ((!unifiedCart || unifiedCart.length === 0) && customerType === 'registered') {
+        console.log('🔄 No hay carrito activo para usuario registrado, creando uno nuevo...');
+        
+        const newCartResult = await query(`
+          INSERT INTO carts_unified (user_id, cart_type, status, expires_at)
+          VALUES (?, 'registered', 'active', DATE_ADD(NOW(), INTERVAL 24 HOUR))
+        `, [userId]);
+        
+        unifiedCart = [{ id: newCartResult.insertId }];
+        console.log('✅ Nuevo carrito creado para usuario registrado:', newCartResult.insertId);
+      }
 
       if (!unifiedCart || unifiedCart.length === 0) {
         return res.status(400).json({
@@ -522,9 +535,22 @@ class OrderController {
       }
 
             // Verificar que el carrito unificado existe y tiene items
-      const [unifiedCart] = await connection.execute(`
+      let [unifiedCart] = await connection.execute(`
         SELECT id FROM carts_unified WHERE session_id = ? AND status = 'active'
       `, [sessionId]);
+
+      // Si no hay carrito activo para invitado, crear uno nuevo
+      if (!unifiedCart) {
+        console.log('🔄 No hay carrito activo para invitado, creando uno nuevo...');
+        
+        const [newCartResult] = await connection.execute(`
+          INSERT INTO carts_unified (session_id, cart_type, status, expires_at)
+          VALUES (?, 'guest', 'active', DATE_ADD(NOW(), INTERVAL 24 HOUR))
+        `, [sessionId]);
+        
+        unifiedCart = { id: newCartResult.insertId };
+        console.log('✅ Nuevo carrito creado para invitado:', newCartResult.insertId);
+      }
 
       if (!unifiedCart) {
         await connection.rollback();
