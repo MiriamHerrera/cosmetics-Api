@@ -213,6 +213,50 @@ class UnifiedCartController {
       const cart = carts[0];
       console.log('📦 [UnifiedCart] Carrito encontrado:', cart);
       
+      // Si el carrito está completado, crear uno nuevo activo
+      if (cart.status === 'completed') {
+        console.log('🔄 [UnifiedCart] Carrito completado encontrado, creando uno nuevo activo...');
+        
+        let createQuery = '';
+        let createParams = [];
+        
+        if (userId) {
+          // Usuario autenticado: carrito expira en 7 días
+          createQuery = 'INSERT INTO carts_unified (user_id, cart_type, status, expires_at) VALUES (?, "registered", "active", DATE_ADD(NOW(), INTERVAL 7 DAY))';
+          createParams = [userId];
+        } else {
+          // Usuario invitado: carrito expira en 1 hora
+          createQuery = 'INSERT INTO carts_unified (session_id, cart_type, status, expires_at) VALUES (?, "guest", "active", DATE_ADD(NOW(), INTERVAL 1 HOUR))';
+          createParams = [sessionId];
+        }
+        
+        console.log('📝 [UnifiedCart] Query de creación de carrito activo:', createQuery);
+        console.log('📝 [UnifiedCart] Params de creación:', createParams);
+        
+        try {
+          const result = await query(createQuery, createParams);
+          const newCartId = result.insertId;
+          
+          console.log('✅ [UnifiedCart] Nuevo carrito activo creado con ID:', newCartId);
+          
+          // Actualizar la variable cart para usar el nuevo carrito
+          cart.id = newCartId;
+          cart.status = 'active';
+          cart.user_id = userId;
+          cart.session_id = sessionId;
+          cart.cart_type = userId ? 'registered' : 'guest';
+          
+          console.log('🔄 [UnifiedCart] Carrito actualizado para usar el nuevo:', cart);
+        } catch (dbError) {
+          console.error('❌ [UnifiedCart] Error creando carrito activo:', dbError);
+          return res.status(500).json({
+            success: false,
+            message: 'Error creando carrito activo',
+            error: process.env.NODE_ENV === 'development' ? dbError.message : 'Error de base de datos'
+          });
+        }
+      }
+      
       // Obtener items del carrito
       const itemsQuery = 'SELECT ci.*, p.name as product_name, p.price, p.image_url FROM cart_items_unified ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?';
       console.log('📝 [UnifiedCart] Query de items:', itemsQuery);
