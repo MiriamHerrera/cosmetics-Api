@@ -489,7 +489,8 @@ class OrderController {
       }
 
               // Validar número de WhatsApp
-        if (!whatsappConfig.validateNumber(whatsappConfig.number)) {
+        const whatsappNumber = whatsappConfig.getNumberForLocation(locationWhatsappType);
+        if (!whatsappConfig.validateNumber(whatsappNumber)) {
         await connection.rollback();
         return res.status(500).json({
           success: false,

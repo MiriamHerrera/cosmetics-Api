@@ -49,4 +49,5 @@ router.get('/time-slots/available/:locationId', availabilityController.getAvaila
 // GET /api/admin/whatsapp-config - Obtener configuración de WhatsApp
 router.get('/whatsapp-config', availabilityController.getWhatsAppConfig);
 
+
 module.exports = router;
