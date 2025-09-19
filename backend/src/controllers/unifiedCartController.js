@@ -1119,6 +1119,11 @@ class UnifiedCartController {
   // Limpiar carrito completo
   async clearCart(req, res) {
     try {
+      console.log('🧹 [ClearCart] Iniciando limpieza de carrito');
+      console.log('🧹 [ClearCart] Body recibido:', req.body);
+      console.log('🧹 [ClearCart] Method:', req.method);
+      console.log('🧹 [ClearCart] Headers:', req.headers);
+      
       const { userId, sessionId } = req.body;
       
       if (!userId && !sessionId) {

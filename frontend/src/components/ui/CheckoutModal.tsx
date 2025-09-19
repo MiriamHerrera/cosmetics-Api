@@ -332,15 +332,15 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
 📱 Revisa tu WhatsApp para completar la compra.`);
           console.log('✅ [DEBUG] Alert mostrado exitosamente');
           
-          // Actualizar el carrito después de cerrar el alert
-          console.log('🔄 [DEBUG] Actualizando carrito después del pedido exitoso');
-          clearCart();
+          // El carrito ya fue limpiado en el backend, solo recargar la página para actualizar el estado
+          console.log('🔄 [DEBUG] Recargando página para actualizar el estado del carrito');
+          window.location.reload();
           
         } catch (alertError) {
           console.error('❌ [ERROR] Error al mostrar alert:', alertError);
-          // Aún así actualizar el carrito si hay error en el alert
-          console.log('🔄 [DEBUG] Actualizando carrito después de error en alert');
-          clearCart();
+          // Recargar la página para actualizar el estado del carrito
+          console.log('🔄 [DEBUG] Recargando página después de error en alert');
+          window.location.reload();
         }
         
         // Cerrar modal

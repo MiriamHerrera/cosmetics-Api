@@ -14,6 +14,7 @@ router.post('/add-item', unifiedCartController.addItem);
 router.put('/update-quantity', unifiedCartController.updateQuantity);
 router.delete('/remove-item', unifiedCartController.removeItem);
 router.delete('/clear', unifiedCartController.clearCart);
+router.post('/clear', unifiedCartController.clearCart); // Alternativa POST para compatibilidad
 
 // Rutas especiales
 router.post('/migrate-guest-to-user', authenticateToken, unifiedCartController.migrateGuestToUser);

@@ -414,9 +414,7 @@ export const unifiedCartApi = {
 
   // Limpiar carrito
   clearCart: async (cartData: { userId?: number; sessionId?: string }): Promise<ApiResponse<void>> => {
-    const response = await api.delete(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/clear`, { 
-      data: cartData 
-    });
+    const response = await api.post(`${API_CONFIG.ENDPOINTS.UNIFIED_CART}/clear`, cartData);
     return response.data;
   },
 
