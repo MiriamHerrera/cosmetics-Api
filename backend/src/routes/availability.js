@@ -49,4 +49,27 @@ router.get('/time-slots/available/:locationId', availabilityController.getAvaila
 // GET /api/admin/whatsapp-config - Obtener configuración de WhatsApp
 router.get('/whatsapp-config', availabilityController.getWhatsAppConfig);
 
+// GET /api/admin/whatsapp-debug - Debug de configuración de WhatsApp (sin autenticación para testing)
+router.get('/whatsapp-debug', (req, res) => {
+  const whatsappConfig = require('../config/whatsapp');
+  
+  res.json({
+    success: true,
+    data: {
+      env: {
+        NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
+        NEXT_PUBLIC_WHATSAPP_NUMBER_2: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2
+      },
+      config: {
+        primaryNumber: whatsappConfig.primaryNumber,
+        secondaryNumber: whatsappConfig.secondaryNumber
+      },
+      test: {
+        DEFAULT: whatsappConfig.getNumberForLocation('DEFAULT'),
+        SECONDARY: whatsappConfig.getNumberForLocation('SECONDARY')
+      }
+    }
+  });
+});
+
 module.exports = router;
