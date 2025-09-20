@@ -222,6 +222,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
 
       // Debug: mostrar qué datos se van a enviar
       console.log('Datos a enviar al backend:', productData);
+      console.log('Video URL específico:', formData.video_url);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.jeniricosmetics.com/api'}/admin/products/${product.id}`, {
         method: 'PUT',
