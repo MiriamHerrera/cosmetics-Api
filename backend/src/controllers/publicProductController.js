@@ -66,6 +66,7 @@ const getPublicProducts = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         p.status,
         p.created_at,
@@ -128,6 +129,7 @@ const getPublicProductById = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         p.status,
         p.created_at,
@@ -182,6 +184,7 @@ const searchPublicProducts = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         pt.name as product_type_name,
         c.name as category_name
@@ -227,6 +230,7 @@ const getPublicProductsByCategory = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         pt.name as product_type_name,
         c.name as category_name

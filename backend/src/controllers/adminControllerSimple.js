@@ -236,6 +236,7 @@ const getProducts = async (req, res) => {
         p.status,
         p.is_approved,
         p.image_url,
+        p.video_url,
         p.created_at,
         p.updated_at,
         pt.name as product_type,
