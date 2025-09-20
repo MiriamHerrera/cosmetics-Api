@@ -202,14 +202,14 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
               onClick={() => setShowVideoModal(true)}
               className="
                 bg-blue-100 border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-200
-                text-blue-600 font-medium py-2 px-3 sm:px-4 rounded-xl
+                text-blue-600 font-medium py-2 px-2 sm:px-4 rounded-xl
                 transition-all duration-300 transform hover:scale-105
-                flex items-center justify-center gap-2
+                flex items-center justify-center gap-1 sm:gap-2
                 shadow-md hover:shadow-lg
               "
             >
               <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="text-xs sm:text-sm">Video</span>
+              <span className="text-xs sm:text-sm hidden sm:inline">Video</span>
             </button>
           )}
 
@@ -242,27 +242,28 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
                  : 'bg-white border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-600'
                }
                disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400
-               font-medium py-2 px-3 sm:px-4 rounded-xl
+               font-medium py-2 px-2 sm:px-4 rounded-xl
                transition-all duration-300 transform hover:scale-105
                disabled:cursor-not-allowed disabled:transform-none
-               flex items-center justify-center gap-2
+               flex items-center justify-center gap-1 sm:gap-2
                shadow-md hover:shadow-lg
                ${isAddingToCart ? 'animate-pulse' : ''}
              `}
            >
              {showSuccess ? (
                <>
-                 <span className="text-xs sm:text-sm">✅ Agregado</span>
+                 <span className="text-xs sm:text-sm">✅</span>
+                 <span className="text-xs sm:text-sm hidden sm:inline">Agregado</span>
                </>
              ) : isAddingToCart ? (
                <>
                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                 <span className="text-xs sm:text-sm">Agregando...</span>
+                 <span className="text-xs sm:text-sm hidden sm:inline">Agregando...</span>
                </>
              ) : (
                <>
                  <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-                 <span className="text-xs sm:text-sm">Carrito</span>
+                 <span className="text-xs sm:text-sm hidden sm:inline">Carrito</span>
                </>
              )}
            </button>
