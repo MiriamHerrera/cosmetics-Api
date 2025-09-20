@@ -317,16 +317,24 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock_total, image_url, status } = req.body;
+    const { name, description, price, stock_total, image_url, video_url, status } = req.body;
+
+    // DEBUG: Log detallado de la actualización
+    console.log(`\n🔄 [ADMIN UPDATE PRODUCT] ID: ${id}`);
+    console.log('📦 Datos recibidos:', JSON.stringify(req.body, null, 2));
+    console.log('🎥 Video URL específico:', video_url);
 
     // Verificar que el producto existe
-    const products = await query('SELECT id FROM products WHERE id = ?', [id]);
+    const products = await query('SELECT id, name, video_url FROM products WHERE id = ?', [id]);
     if (products.length === 0) {
+      console.log('❌ Producto no encontrado');
       return res.status(404).json({
         success: false,
         message: 'Producto no encontrado'
       });
     }
+
+    console.log('✅ Producto encontrado:', products[0]);
 
     // Construir query de actualización dinámicamente
     const updateFields = [];
@@ -335,31 +343,45 @@ const updateProduct = async (req, res) => {
     if (name !== undefined) {
       updateFields.push('name = ?');
       updateValues.push(name);
+      console.log('✅ Campo incluido: name =', name);
     }
     if (description !== undefined) {
       updateFields.push('description = ?');
       updateValues.push(description);
+      console.log('✅ Campo incluido: description =', description);
     }
     if (price !== undefined) {
       updateFields.push('price = ?');
       updateValues.push(price);
+      console.log('✅ Campo incluido: price =', price);
     }
     if (stock_total !== undefined) {
       updateFields.push('stock_total = ?');
       updateValues.push(stock_total);
+      console.log('✅ Campo incluido: stock_total =', stock_total);
     }
     if (image_url !== undefined) {
       updateFields.push('image_url = ?');
       updateValues.push(image_url);
+      console.log('✅ Campo incluido: image_url =', image_url);
+    }
+    if (video_url !== undefined) {
+      updateFields.push('video_url = ?');
+      updateValues.push(video_url);
+      console.log('✅ Campo incluido: video_url =', video_url);
     }
     if (status !== undefined) {
       updateFields.push('status = ?');
       updateValues.push(status);
+      console.log('✅ Campo incluido: status =', status);
     }
 
     // Agregar updated_at y el ID
     updateFields.push('updated_at = CURRENT_TIMESTAMP');
     updateValues.push(id);
+
+    console.log('🔧 Query final:', `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`);
+    console.log('📊 Valores finales:', updateValues);
 
     // Actualizar producto
     await query(`
@@ -367,6 +389,10 @@ const updateProduct = async (req, res) => {
       SET ${updateFields.join(', ')}
       WHERE id = ?
     `, updateValues);
+
+    // Verificar que se actualizó correctamente
+    const updatedProduct = await query('SELECT id, name, video_url FROM products WHERE id = ?', [id]);
+    console.log('✅ Producto actualizado:', updatedProduct[0]);
 
     res.json({
       success: true,

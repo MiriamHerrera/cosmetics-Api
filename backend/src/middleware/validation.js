@@ -41,6 +41,7 @@ const productSchema = Joi.object({
   description: Joi.string().max(1000).optional(),
   price: Joi.number().positive().precision(2).required(),
   image_url: Joi.string().uri().max(255).optional(),
+  video_url: Joi.string().uri().max(500).optional().allow(''),
   stock_total: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active')
 });

@@ -269,18 +269,26 @@ const updateProduct = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
+    // DEBUG: Log detallado de la actualización
+    console.log(`\n🔄 [UPDATE PRODUCT] ID: ${id}`);
+    console.log('📦 Datos recibidos:', JSON.stringify(updateData, null, 2));
+    console.log('🎥 Video URL específico:', updateData.video_url);
+
     // Verificar que el producto existe
     const existingProducts = await query(
-      'SELECT id FROM products WHERE id = ?',
+      'SELECT id, name, video_url FROM products WHERE id = ?',
       [id]
     );
 
     if (existingProducts.length === 0) {
+      console.log('❌ Producto no encontrado');
       return res.status(404).json({
         success: false,
         message: 'Producto no encontrado'
       });
     }
+
+    console.log('✅ Producto encontrado:', existingProducts[0]);
 
     // Construir query de actualización dinámicamente
     const allowedFields = ['name', 'description', 'price', 'cost_price', 'image_url', 'video_url', 'stock_total', 'status'];
@@ -291,10 +299,14 @@ const updateProduct = async (req, res) => {
       if (allowedFields.includes(key) && value !== undefined) {
         updateFields.push(`${key} = ?`);
         updateValues.push(value);
+        console.log(`✅ Campo incluido: ${key} = ${value}`);
+      } else {
+        console.log(`❌ Campo excluido: ${key} = ${value}`);
       }
     }
 
     if (updateFields.length === 0) {
+      console.log('❌ No hay campos válidos para actualizar');
       return res.status(400).json({
         success: false,
         message: 'No se proporcionaron campos válidos para actualizar'
@@ -303,19 +315,26 @@ const updateProduct = async (req, res) => {
 
     updateValues.push(id);
 
+    console.log('🔧 Query final:', `UPDATE products SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
+    console.log('📊 Valores finales:', updateValues);
+
     await query(`
       UPDATE products 
       SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP 
       WHERE id = ?
     `, updateValues);
 
+    // Verificar que se actualizó correctamente
+    const updatedProduct = await query('SELECT id, name, video_url FROM products WHERE id = ?', [id]);
+    console.log('✅ Producto actualizado:', updatedProduct[0]);
+
     res.json({
       success: true,
-      message: 'Producto actualizado exitosamente'
+      message: 'Producto actualizado correctamente'
     });
 
   } catch (error) {
-    console.error('Error actualizando producto:', error);
+    console.error('❌ Error actualizando producto:', error);
     res.status(500).json({
       success: false,
       message: 'Error interno del servidor'
