@@ -69,6 +69,7 @@ const getAllProducts = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         p.status,
         p.created_at,
@@ -139,6 +140,7 @@ const getProductById = async (req, res) => {
         p.description,
         p.price,
         p.image_url,
+        p.video_url,
         p.stock_total,
         p.status,
         p.created_at,
@@ -184,6 +186,7 @@ const createProduct = async (req, res) => {
       price,
       cost_price,
       image_url,
+      video_url,
       stock_total
     } = req.body;
 
@@ -230,9 +233,9 @@ const createProduct = async (req, res) => {
     }
 
     const result = await query(`
-      INSERT INTO products (product_type_id, name, description, price, cost_price, image_url, stock_total, is_approved)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0)
-    `, [product_type_id, name, description, price, cost_price, image_url, stock_total || 0]);
+      INSERT INTO products (product_type_id, name, description, price, cost_price, image_url, video_url, stock_total, is_approved)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `, [product_type_id, name, description, price, cost_price, image_url, video_url || null, stock_total || 0]);
 
     res.status(201).json({
       success: true,
@@ -279,7 +282,7 @@ const updateProduct = async (req, res) => {
     }
 
     // Construir query de actualización dinámicamente
-    const allowedFields = ['name', 'description', 'price', 'cost_price', 'image_url', 'stock_total', 'status'];
+    const allowedFields = ['name', 'description', 'price', 'cost_price', 'image_url', 'video_url', 'stock_total', 'status'];
     const updateFields = [];
     const updateValues = [];
 

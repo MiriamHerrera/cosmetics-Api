@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Heart, ShoppingCart, Eye, Zap } from 'lucide-react';
+import { Heart, ShoppingCart, Eye, Zap, Play } from 'lucide-react';
 import { useUnifiedCart } from '@/hooks/useUnifiedCart';
 import { getImageUrl } from '@/lib/config';
 import ImageCarousel from './ImageCarousel';
+import VideoModal from './VideoModal';
 import type { Product } from '@/types';
 
 interface ProductCardProps {
@@ -18,6 +19,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const { addToCart, error, clearError } = useUnifiedCart();
 
   const handleAddToCart = async () => {
@@ -194,6 +196,23 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
 
         {/* Botones de acción */}
         <div className="flex gap-1.5 sm:gap-2">
+          {/* Botón de video */}
+          {product.video_url && (
+            <button
+              onClick={() => setShowVideoModal(true)}
+              className="
+                bg-blue-100 border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-200
+                text-blue-600 font-medium py-2 px-3 sm:px-4 rounded-xl
+                transition-all duration-300 transform hover:scale-105
+                flex items-center justify-center gap-2
+                shadow-md hover:shadow-lg
+              "
+            >
+              <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm">Video</span>
+            </button>
+          )}
+
           {/* Botón de compra rápida - COMENTADO TEMPORALMENTE */}
           {/* <button
             onClick={() => onQuickBuy(product)}
@@ -249,6 +268,14 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
            </button>
         </div>
       </div>
+
+      {/* Modal de video */}
+      <VideoModal
+        isOpen={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+        videoUrl={product.video_url || ''}
+        productName={product.name}
+      />
     </div>
   );
 } 

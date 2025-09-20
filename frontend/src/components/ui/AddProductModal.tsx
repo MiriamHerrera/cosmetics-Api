@@ -31,6 +31,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
     stock_total: '',
     product_type_id: '',
     image_url: '',
+    video_url: '',
     status: 'active'
   });
 
@@ -101,6 +102,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded }: Add
       stock_total: '',
       product_type_id: '',
       image_url: '',
+      video_url: '',
       status: 'active'
     });
     clearImages();
@@ -457,6 +459,24 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Video URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL del Video (Opcional)
+              </label>
+              <input
+                type="url"
+                name="video_url"
+                value={formData.video_url}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://youtube.com/watch?v=..., https://tiktok.com/@..., https://facebook.com/..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Soporta YouTube, TikTok, Facebook y otros enlaces de video
+              </p>
             </div>
 
             {/* Estado */}

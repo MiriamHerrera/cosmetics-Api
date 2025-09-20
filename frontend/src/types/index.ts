@@ -9,6 +9,7 @@ export interface Product {
   category_name: string;
   product_type_name: string;
   image_url: string;
+  video_url?: string;  // Campo opcional para URL del video
   status: string;
   is_approved?: boolean;  // Campo para aprobación de productos
   created_at: string;
@@ -24,6 +25,7 @@ export interface AdminProduct {
   stock_total: number;
   status: string;
   image_url: string | null;
+  video_url?: string | null;  // Campo opcional para URL del video
   created_at: string;
   updated_at: string;
   product_type: string;

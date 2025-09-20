@@ -17,6 +17,7 @@ interface EditProductModalProps {
     description: string;
     price: number;
     image_url: string;
+    video_url?: string;
     stock_total: number;
     status: string;
     product_type: string;
@@ -46,6 +47,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
     price: '',
     stock_total: '',
     image_url: '',
+    video_url: '',
     status: 'active'
   });
 
@@ -83,6 +85,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         price: product.price?.toString() || '',
         stock_total: product.stock_total?.toString() || '',
         image_url: product.image_url || '',
+        video_url: product.video_url || '',
         status: product.status || 'active'
       });
       
@@ -134,6 +137,7 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
       price: '',
       stock_total: '',
       image_url: '',
+      video_url: '',
       status: 'active'
     });
     clearImages();
@@ -486,6 +490,24 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Video URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL del Video (Opcional)
+              </label>
+              <input
+                type="url"
+                name="video_url"
+                value={formData.video_url}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://youtube.com/watch?v=..., https://tiktok.com/@..., https://facebook.com/..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Soporta YouTube, TikTok, Facebook y otros enlaces de video
+              </p>
             </div>
 
             {/* Estado */}
