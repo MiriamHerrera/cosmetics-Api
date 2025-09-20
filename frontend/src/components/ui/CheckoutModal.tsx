@@ -263,7 +263,9 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         console.log('📝 [DEBUG] whatsappMessage codificado:', whatsappMessage);
         
         // Obtener el número de WhatsApp correcto según el punto de entrega
+        console.log('🔍 [DEBUG] Buscando ubicación:', { selectedLocation, deliveryLocations });
         const selectedLocationData = deliveryLocations.find(loc => loc.id === selectedLocation);
+        console.log('📍 [DEBUG] Ubicación encontrada:', selectedLocationData);
         const whatsappType = selectedLocationData?.whatsapp_number || 'DEFAULT';
         
         // Determinar qué número usar según el tipo

@@ -11,6 +11,7 @@ class OrderController {
           name, 
           address, 
           description,
+          whatsapp_number,
           is_active
         FROM delivery_locations 
         WHERE is_active = TRUE
