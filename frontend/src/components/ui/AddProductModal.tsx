@@ -175,7 +175,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       stock_total: parseInt(formData.stock_total) || 0,
       product_type_id: parseInt(formData.product_type_id),
       // Solo incluir image_url si se proporcionó una URL válida o hay imágenes subidas
-      ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() })
+      ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() }),
+      // Incluir video_url si se proporcionó
+      ...(formData.video_url && formData.video_url.trim() !== '' && { video_url: formData.video_url.trim() })
     };
 
     console.log('Datos a enviar al backend:', productData);

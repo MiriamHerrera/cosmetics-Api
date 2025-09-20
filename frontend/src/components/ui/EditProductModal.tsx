@@ -215,7 +215,9 @@ export default function EditProductModal({ isOpen, onClose, onProductUpdated, pr
         price: parseFloat(formData.price),
         stock_total: parseInt(formData.stock_total) || 0,
         // Solo incluir image_url si se proporcionó una URL válida o hay imágenes subidas
-        ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() })
+        ...(finalImageUrl && finalImageUrl.trim() !== '' && { image_url: finalImageUrl.trim() }),
+        // Incluir video_url si se proporcionó
+        ...(formData.video_url && formData.video_url.trim() !== '' && { video_url: formData.video_url.trim() })
       };
 
       // Debug: mostrar qué datos se van a enviar
