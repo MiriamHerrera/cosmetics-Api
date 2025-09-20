@@ -248,6 +248,7 @@ const createProduct = async (req, res) => {
         price,
         cost_price,
         image_url,
+        video_url: video_url || null,
         stock_total: stock_total || 0,
         is_approved: 0
       }
