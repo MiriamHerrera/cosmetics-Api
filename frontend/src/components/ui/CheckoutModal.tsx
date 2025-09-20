@@ -5,7 +5,8 @@ import { X, Calendar, Clock, MapPin, User, Phone, Mail, MessageSquare } from 'lu
 import { useAuth } from '@/hooks/useAuth';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
-import { useCart } from '@/hooks/useCart';
+import { useUnifiedCart } from '@/hooks/useUnifiedCart';
+import { useStore } from '@/store/useStore';
 import { getImageUrl } from '@/lib/config';
 
 interface CartItem {
@@ -53,7 +54,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
   const { setOrderProcessing } = useBeforeUnload();
   
   // Hook para limpiar el carrito
-  const { clearCart } = useCart();
+  const { clearCart } = useUnifiedCart();
   
   // Estados del formulario
   const [customerInfo, setCustomerInfo] = useState({
@@ -318,9 +319,6 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
           return;
         }
         
-        // El carrito se limpia automáticamente en el backend al crear la orden
-        // No es necesario limpiarlo manualmente aquí
-        
         // Mostrar confirmación
         console.log('🎉 [DEBUG] Mostrando alert de confirmación');
         console.log('🎉 [DEBUG] Número de orden:', result.data.order?.order_number);
@@ -332,15 +330,22 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
 📱 Revisa tu WhatsApp para completar la compra.`);
           console.log('✅ [DEBUG] Alert mostrado exitosamente');
           
-          // El carrito ya fue limpiado en el backend, solo recargar la página para actualizar el estado
-          console.log('🔄 [DEBUG] Recargando página para actualizar el estado del carrito');
-          window.location.reload();
+          // El carrito ya fue limpiado en el backend, solo actualizar el estado local
+          console.log('🔄 [DEBUG] Actualizando estado local del carrito');
+          console.log('🔄 [DEBUG] Estado del carrito antes de limpiar:', useStore.getState().cart);
+          // Usar el método del store directamente para limpiar el estado local
+          const { clearCart: clearStoreCart } = useStore.getState();
+          clearStoreCart();
+          console.log('🔄 [DEBUG] Estado del carrito después de limpiar:', useStore.getState().cart);
           
         } catch (alertError) {
           console.error('❌ [ERROR] Error al mostrar alert:', alertError);
-          // Recargar la página para actualizar el estado del carrito
-          console.log('🔄 [DEBUG] Recargando página después de error en alert');
-          window.location.reload();
+          // El carrito ya fue limpiado en el backend, solo actualizar el estado local
+          console.log('🔄 [DEBUG] Actualizando estado local del carrito después de error');
+          console.log('🔄 [DEBUG] Estado del carrito antes de limpiar:', useStore.getState().cart);
+          const { clearCart: clearStoreCart } = useStore.getState();
+          clearStoreCart();
+          console.log('🔄 [DEBUG] Estado del carrito después de limpiar:', useStore.getState().cart);
         }
         
         // Cerrar modal
