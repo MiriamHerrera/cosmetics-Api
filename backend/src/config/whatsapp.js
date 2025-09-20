@@ -6,7 +6,7 @@ const whatsappConfig = {
   primaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '8124307494',
   
   // Número secundario de WhatsApp para Santa María y Mall Pablo Livas
-  secondaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2 || '8124307494',
+  secondaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2 || '8117435532',
   
   // Nombre del negocio
   businessName: process.env.WHATSAPP_BUSINESS_NAME || 'Cosméticos Store',
