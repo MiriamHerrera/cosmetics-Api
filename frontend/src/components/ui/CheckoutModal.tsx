@@ -230,42 +230,30 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
       });
 
       if (response.ok) {
-        console.log('✅ [DEBUG] Respuesta exitosa del servidor');
-        
         let result;
         try {
           result = await response.json();
-          console.log('✅ [DEBUG] JSON parseado exitosamente:', result);
         } catch (parseError) {
-          console.error('❌ [ERROR] Error al parsear JSON:', parseError);
           setError('Error al procesar la respuesta del servidor');
           return;
         }
         
         // Verificar que result.data existe
         if (!result || !result.data) {
-          console.error('❌ [ERROR] Respuesta del servidor inválida:', result);
           setError('Respuesta del servidor inválida');
           return;
         }
         
         // Generar enlace de WhatsApp
-        console.log('📝 [DEBUG] Verificando campos de WhatsApp...');
-        console.log('📝 [DEBUG] result.data:', result.data);
-        
         if (!result.data.whatsappMessage) {
-          console.error('❌ [ERROR] whatsappMessage no está presente en la respuesta');
           setError('Mensaje de WhatsApp no disponible');
           return;
         }
         
         const whatsappMessage = encodeURIComponent(result.data.whatsappMessage);
-        console.log('📝 [DEBUG] whatsappMessage codificado:', whatsappMessage);
         
         // Obtener el número de WhatsApp correcto según el punto de entrega
-        console.log('🔍 [DEBUG] Buscando ubicación:', { selectedLocation, deliveryLocations });
         const selectedLocationData = deliveryLocations.find(loc => loc.id === selectedLocation);
-        console.log('📍 [DEBUG] Ubicación encontrada:', selectedLocationData);
         const whatsappType = selectedLocationData?.whatsapp_number || 'DEFAULT';
         
         // Determinar qué número usar según el tipo
@@ -276,16 +264,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
           businessWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
         }
         
-        console.log('📱 [DEBUG] WhatsApp config:', {
-          whatsappType,
-          selectedLocation: selectedLocationData?.name,
-          primaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
-          secondaryNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_2,
-          selectedNumber: businessWhatsAppNumber
-        });
-        
         if (!businessWhatsAppNumber) {
-          console.error('❌ [ERROR] Número de WhatsApp no disponible para el tipo:', whatsappType);
           setError('Error de configuración: número de WhatsApp no disponible');
           return;
         }
@@ -298,60 +277,35 @@ export default function CheckoutModal({ isOpen, onClose, cart, sessionId }: Chec
         
         const whatsappUrl = `https://wa.me/${formattedBusinessPhone}?text=${whatsappMessage}`;
         
-        console.log('📱 [DEBUG] WhatsApp URL generada:', {
-          businessPhone: businessWhatsAppNumber,
-          cleanBusinessPhone,
-          formattedBusinessPhone,
-          whatsappUrl,
-          customerPhone: customerInfo.phone
-        });
-        
         // Marcar que se está procesando una orden para evitar el modal de confirmación
         setOrderProcessing(true);
-        
-        console.log('🚀 [DEBUG] Abriendo WhatsApp con URL:', whatsappUrl);
         
         try {
           // Abrir WhatsApp
           window.open(whatsappUrl, '_blank');
-          console.log('✅ [DEBUG] WhatsApp abierto exitosamente');
         } catch (windowError) {
-          console.error('❌ [ERROR] Error al abrir WhatsApp:', windowError);
           setError('Error al abrir WhatsApp');
           return;
         }
         
         // Mostrar confirmación
-        console.log('🎉 [DEBUG] Mostrando alert de confirmación');
-        console.log('🎉 [DEBUG] Número de orden:', result.data.order?.order_number);
-        
         try {
           alert(`¡Pedido #${result.data.order?.order_number || 'N/A'} creado exitosamente! 
 
 ✅ Tu carrito se ha limpiado automáticamente.
 📱 Revisa tu WhatsApp para completar la compra.`);
-          console.log('✅ [DEBUG] Alert mostrado exitosamente');
           
           // El carrito ya fue limpiado en el backend, solo actualizar el estado local
-          console.log('🔄 [DEBUG] Actualizando estado local del carrito');
-          console.log('🔄 [DEBUG] Estado del carrito antes de limpiar:', useStore.getState().cart);
-          // Usar el método del store directamente para limpiar el estado local
           const { clearCart: clearStoreCart } = useStore.getState();
           clearStoreCart();
-          console.log('🔄 [DEBUG] Estado del carrito después de limpiar:', useStore.getState().cart);
           
         } catch (alertError) {
-          console.error('❌ [ERROR] Error al mostrar alert:', alertError);
           // El carrito ya fue limpiado en el backend, solo actualizar el estado local
-          console.log('🔄 [DEBUG] Actualizando estado local del carrito después de error');
-          console.log('🔄 [DEBUG] Estado del carrito antes de limpiar:', useStore.getState().cart);
           const { clearCart: clearStoreCart } = useStore.getState();
           clearStoreCart();
-          console.log('🔄 [DEBUG] Estado del carrito después de limpiar:', useStore.getState().cart);
         }
         
         // Cerrar modal
-        console.log('🚪 [DEBUG] Cerrando modal');
         onClose();
       } else {
         const errorData = await response.json();

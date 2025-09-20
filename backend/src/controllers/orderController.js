@@ -210,9 +210,6 @@ class OrderController {
   // Crear nueva orden
   createOrder = async (req, res) => {
     try {
-      console.log('🔄 [CREATE ORDER] Iniciando creación de orden');
-      console.log('📦 [CREATE ORDER] Datos recibidos:', JSON.stringify(req.body, null, 2));
-      
       const {
         customerType,
         userId,
@@ -230,43 +227,21 @@ class OrderController {
       } = req.body;
 
       // Validar datos requeridos
-      console.log('🔍 [CREATE ORDER] Validando datos requeridos...');
-      const missingFields = [];
-      if (!customerType) missingFields.push('customerType');
-      if (!customerName) missingFields.push('customerName');
-      if (!customerPhone) missingFields.push('customerPhone');
-      if (!deliveryLocationId) missingFields.push('deliveryLocationId');
-      if (!deliveryDate) missingFields.push('deliveryDate');
-      if (!deliveryTime) missingFields.push('deliveryTime');
-      if (!totalAmount) missingFields.push('totalAmount');
-      if (!cartItems || cartItems.length === 0) missingFields.push('cartItems');
-      
-      if (missingFields.length > 0) {
-        console.log('❌ [CREATE ORDER] Campos faltantes:', missingFields);
+      if (!customerType || !customerName || !customerPhone || !deliveryLocationId || 
+          !deliveryDate || !deliveryTime || !totalAmount || !cartItems || cartItems.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Faltan datos requeridos',
-          missingFields: missingFields
+          message: 'Faltan datos requeridos'
         });
       }
-      
-      console.log('✅ [CREATE ORDER] Todos los datos requeridos están presentes');
 
       // Validar fecha de entrega según tipo de usuario
       const today = new Date();
       const deliveryDateObj = new Date(deliveryDate);
       const daysDiff = Math.ceil((deliveryDateObj - today) / (1000 * 60 * 60 * 24));
       
-      console.log('📅 [CREATE ORDER] Validando fecha de entrega:', {
-        today: today.toISOString(),
-        deliveryDate: deliveryDate,
-        deliveryDateObj: deliveryDateObj.toISOString(),
-        daysDiff: daysDiff
-      });
-      
       // No se puede seleccionar el día actual (daysDiff debe ser >= 1)
       if (daysDiff < 1) {
-        console.log('❌ [CREATE ORDER] Fecha de entrega inválida - día actual no permitido');
         return res.status(400).json({
           success: false,
           message: 'No se puede seleccionar el día actual. La fecha de entrega debe ser desde mañana en adelante'
@@ -274,7 +249,6 @@ class OrderController {
       }
       
       if (customerType === 'guest' && daysDiff > 3) {
-        console.log('❌ [CREATE ORDER] Fecha de entrega inválida para invitado - más de 3 días');
         return res.status(400).json({
           success: false,
           message: 'Los usuarios invitados solo pueden elegir fechas desde mañana hasta 3 días posteriores'
@@ -282,14 +256,11 @@ class OrderController {
       }
       
       if (customerType === 'registered' && daysDiff > 7) {
-        console.log('❌ [CREATE ORDER] Fecha de entrega inválida para usuario registrado - más de 7 días');
         return res.status(400).json({
           success: false,
           message: 'Los usuarios registrados pueden elegir fechas desde mañana hasta 7 días posteriores'
         });
       }
-      
-      console.log('✅ [CREATE ORDER] Fecha de entrega válida');
 
       // Verificar que el carrito unificado existe y tiene items
       let cartQuery, cartParams;
@@ -409,21 +380,14 @@ class OrderController {
       }
 
       // Obtener información del punto de entrega para determinar el número de WhatsApp
-      console.log(`🔍 [ORDER] Obteniendo información del punto de entrega ID: ${deliveryLocationId}`);
-      
       const deliveryLocation = await query(`
         SELECT name, whatsapp_number 
         FROM delivery_locations 
         WHERE id = ?
       `, [deliveryLocationId]);
 
-      console.log('📍 [ORDER] Información del punto de entrega:', deliveryLocation[0]);
-
       const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
       const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
-      
-      console.log(`📱 [ORDER] Tipo de WhatsApp seleccionado: ${locationWhatsappType}`);
-      console.log(`📍 [ORDER] Nombre del punto: ${locationName}`);
 
       // Generar mensaje de WhatsApp
       const whatsappMessage = this.generateWhatsAppMessage(
@@ -696,21 +660,14 @@ class OrderController {
       }
 
       // Obtener información del punto de entrega para determinar el número de WhatsApp
-      console.log(`🔍 [GUEST ORDER] Obteniendo información del punto de entrega ID: ${deliveryLocationId}`);
-      
       const [deliveryLocation] = await connection.execute(`
         SELECT name, whatsapp_number 
         FROM delivery_locations 
         WHERE id = ?
       `, [deliveryLocationId]);
 
-      console.log('📍 [GUEST ORDER] Información del punto de entrega:', deliveryLocation[0]);
-
       const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
       const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
-      
-      console.log(`📱 [GUEST ORDER] Tipo de WhatsApp seleccionado: ${locationWhatsappType}`);
-      console.log(`📍 [GUEST ORDER] Nombre del punto: ${locationName}`);
 
       // Generar mensaje de WhatsApp
       const whatsappMessage = this.generateWhatsAppMessage(
@@ -1016,10 +973,6 @@ class OrderController {
 
   // Generar mensaje de WhatsApp
   generateWhatsAppMessage = (orderNumber, customerName, cartItems, totalAmount, deliveryDate, deliveryTime, locationName, locationWhatsappType) => {
-    console.log(`🎯 [WHATSAPP] Generando mensaje para orden ${orderNumber}`);
-    console.log(`📍 [WHATSAPP] Punto de entrega: ${locationName}`);
-    console.log(`📱 [WHATSAPP] Tipo de WhatsApp: ${locationWhatsappType}`);
-    
     const itemsList = cartItems.map(item => 
       `• ${item.product.name} - Cantidad: ${item.quantity} - $${item.product.price}`
     ).join('\n');
@@ -1034,9 +987,6 @@ class OrderController {
     // Obtener el número de WhatsApp correcto según el punto de entrega
     const whatsappNumber = whatsappConfig.getNumberForLocation(locationWhatsappType);
     const whatsappNumberFormatted = whatsappNumber.replace(/(\d{2})(\d{3})(\d{3})(\d{4})/, '+$1 $2 $3 $4');
-    
-    console.log(`📞 [WHATSAPP] Número seleccionado: ${whatsappNumber}`);
-    console.log(`📞 [WHATSAPP] Número formateado: ${whatsappNumberFormatted}`);
 
     return `🛍️ *NUEVO PEDIDO #${orderNumber}*
 
