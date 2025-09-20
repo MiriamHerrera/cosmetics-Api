@@ -194,45 +194,45 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
            </div>
          )}
 
-        {/* Botones de acción */}
-        <div className="flex gap-1.5 sm:gap-2">
-          {/* Botón de video */}
-          {product.video_url && (
-            <button
-              onClick={() => setShowVideoModal(true)}
-              className="
-                bg-blue-100 border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-200
-                text-blue-600 font-medium py-2 px-2 sm:px-4 rounded-xl
-                transition-all duration-300 transform hover:scale-105
-                flex items-center justify-center gap-1 sm:gap-2
-                shadow-md hover:shadow-lg
-              "
-            >
-              <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="text-xs sm:text-sm hidden sm:inline">Video</span>
-            </button>
-          )}
+         {/* Botones de acción - Alineados a la derecha */}
+         <div className="flex justify-end gap-1.5 sm:gap-2">
+           {/* Botón de video */}
+           {product.video_url && (
+             <button
+               onClick={() => setShowVideoModal(true)}
+               className="
+                 bg-blue-100 border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-200
+                 text-blue-600 font-medium py-2 px-2 sm:px-4 rounded-xl
+                 transition-all duration-300 transform hover:scale-105
+                 flex items-center justify-center gap-1 sm:gap-2
+                 shadow-md hover:shadow-lg
+               "
+             >
+               <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+               <span className="text-xs sm:text-sm hidden sm:inline">Video</span>
+             </button>
+           )}
 
-          {/* Botón de compra rápida - COMENTADO TEMPORALMENTE */}
-          {/* <button
-            onClick={() => onQuickBuy(product)}
-            disabled={product.stock_total === 0}
-            className="
-              flex-1 bg-gradient-to-r from-purple-600 to-pink-600 
-              hover:from-purple-700 hover:to-pink-700
-              disabled:from-gray-400 disabled:to-gray-500
-              text-white font-medium py-2 px-3 sm:px-4 rounded-xl
-              transition-all duration-300 transform hover:scale-105
-              disabled:cursor-not-allowed disabled:transform-none
-              flex items-center justify-center gap-2
-              shadow-lg hover:shadow-xl
-            "
-          >
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="text-xs sm:text-sm">Comprar</span>
-          </button> */}
+           {/* Botón de compra rápida - COMENTADO TEMPORALMENTE */}
+           {/* <button
+             onClick={() => onQuickBuy(product)}
+             disabled={product.stock_total === 0}
+             className="
+               flex-1 bg-gradient-to-r from-purple-600 to-pink-600 
+               hover:from-purple-700 hover:to-pink-700
+               disabled:from-gray-400 disabled:to-gray-500
+               text-white font-medium py-2 px-3 sm:px-4 rounded-xl
+               transition-all duration-300 transform hover:scale-105
+               disabled:cursor-not-allowed disabled:transform-none
+               flex items-center justify-center gap-2
+               shadow-lg hover:shadow-xl
+             "
+           >
+             <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+             <span className="text-xs sm:text-sm">Comprar</span>
+           </button> */}
 
-                     {/* Botón de agregar al carrito */}
+           {/* Botón de agregar al carrito */}
            <button
              onClick={handleAddToCart}
              disabled={product.stock_total === 0 || isAddingToCart}
@@ -267,7 +267,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
                </>
              )}
            </button>
-        </div>
+         </div>
       </div>
 
       {/* Modal de video */}
