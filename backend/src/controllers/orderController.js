@@ -379,14 +379,21 @@ class OrderController {
       }
 
       // Obtener información del punto de entrega para determinar el número de WhatsApp
+      console.log(`🔍 [ORDER] Obteniendo información del punto de entrega ID: ${deliveryLocationId}`);
+      
       const deliveryLocation = await query(`
         SELECT name, whatsapp_number 
         FROM delivery_locations 
         WHERE id = ?
       `, [deliveryLocationId]);
 
+      console.log('📍 [ORDER] Información del punto de entrega:', deliveryLocation[0]);
+
       const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
       const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
+      
+      console.log(`📱 [ORDER] Tipo de WhatsApp seleccionado: ${locationWhatsappType}`);
+      console.log(`📍 [ORDER] Nombre del punto: ${locationName}`);
 
       // Generar mensaje de WhatsApp
       const whatsappMessage = this.generateWhatsAppMessage(
@@ -659,14 +666,21 @@ class OrderController {
       }
 
       // Obtener información del punto de entrega para determinar el número de WhatsApp
+      console.log(`🔍 [GUEST ORDER] Obteniendo información del punto de entrega ID: ${deliveryLocationId}`);
+      
       const [deliveryLocation] = await connection.execute(`
         SELECT name, whatsapp_number 
         FROM delivery_locations 
         WHERE id = ?
       `, [deliveryLocationId]);
 
+      console.log('📍 [GUEST ORDER] Información del punto de entrega:', deliveryLocation[0]);
+
       const locationWhatsappType = deliveryLocation[0]?.whatsapp_number || 'DEFAULT';
       const locationName = deliveryLocation[0]?.name || 'Punto de entrega';
+      
+      console.log(`📱 [GUEST ORDER] Tipo de WhatsApp seleccionado: ${locationWhatsappType}`);
+      console.log(`📍 [GUEST ORDER] Nombre del punto: ${locationName}`);
 
       // Generar mensaje de WhatsApp
       const whatsappMessage = this.generateWhatsAppMessage(
@@ -972,6 +986,10 @@ class OrderController {
 
   // Generar mensaje de WhatsApp
   generateWhatsAppMessage = (orderNumber, customerName, cartItems, totalAmount, deliveryDate, deliveryTime, locationName, locationWhatsappType) => {
+    console.log(`🎯 [WHATSAPP] Generando mensaje para orden ${orderNumber}`);
+    console.log(`📍 [WHATSAPP] Punto de entrega: ${locationName}`);
+    console.log(`📱 [WHATSAPP] Tipo de WhatsApp: ${locationWhatsappType}`);
+    
     const itemsList = cartItems.map(item => 
       `• ${item.product.name} - Cantidad: ${item.quantity} - $${item.product.price}`
     ).join('\n');
@@ -986,6 +1004,9 @@ class OrderController {
     // Obtener el número de WhatsApp correcto según el punto de entrega
     const whatsappNumber = whatsappConfig.getNumberForLocation(locationWhatsappType);
     const whatsappNumberFormatted = whatsappNumber.replace(/(\d{2})(\d{3})(\d{3})(\d{4})/, '+$1 $2 $3 $4');
+    
+    console.log(`📞 [WHATSAPP] Número seleccionado: ${whatsappNumber}`);
+    console.log(`📞 [WHATSAPP] Número formateado: ${whatsappNumberFormatted}`);
 
     return `🛍️ *NUEVO PEDIDO #${orderNumber}*
 
