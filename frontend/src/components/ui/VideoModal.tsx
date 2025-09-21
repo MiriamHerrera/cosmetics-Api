@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Play, ExternalLink } from 'lucide-react';
 
 interface VideoModalProps {
@@ -68,36 +69,46 @@ export default function VideoModal({ isOpen, onClose, videoUrl, productName }: V
     }
   }, [isOpen, videoUrl]);
 
+  // Efecto para manejar el scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (isOpen) {
+      // Deshabilitar scroll del body
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Rehabilitar scroll del body
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup al desmontar el componente
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Efecto para manejar teclas cuando el modal está abierto
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !videoUrl) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-75"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <Play className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Video de {productName}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
+  return typeof window !== 'undefined' && createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black bg-opacity-90 flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Contenido del Video */}
+        <div className="relative w-full max-w-4xl mx-auto">
           {isEmbeddableVideo ? (
             // Video embebido (YouTube)
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
@@ -112,39 +123,42 @@ export default function VideoModal({ isOpen, onClose, videoUrl, productName }: V
             </div>
           ) : (
             // Enlace externo para otros tipos de video
-            <div className="text-center space-y-4">
-              <div className="bg-gray-50 rounded-lg p-8">
-                <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  Video no disponible para vista previa
-                </h4>
-                <p className="text-gray-600 mb-4">
-                  Este tipo de video se abrirá en una nueva pestaña
-                </p>
-                <a
-                  href={videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Ver Video
-                </a>
-              </div>
+            <div className="text-center space-y-4 bg-white rounded-lg p-8">
+              <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                Video no disponible para vista previa
+              </h4>
+              <p className="text-gray-600 mb-4">
+                Este tipo de video se abrirá en una nueva pestaña
+              </p>
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ver Video
+              </a>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-3 p-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            Cerrar
-          </button>
+        {/* Botón Cerrar */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+          aria-label="Cerrar video"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Título del Video */}
+        <div className="absolute top-4 left-4 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+          Video de {productName}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
