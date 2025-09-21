@@ -11,6 +11,31 @@ interface VideoModalProps {
   productName: string;
 }
 
+// Función para extraer el ID del video de TikTok
+const extractTikTokVideoId = (url: string): string | null => {
+  try {
+    // Patrones de URL de TikTok
+    const patterns = [
+      /tiktok\.com\/@[\w.-]+\/video\/(\d+)/,
+      /tiktok\.com\/v\/(\d+)/,
+      /vm\.tiktok\.com\/(\w+)/,
+      /tiktok\.com\/t\/(\w+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extrayendo ID de TikTok:', error);
+    return null;
+  }
+};
+
 // Función para convertir URLs de video a URLs de embed
 const getEmbedUrl = (url: string): string => {
   try {
@@ -25,10 +50,13 @@ const getEmbedUrl = (url: string): string => {
       }
     }
     
-    // TikTok
+    // TikTok - Usar el formato oficial de TikTok Embed Player
     if (url.includes('tiktok.com/')) {
-      // Para TikTok, usamos la URL original ya que no hay embed directo
-      return url;
+      const videoId = extractTikTokVideoId(url);
+      if (videoId) {
+        // Formato oficial de TikTok: https://www.tiktok.com/player/v1/{video_id}
+        return `https://www.tiktok.com/player/v1/${videoId}?music_info=1&description=1&controls=1&autoplay=0`;
+      }
     }
     
     // Facebook
@@ -54,7 +82,8 @@ const getEmbedUrl = (url: string): string => {
 const isEmbeddable = (url: string): boolean => {
   return url.includes('youtube.com/embed') || 
          url.includes('youtu.be/') || 
-         url.includes('youtube.com/watch');
+         url.includes('youtube.com/watch') ||
+         url.includes('tiktok.com/player/v1/');
 };
 
 export default function VideoModal({ isOpen, onClose, videoUrl, productName }: VideoModalProps) {
@@ -110,15 +139,17 @@ export default function VideoModal({ isOpen, onClose, videoUrl, productName }: V
         {/* Contenido del Video */}
         <div className="relative w-full max-w-4xl mx-auto">
           {isEmbeddableVideo ? (
-            // Video embebido (YouTube)
+            // Video embebido (YouTube/TikTok)
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
                 src={embedUrl}
                 title={`Video de ${productName}`}
                 className="absolute top-0 left-0 w-full h-full rounded-lg"
                 frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
+                loading="lazy"
+                sandbox="allow-scripts allow-same-origin allow-presentation"
               />
             </div>
           ) : (
