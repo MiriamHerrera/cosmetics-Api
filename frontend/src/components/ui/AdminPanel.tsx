@@ -32,6 +32,7 @@ import AddProductModal from './AddProductModal';
 import EditProductModal from './EditProductModal';
 import MigrationButton from './MigrationButton';
 import AvailabilityManagement from './AvailabilityManagement';
+import Pagination from './Pagination';
 import { OrdersSection, ReservationsSection, ReportsSection, SurveysManagementSection } from '@/components/sections';
 
 interface AdminPanelProps {
@@ -52,6 +53,12 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  
+  // Estados para paginación de productos
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(10);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   
   // Hook del admin - solo cargar cuando sea necesario
   const {
@@ -89,7 +96,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
       if (response.ok) {
         // Recargar productos después de eliminar
-        loadProducts();
+        loadProductsWithPagination();
         // Mostrar mensaje de éxito (podrías usar un toast aquí)
         alert('Producto eliminado correctamente');
       } else {
@@ -125,8 +132,45 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
   // Función para cuando se actualiza un producto
   const handleProductUpdated = () => {
-    loadProducts(); // Recargar la lista de productos
+    loadProductsWithPagination(); // Recargar la lista de productos
   };
+
+  // Función para cargar productos con paginación
+  const loadProductsWithPagination = useCallback(async (page = currentPage, limit = productsPerPage, search = searchTerm, category = '', status = '') => {
+    try {
+      const data = await loadProducts(page, limit, search, category, status);
+      if (data.pagination) {
+        setTotalProducts(data.pagination.total);
+        setTotalPages(data.pagination.pages);
+        setCurrentPage(data.pagination.page);
+      }
+      return data;
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      throw error;
+    }
+  }, [loadProducts, currentPage, productsPerPage, searchTerm]);
+
+  // Función para cambiar de página
+  const handlePageChange = useCallback((newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      loadProductsWithPagination(newPage, productsPerPage, searchTerm);
+    }
+  }, [loadProductsWithPagination, totalPages, productsPerPage, searchTerm]);
+
+  // Función para cambiar productos por página
+  const handleProductsPerPageChange = useCallback((newLimit: number) => {
+    setProductsPerPage(newLimit);
+    setCurrentPage(1); // Resetear a la primera página
+    loadProductsWithPagination(1, newLimit, searchTerm);
+  }, [loadProductsWithPagination, searchTerm]);
+
+  // Función para buscar productos
+  const handleSearchProducts = useCallback(() => {
+    setCurrentPage(1); // Resetear a la primera página
+    loadProductsWithPagination(1, productsPerPage, searchTerm);
+  }, [loadProductsWithPagination, productsPerPage, searchTerm]);
 
   // Debug: Log cuando cambia el estado del modal - solo en desarrollo y con throttling
   useEffect(() => {
@@ -150,7 +194,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           loadUsers();
           break;
         case 'products':
-          loadProducts();
+          loadProductsWithPagination();
           break;
         case 'carts':
           loadCarts();
@@ -567,9 +611,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearchProducts()}
                   />
                 </div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={handleSearchProducts}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
                   <Search className="w-4 h-4 inline mr-2" />
                   Buscar
                 </button>
@@ -580,6 +628,13 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   <Package className="w-4 h-4" />
                   Agregar Producto
                 </button>
+              </div>
+              
+              {/* Información de paginación superior */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600 text-center">
+                  Mostrando {((currentPage - 1) * productsPerPage) + 1} - {Math.min(currentPage * productsPerPage, totalProducts)} de {totalProducts} productos
+                </div>
               </div>
             </div>
 
@@ -821,6 +876,17 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                 </div>
               )}
             </div>
+
+            {/* Controles de paginación */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalProducts}
+              itemsPerPage={productsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleProductsPerPageChange}
+              showItemsPerPage={true}
+            />
           </div>
         );
 
@@ -1033,7 +1099,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     <AddProductModal
       isOpen={showAddProductModal}
       onClose={() => setShowAddProductModal(false)}
-      onProductAdded={loadProducts}
+      onProductAdded={loadProductsWithPagination}
     />
 
     {/* Modal para editar producto */}
