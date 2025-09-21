@@ -142,60 +142,63 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
         )}
       </div>
 
-      {/* Información del producto */}
-      <div className="p-3 sm:p-5">
-        {/* Nombre del producto */}
-        <h3 className="
-          font-semibold text-gray-900 mb-1
-          text-sm sm:text-base
-          leading-tight group-hover:text-purple-800
-          transition-colors duration-300
-          h-10 sm:h-12 flex items-start
-        ">
-          {product.name}
-        </h3>
+       {/* Información del producto */}
+       <div className="p-3 sm:p-5 flex flex-col h-full">
+         {/* Contenido principal - se expande para empujar los botones hacia abajo */}
+         <div className="flex-1">
+           {/* Nombre del producto */}
+           <h3 className="
+             font-semibold text-gray-900 mb-1
+             text-sm sm:text-base
+             leading-tight group-hover:text-purple-800
+             transition-colors duration-300
+             h-10 sm:h-12 flex items-start
+           ">
+             {product.name}
+           </h3>
 
-        {/* Descripción del producto */}
-        {product.description && (
-          <p className="
-            text-xs text-gray-500 mb-2
-            leading-relaxed line-clamp-2
-            overflow-hidden
-          ">
-            {product.description}
-          </p>
-        )}
-
-        {/* Tipo/Variante del producto */}
-        <p className="
-          text-xs text-purple-600 mb-2 sm:mb-3
-          font-medium bg-purple-50 px-2 py-1 rounded-lg
-          inline-block
-        ">
-          {product.category_name}
-        </p>
-
-        {/* Precio y Stock en la misma línea */}
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            ${product.price.toFixed(2)}
-          </span>
-          <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-1 rounded-lg">
-            <span className="hidden sm:inline">Stock: </span>{product.stock_total}
-          </span>
-        </div>
-
-                 {/* Mensaje de error */}
-         {error && (
-           <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
-             <p className="text-xs text-red-600">
-               <span className="font-semibold">Error:</span> {error}
+           {/* Descripción del producto */}
+           {product.description && (
+             <p className="
+               text-xs text-gray-500 mb-2
+               leading-relaxed line-clamp-2
+               overflow-hidden
+             ">
+               {product.description}
              </p>
-           </div>
-         )}
+           )}
 
-         {/* Botones de acción - Alineados a la derecha */}
-         <div className="flex justify-end gap-1.5 sm:gap-2">
+           {/* Tipo/Variante del producto */}
+           <p className="
+             text-xs text-purple-600 mb-2 sm:mb-3
+             font-medium bg-purple-50 px-2 py-1 rounded-lg
+             inline-block
+           ">
+             {product.category_name}
+           </p>
+
+           {/* Precio y Stock en la misma línea */}
+           <div className="flex items-center justify-between mb-3 sm:mb-4">
+             <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+               ${product.price.toFixed(2)}
+             </span>
+             <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-1 rounded-lg">
+               <span className="hidden sm:inline">Stock: </span>{product.stock_total}
+             </span>
+           </div>
+
+           {/* Mensaje de error */}
+           {error && (
+             <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
+               <p className="text-xs text-red-600">
+                 <span className="font-semibold">Error:</span> {error}
+               </p>
+             </div>
+           )}
+         </div>
+
+         {/* Botones de acción - Fijos en la parte inferior */}
+         <div className="flex justify-end gap-1.5 sm:gap-2 mt-auto">
            {/* Botón de video */}
            {product.video_url && (
              <button
@@ -268,7 +271,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
              )}
            </button>
          </div>
-      </div>
+       </div>
 
       {/* Modal de video */}
       <VideoModal
