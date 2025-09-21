@@ -271,7 +271,7 @@ export default function ProductCard({ product, onQuickBuy, onOpenCart }: Product
              )}
            </button>
          </div>
-       </div>
+      </div>
 
       {/* Modal de video */}
       <VideoModal
