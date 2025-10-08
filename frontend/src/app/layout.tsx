@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "💄 Jeniri Cosmetics - Sistema de Inventario y Ventas",
+  title: "Jeniri Cosmetics - Sistema de Inventario y Ventas",
   description: "Aplicación completa para gestión de inventario, ventas y carrito con apartado de productos de cosméticos Jeniri",
   keywords: "jeniri, cosméticos, inventario, ventas, carrito, apartado, belleza, maquillaje",
   authors: [{ name: "Jeniri Cosmetics Team" }],
@@ -24,38 +24,38 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951725/jeniri_logo_4_e0no85.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "any",
         type: "image/x-icon",
       },
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "any",
       },
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "32x32",
         type: "image/png",
       },
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "32x32",
         type: "image/png",
       },
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "16x16",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "180x180",
         type: "image/png",
       },
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         sizes: "180x180",
         type: "image/png",
       },
@@ -63,12 +63,12 @@ export const metadata: Metadata = {
     other: [
       {
         rel: "icon",
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951725/jeniri_logo_4_e0no85.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         // Modern browsers usarán este .ico remoto
       },
       {
         rel: "icon",
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         // Fallback local
       },
     ],
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     siteName: "Jeniri Cosmetics",
     images: [
       {
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png",
         width: 1200,
         height: 630,
         alt: "Jeniri Cosmetics",
@@ -94,7 +94,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Jeniri Cosmetics - Sistema de Inventario y Ventas",
     description: "Aplicación completa para gestión de inventario, ventas y carrito con apartado de productos de cosméticos Jeniri",
-    images: ["https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png"],
+    images: ["https://res.cloudinary.com/dthbzzrey/image/upload/v1759953435/jeniri_logo_8_ph0xj7.png"],
   },
 };
 
