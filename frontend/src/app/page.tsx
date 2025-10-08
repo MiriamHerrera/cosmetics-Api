@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { CartButton, AuthButton } from '@/components/ui';
 import { UpcomingInventory, StockSurvey, ProductsSection } from '@/components/sections';
 
@@ -13,8 +14,16 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             {/* Logo/Brand */}
             <div className="flex items-center">
+              <Image
+                src="https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png"
+                alt="Jeniri Cosmetics logo"
+                width={32}
+                height={32}
+                className="mr-2 rounded"
+                priority
+              />
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                💄 Cosmetics
+                Jeniri Cosmetics
               </h1>
             </div>
             
@@ -120,7 +129,7 @@ export default function Home() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">💄 Cosmetics App</h3>
+            <h3 className="text-2xl font-bold mb-4">Jeniri App</h3>
             <p className="text-gray-400 mb-6">
               Transformando la gestión de negocios de cosméticos
             </p>

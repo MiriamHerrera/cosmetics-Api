@@ -165,6 +165,35 @@ export default function ProductsSection() {
           </div>
         </div>
 
+      {/* Filtro por categorías con chips */}
+      <div className="mb-6 -mt-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+          <button
+            onClick={() => handleCategoryFilter('all')}
+            className={`whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${
+              selectedCategory === 'all'
+                ? 'bg-rose-500 text-white border-rose-500'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Todas
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => handleCategoryFilter(category)}
+              className={`whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${
+                selectedCategory === category
+                  ? 'bg-rose-500 text-white border-rose-500'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
         {/* Grid de productos */}
         {currentProducts.length > 0 ? (
           <>

@@ -178,7 +178,7 @@ export default function VideoModal({ isOpen, onClose, videoUrl, productName }: V
         {/* Botón Cerrar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+          className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-2 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 transition-transform duration-200 hover:scale-110 active:scale-95"
           aria-label="Cerrar video"
         >
           <X className="w-6 h-6" />

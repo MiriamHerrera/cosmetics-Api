@@ -24,11 +24,16 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/favicon.ico",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951725/jeniri_logo_4_e0no85.png",
+        sizes: "any",
+        type: "image/x-icon",
+      },
+      {
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
         sizes: "any",
       },
       {
-        url: "/favicon.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
         sizes: "32x32",
         type: "image/png",
       },
@@ -45,7 +50,7 @@ export const metadata: Metadata = {
     ],
     apple: [
       {
-        url: "/favicon.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
         sizes: "180x180",
         type: "image/png",
       },
@@ -58,11 +63,13 @@ export const metadata: Metadata = {
     other: [
       {
         rel: "icon",
-        url: "/favicon.ico",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951725/jeniri_logo_4_e0no85.png",
+        // Modern browsers usarán este .ico remoto
       },
       {
         rel: "icon",
-        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1758421657/isotipoJeniri_tx2fxz.png",
+        url: "https://res.cloudinary.com/dthbzzrey/image/upload/v1759951486/jeniri_logo_3_inpmzi.png",
+        // Fallback local
       },
     ],
   },

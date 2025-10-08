@@ -94,6 +94,8 @@ export interface PaginationParams {
   category?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  // Extras soportados por endpoints públicos
+  in_stock?: 'true' | 'false';
 }
 
 // Tipos para encuestas

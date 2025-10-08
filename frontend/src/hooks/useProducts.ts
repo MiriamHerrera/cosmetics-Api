@@ -25,7 +25,7 @@ export const useProducts = () => {
   };
 
   // Cargar productos con paginación
-  const loadProducts = useCallback(async (params: PaginationParams = { page: 1, limit: 50 }) => {
+  const loadProducts = useCallback(async (params: PaginationParams = { page: 1, limit: 200, in_stock: 'true' }) => {
     try {
       setLoading(true);
       setError(null);
@@ -42,12 +42,12 @@ export const useProducts = () => {
         }
         
         // Mapear los productos para que coincidan con la estructura esperada
-        const mappedProducts = response.data.map((product: Product) => ({
+        const mappedProducts = response.data.map((product: any) => ({
           ...product,
-          // Asegurar que el precio sea un número
-          price: parseFloat(product.price.toString()) || 0,
-          // Asegurar que el stock sea un número
-          stock_total: parseInt(product.stock_total.toString()) || 0
+          // Asegurar que el precio sea un número incluso si viene como string o null
+          price: typeof product.price === 'number' ? product.price : parseFloat(String(product.price ?? 0)) || 0,
+          // Asegurar que el stock sea un número incluso si viene como string o null
+          stock_total: typeof product.stock_total === 'number' ? product.stock_total : parseInt(String(product.stock_total ?? 0)) || 0
         }));
         
         if (DEBUG_MODE) {

@@ -24,7 +24,7 @@ export const API_CONFIG = {
     
     // Products
     PRODUCTS: '/products',
-    PUBLIC_PRODUCTS: '/products',
+    PUBLIC_PRODUCTS: '/public/products',
     PRODUCT_TYPES: '/products/types',
     PRODUCT_CATEGORIES: '/products/categories',
     
@@ -193,7 +193,7 @@ export const publicProductsApi = {
   // Obtener productos públicos con paginación y filtros
   getPublicProducts: async (params: PaginationParams = { page: 1, limit: 50 }) => {
     try {
-      const response = await api.get('/products', { params });
+      const response = await api.get(`${API_CONFIG.ENDPOINTS.PUBLIC_PRODUCTS}`, { params });
       return response.data;
     } catch (error) {
       console.error('Error obteniendo productos públicos:', error);
@@ -204,7 +204,7 @@ export const publicProductsApi = {
   // Obtener producto público por ID
   getPublicProductById: async (id: number) => {
     try {
-      const response = await api.get(`/products/${id}`);
+      const response = await api.get(`${API_CONFIG.ENDPOINTS.PUBLIC_PRODUCTS}/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo producto público:', error);
@@ -215,7 +215,7 @@ export const publicProductsApi = {
   // Buscar productos públicos
   searchPublicProducts: async (query: string, params: PaginationParams = { page: 1, limit: 50 }) => {
     try {
-      const response = await api.get('/products/search', { params: { q: query } });
+      const response = await api.get(`${API_CONFIG.ENDPOINTS.PUBLIC_PRODUCTS}/search`, { params: { q: query } });
       return response.data;
     } catch (error) {
       console.error('Error buscando productos públicos:', error);
@@ -226,7 +226,7 @@ export const publicProductsApi = {
   // Obtener productos por categoría
   getPublicProductsByCategory: async (category: string, params: PaginationParams = { page: 1, limit: 50 }) => {
     try {
-      const response = await api.get(`/products/category/${category}`, { params });
+      const response = await api.get(`${API_CONFIG.ENDPOINTS.PUBLIC_PRODUCTS}/category/${category}`, { params });
       return response.data;
     } catch (error) {
       console.error('Error obteniendo productos por categoría:', error);

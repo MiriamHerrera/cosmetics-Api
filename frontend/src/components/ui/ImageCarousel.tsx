@@ -74,7 +74,7 @@ export default function ImageCarousel({
                 {/* Botón Cerrar */}
                 <button
                   onClick={() => setIsFullscreen(false)}
-                  className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+                  className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-2 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 transition-transform duration-200 hover:scale-110 active:scale-95"
                   aria-label="Cerrar vista fullscreen"
                 >
                   <X className="w-6 h-6" />
@@ -241,7 +241,7 @@ export default function ImageCarousel({
               {/* Botón Cerrar */}
               <button
                 onClick={closeFullscreen}
-                className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-200 hover:scale-110"
+                className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white p-2 rounded-full shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 transition-transform duration-200 hover:scale-110 active:scale-95"
                 aria-label="Cerrar vista fullscreen"
               >
                 <X className="w-6 h-6" />
